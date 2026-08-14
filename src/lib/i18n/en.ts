@@ -1,0 +1,46 @@
+export const en = {
+  common: {
+    brand: "TipMe",
+    continue: "Continue",
+    back: "Back",
+    loading: "Loading...",
+    unknownError: "Something went wrong. Please try again.",
+    copyLink: "Copy my link",
+    copied: "Link copied",
+  },
+  landing: {
+    headline: "Get direct support from the people who value your work.",
+    body: "Share your link, receive tips, and know right away.",
+    signup: "Create my page",
+    login: "I have an account",
+    trust: "Verified payments. Clear balance. Simple payouts.",
+  },
+  tip: {
+    send: "SEND TIP",
+    heading: "Send a tip",
+    otherAmount: "Other amount",
+    name: "Your name (optional)",
+    message: "Message (optional)",
+    anonymous: "Send anonymously",
+    pending: "We are confirming your tip.",
+    rejected: "The payment was not approved.",
+    confirmed: "Tip sent",
+  },
+  dashboard: {
+    hello: "Hello",
+    available: "Available",
+    pending: "Pending",
+    withdraw: "WITHDRAW",
+    today: "Today",
+    month: "This month",
+    recent: "Recent tips",
+    empty: "Your first tip will appear here.",
+  },
+  push: {
+    heading: "Never miss a tip",
+    body: "We will notify you as soon as a payment is confirmed.",
+    enable: "Enable notifications",
+    disabled: "Notifications are disabled.",
+  },
+} as const;
+

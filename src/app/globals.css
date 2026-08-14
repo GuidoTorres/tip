@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f4;
+  --surface: #ffffff;
+  --surface-soft: #eeeFEB;
+  --foreground: #222321;
+  --muted: #666963;
+  --border: #dfe1dc;
+  --accent: #d95747;
+  --accent-strong: #b83f32;
+  --on-accent: #fffaf7;
+  --success: #24745a;
+  --warning: #9a5c16;
+  --shadow: 0 24px 70px rgb(57 64 55 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #171916;
+    --surface: #20231f;
+    --surface-soft: #292d28;
+    --foreground: #f3f3ee;
+    --muted: #b1b5ad;
+    --border: #383d36;
+    --accent: #ee7566;
+    --accent-strong: #ff8b7c;
+    --on-accent: #24110e;
+    --success: #7dc5a8;
+    --warning: #e2ac68;
+    --shadow: 0 24px 70px rgb(0 0 0 / 0.28);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-geist-sans);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--background); }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, textarea, select { font: inherit; }
+
+:where(a[href], button:not(:disabled), select:not(:disabled), label[for], input:is([type="checkbox"], [type="radio"], [type="file"]):not(:disabled), [role="button"]:not([aria-disabled="true"])) {
+  cursor: pointer;
+}
+
+:where(button, select, input, [role="button"]):is(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  outline-offset: 3px;
+}
+
+::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+.pressable {
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.pressable:active { transform: scale(0.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

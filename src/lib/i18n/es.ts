@@ -1,0 +1,46 @@
+export const es = {
+  common: {
+    brand: "TipMe",
+    continue: "Continuar",
+    back: "Volver",
+    loading: "Cargando...",
+    unknownError: "Algo salió mal. Inténtalo nuevamente.",
+    copyLink: "Copiar mi link",
+    copied: "Link copiado",
+  },
+  landing: {
+    headline: "Recibe apoyo directo de quienes valoran lo que haces.",
+    body: "Comparte tu link, recibe tips y entérate al instante.",
+    signup: "Crear mi página",
+    login: "Ya tengo cuenta",
+    trust: "Pagos verificables. Saldo claro. Retiros simples.",
+  },
+  tip: {
+    send: "ENVIAR TIP",
+    heading: "Enviar tip",
+    otherAmount: "Otro monto",
+    name: "Tu nombre (opcional)",
+    message: "Mensaje (opcional)",
+    anonymous: "Enviar anónimamente",
+    pending: "Estamos confirmando tu tip.",
+    rejected: "El pago no fue aprobado.",
+    confirmed: "Tip enviado",
+  },
+  dashboard: {
+    hello: "Hola",
+    available: "Disponible",
+    pending: "Pendiente",
+    withdraw: "RETIRAR",
+    today: "Hoy",
+    month: "Este mes",
+    recent: "Últimos tips",
+    empty: "Tu primer tip aparecerá aquí.",
+  },
+  push: {
+    heading: "No te pierdas ningún tip",
+    body: "Te avisaremos en cuanto recibas un pago confirmado.",
+    enable: "Activar notificaciones",
+    disabled: "Las notificaciones están desactivadas.",
+  },
+} as const;
+
