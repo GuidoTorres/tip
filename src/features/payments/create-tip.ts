@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { calculateTipBreakdown } from "@/features/ledger/money";
+import { APPLICATION_CURRENCY } from "./application-currency";
 import type { Currency } from "./types";
 import type { PaymentProvider } from "./provider";
 
@@ -51,7 +52,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     message: value.message || null,
     anonymous: value.anonymous,
     amountMinor: value.amountMinor,
-    currency: creator.currency,
+    currency: APPLICATION_CURRENCY,
     platformFeeMinor: breakdown.platformFeeMinor,
     gatewayFeeMinor: null,
     netAmountMinor: breakdown.netAmountMinor,
@@ -60,7 +61,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   const payment = await dependencies.provider.createPayment({
     tipId: tip.id,
     amountMinor: value.amountMinor,
-    currency: creator.currency,
+    currency: APPLICATION_CURRENCY,
     idempotencyKey: `create:${tip.id}`,
   });
   await dependencies.repository.attachPayment(tip.id, {

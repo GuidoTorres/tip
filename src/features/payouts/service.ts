@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 import type { Currency } from "@/features/payments/types";
 import type { PaymentProvider, PayoutStatus } from "@/features/payments/provider";
 
@@ -23,10 +24,18 @@ export interface PayoutRepository {
 
 const requestSchema = z.object({
   creatorId: z.string().min(1), accountId: z.string().min(1), amountMinor: z.number().int().positive(),
-  currency: z.enum(["USD", "EUR", "PEN", "COP", "BRL", "CLP", "ARS"]), idempotencyKey: z.string().min(8).max(160),
+  currency: z.literal(APPLICATION_CURRENCY), idempotencyKey: z.string().min(8).max(160),
 });
 
-export async function requestPayout(input: z.infer<typeof requestSchema>, dependencies: { repository: PayoutRepository; provider: PaymentProvider }) {
+type PayoutRequestInput = {
+  creatorId: string;
+  accountId: string;
+  amountMinor: number;
+  currency: Currency;
+  idempotencyKey: string;
+};
+
+export async function requestPayout(input: PayoutRequestInput, dependencies: { repository: PayoutRepository; provider: PaymentProvider }) {
   const value = requestSchema.parse(input);
   const account = await dependencies.repository.getAccount(value.accountId, value.creatorId);
   if (!account || !account.verified) throw new Error("payout_account_not_verified");

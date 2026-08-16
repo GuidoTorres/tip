@@ -25,6 +25,16 @@ describe("createTip", () => {
     expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 2_000, platformFeeMinor: 60, netAmountMinor: 1_940, currency: "USD", payerName: "Mateo" }));
   });
 
+  it("fuerza USD aunque el perfil conserve otra moneda", async () => {
+    const { repository, provider } = dependencies();
+    vi.mocked(repository.findCreatorByUsername).mockResolvedValue({ id: "creator-1", currency: "EUR" });
+
+    await createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true }, { repository, provider, platformFeeBps: 300 });
+
+    expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ currency: "USD" }));
+    expect(provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({ currency: "USD" }));
+  });
+
   it("elimina la identidad antes de persistir un tip anónimo", async () => {
     const { repository, provider } = dependencies();
     await createTip({ username: "camila", amountMinor: 2_000, payerName: "Nombre secreto", message: "Hola", anonymous: true }, { repository, provider, platformFeeBps: 300 });

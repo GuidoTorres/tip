@@ -47,4 +47,11 @@ describe("ReceiptStatus repeat tip action", () => {
 
     expect(receipt).not.toContain("Enviar otro tip");
   });
+
+  it("usa lenguaje neutral cuando el perfil no está disponible", () => {
+    const receipt = renderReceipt("confirmed", null);
+
+    expect(receipt).toContain("este perfil");
+    expect(receipt.toLowerCase()).not.toContain("creadora");
+  });
 });

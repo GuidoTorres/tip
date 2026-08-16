@@ -1,6 +1,6 @@
 # TipMe
 
-TipMe es un MVP mobile-first para que creadoras reciban tips verificables sin obligar al fan a registrarse. El flujo crítico es:
+TipMe es un MVP mobile-first para que quienes crean contenido reciban tips verificables sin obligar al fan a registrarse. El flujo crítico es:
 
 ```text
 Fan envía tip -> provider -> webhook verificado -> ledger -> saldo -> notificación -> Web Push
@@ -107,7 +107,7 @@ npx web-push generate-vapid-keys
 
 Coloca la clave pública en `NEXT_PUBLIC_VAPID_PUBLIC_KEY` y la privada en `VAPID_PRIVATE_KEY`. La clave privada nunca se importa en componentes cliente.
 
-Web Push requiere HTTPS, salvo `localhost`. En iPhone/iPad la usuaria debe añadir TipMe a la pantalla de inicio, abrirla desde el icono y pulsar explícitamente “Activar notificaciones”.
+Web Push requiere HTTPS, salvo `localhost`. En iPhone/iPad se debe añadir TipMe a la pantalla de inicio, abrirla desde el icono y pulsar explícitamente “Activar notificaciones”.
 
 Cada dispositivo crea una fila en `push_subscriptions`. Un endpoint que devuelve 404 o 410 queda revocado. Un mismo evento financiero crea una notificación lógica y puede enviarse a varios dispositivos.
 
@@ -138,7 +138,7 @@ No hay conversión entre monedas. Cada saldo se reconstruye en su moneda origina
 3. Solicita un monto menor o igual al disponible.
 4. En desarrollo usa `Procesar`, luego `Completar` o `Fallar`.
 
-La base de datos bloquea simultáneamente el saldo por creadora/moneda antes de reservar el retiro. Completar o fallar inserta movimientos compensatorios una sola vez y crea la notificación correspondiente.
+La base de datos bloquea simultáneamente el saldo por perfil y moneda antes de reservar el retiro. Completar o fallar inserta movimientos compensatorios una sola vez y crea la notificación correspondiente.
 
 ## Pruebas y verificación
 
@@ -194,7 +194,7 @@ El adaptador debe implementar creación/consulta de pagos y payouts, verificaci�
 
 ## Límites del MVP
 
-- El rate limit actual es una protección en memoria por instancia. Para un piloto de dos creadoras es razonable; antes de tráfico real debe migrarse a una store distribuida.
+- El rate limit actual es una protección en memoria por instancia. Para un piloto de dos perfiles es razonable; antes de tráfico real debe migrarse a una store distribuida.
 - El admin es observacional. No se incluyeron mutaciones financieras manuales para reducir riesgo.
 - La entrega física de Push no puede certificarse mediante tests de escritorio. Usa [push-device-checklist.md](docs/manual/push-device-checklist.md).
 - Los simuladores mock están desactivados en el entorno Vercel Production. Se habilitan en desarrollo local y Vercel Preview para el piloto.

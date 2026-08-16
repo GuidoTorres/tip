@@ -35,6 +35,15 @@ describe("requestPayout", () => {
     const deps = setup({ verified: false });
     await expect(requestPayout({ creatorId: "creator-1", accountId: "acct-1", amountMinor: 1_000, currency: "USD", idempotencyKey: "key-0001" }, deps)).rejects.toThrow("payout_account_not_verified");
   });
+
+  it("rechaza retiros nuevos en una moneda distinta de USD", async () => {
+    const deps = setup();
+
+    await expect(requestPayout({ creatorId: "creator-1", accountId: "acct-1", amountMinor: 1_000, currency: "EUR", idempotencyKey: "key-0001" }, deps)).rejects.toThrow();
+
+    expect(deps.repository.getAccount).not.toHaveBeenCalled();
+    expect(deps.provider.createPayout).not.toHaveBeenCalled();
+  });
 });
 
 describe("processPayoutEvent", () => {

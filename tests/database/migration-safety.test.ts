@@ -9,6 +9,9 @@ const migration = readFileSync(migrationPath, "utf8");
 const usernameFixPath = fileURLToPath(
   new URL("../../supabase/migrations/202608130001_fix_username_double_underscore.sql", import.meta.url),
 );
+const usdMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608160001_set_application_currency_usd.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -27,5 +30,14 @@ describe("database migration safety", () => {
     const usernameFix = readFileSync(usernameFixPath, "utf8");
     expect(usernameFix).toContain("drop constraint if exists profiles_username_no_double_underscore");
     expect(usernameFix).toContain("position('__' in username::text) = 0");
+  });
+
+  it("sets profile preferences to USD without relabeling financial history", () => {
+    expect(existsSync(usdMigrationPath)).toBe(true);
+    if (!existsSync(usdMigrationPath)) return;
+
+    const usdMigration = readFileSync(usdMigrationPath, "utf8");
+    expect(usdMigration).toMatch(/update\s+public\.profiles\s+set\s+preferred_currency\s*=\s*'USD'/i);
+    expect(usdMigration).not.toMatch(/update\s+public\.(tips|ledger_entries|payouts)/i);
   });
 });

@@ -9,9 +9,9 @@ import { getServerEnv } from "@/lib/env/server";
 import { getPaymentProvider } from "@/features/payments/provider-factory";
 import { requestPayout } from "./service";
 import { SupabasePayoutRepository } from "./supabase-repository";
-import { supportedCurrencies } from "@/features/payments/types";
+import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 
-const schema = z.object({ accountId: z.string().uuid(), amountMinor: z.coerce.number().int().positive(), currency: z.enum(supportedCurrencies) });
+const schema = z.object({ accountId: z.string().uuid(), amountMinor: z.coerce.number().int().positive(), currency: z.literal(APPLICATION_CURRENCY) });
 
 export async function requestPayoutAction(formData: FormData) {
   const parsed = schema.safeParse({ accountId: formData.get("accountId"), amountMinor: formData.get("amountMinor"), currency: formData.get("currency") });
@@ -33,4 +33,3 @@ export async function requestPayoutAction(formData: FormData) {
   }
   redirect("/dashboard/payouts?success=requested");
 }
-

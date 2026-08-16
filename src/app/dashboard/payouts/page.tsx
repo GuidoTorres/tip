@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/i18n";
 import { supportedCurrencies, type Currency } from "@/features/payments/types";
+import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 import { sumWithdrawnByCurrency } from "@/features/ledger/money";
 import { PayoutForm } from "@/components/payouts/payout-form";
 import { MockPayoutActions } from "@/components/payouts/mock-payout-actions";
@@ -12,14 +13,13 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
   const query = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect("/login");
-  const [{ data: profile }, { data: balances }, { data: account }, { data: payouts }, { data: payoutMovements }] = await Promise.all([
-    supabase.from("profiles").select("preferred_currency").eq("id", user.id).single(),
+  const [{ data: balances }, { data: account }, { data: payouts }, { data: payoutMovements }] = await Promise.all([
     supabase.rpc("creator_balances", { requested_creator: user.id }),
     supabase.from("payout_accounts").select("id,bank_name,last4,status").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("payouts").select("id,amount_minor,currency,status,provider_payout_id,created_at").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(20),
     supabase.from("ledger_entries").select("amount_minor,currency").eq("creator_id", user.id).eq("type", "payout"),
   ]);
-  const currency = (profile?.preferred_currency ?? "USD") as Currency;
+  const currency: Currency = APPLICATION_CURRENCY;
   const balance = (balances as Array<{ currency: Currency; available_minor: number }> | null)?.find((item) => item.currency === currency);
   const available = Number(balance?.available_minor ?? 0);
   const digits = new Intl.NumberFormat("es", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;

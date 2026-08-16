@@ -3,21 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { supportedCurrencies } from "@/features/payments/types";
 import { validateUsername } from "./username";
+import { parseProfileFormData } from "./profile-input";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env/server";
 import { logSupabaseError } from "@/lib/logging/supabase-error";
-
-const profileSchema = z.object({
-  publicName: z.string().trim().min(1).max(80),
-  username: z.string(),
-  bio: z.string().trim().max(180),
-  country: z.string().regex(/^[A-Z]{2}$/),
-  currency: z.enum(supportedCurrencies),
-  locale: z.enum(["es", "en"]).default("es"),
-});
 
 async function authenticatedUser() {
   const supabase = await createServerSupabaseClient();
@@ -27,10 +18,7 @@ async function authenticatedUser() {
 }
 
 export async function saveOnboardingProfile(formData: FormData) {
-  const parsed = profileSchema.safeParse({
-    publicName: formData.get("publicName"), username: formData.get("username"), bio: formData.get("bio"),
-    country: formData.get("country"), currency: formData.get("currency"), locale: formData.get("locale") ?? "es",
-  });
+  const parsed = parseProfileFormData(formData);
   if (!parsed.success) redirect("/onboarding?step=1&error=invalid_profile");
   const username = validateUsername(parsed.data.username);
   if (!username.ok) redirect(`/onboarding?step=1&error=${username.error}_username`);
@@ -95,10 +83,7 @@ export async function deleteAvatar() {
 }
 
 export async function updateSettings(formData: FormData) {
-  const parsed = profileSchema.safeParse({
-    publicName: formData.get("publicName"), username: formData.get("username"), bio: formData.get("bio"),
-    country: formData.get("country"), currency: formData.get("currency"), locale: formData.get("locale"),
-  });
+  const parsed = parseProfileFormData(formData);
   if (!parsed.success) redirect("/dashboard/settings?error=invalid_profile");
   const username = validateUsername(parsed.data.username);
   if (!username.ok) redirect(`/dashboard/settings?error=${username.error}_username`);
