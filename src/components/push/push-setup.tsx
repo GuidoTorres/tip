@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Bell, CheckCircle, ShareNetwork, WarningCircle } from "@phosphor-icons/react";
+import {
+  persistPushSubscription,
+  syncExistingPushSubscription,
+} from "@/features/notifications/push-subscription-client";
 
 type State = "checking" | "unsupported" | "install-ios" | "ready" | "active" | "denied" | "error";
 
@@ -34,9 +38,11 @@ export function PushSetup({ vapidPublicKey }: { vapidPublicKey: string }) {
       if (Notification.permission === "denied") { setState("denied"); return; }
       try {
         const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (active) setState(subscription ? "active" : "ready");
-      } catch { if (active) setState("ready"); }
+        const nextState = await syncExistingPushSubscription(
+          () => registration.pushManager.getSubscription(),
+        );
+        if (active) setState(nextState);
+      } catch { if (active) setState("error"); }
     }
     void check();
     return () => { active = false; };
@@ -48,8 +54,7 @@ export function PushSetup({ vapidPublicKey }: { vapidPublicKey: string }) {
       if (permission !== "granted") { setState("denied"); return; }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toUint8Array(vapidPublicKey) });
-      const response = await fetch("/api/push/subscriptions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(subscription.toJSON()) });
-      if (!response.ok) throw new Error("subscription_failed");
+      await persistPushSubscription(subscription);
       setState("active");
     } catch { setState("error"); }
   }
