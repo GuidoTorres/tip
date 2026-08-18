@@ -7,7 +7,7 @@ import type { Currency, TipStatus } from "@/features/payments/types";
 
 export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ tipId: string }>; searchParams: Promise<{ token?: string }> }) {
   const { tipId } = await params; const { token = "" } = await searchParams;
-  if (!verifyReceiptToken(tipId, token, getServerEnv().MOCK_WEBHOOK_SECRET)) notFound();
+  if (!verifyReceiptToken(tipId, token, getServerEnv().RECEIPT_SIGNING_SECRET)) notFound();
   const { data } = await createAdminSupabaseClient().from("tips").select("id,status,amount_minor,currency,message,profiles!tips_creator_id_fkey(public_name,username)").eq("id", tipId).single();
   if (!data) notFound();
   const receipt = data as unknown as { id: string; status: TipStatus; amount_minor: number; currency: Currency; message: string | null; profiles: { public_name: string | null; username: string } | null };

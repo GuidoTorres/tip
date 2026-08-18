@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pay
   };
   const rawBody = JSON.stringify(event);
   const signature = signMockWebhook(rawBody, timestamp, env.MOCK_WEBHOOK_SECRET);
-  const result = await handlePaymentWebhook(rawBody, signature);
-  const token = createReceiptToken(tip.id, env.MOCK_WEBHOOK_SECRET);
+  const result = await handlePaymentWebhook(rawBody, new Headers({ "x-tipme-signature": signature }));
+  const token = createReceiptToken(tip.id, env.RECEIPT_SIGNING_SECRET);
   return NextResponse.json({ ...result, receiptUrl: `/tips/${tip.id}/receipt?token=${encodeURIComponent(token)}` });
 }

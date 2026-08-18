@@ -3,6 +3,7 @@ import { calculateTipBreakdown } from "@/features/ledger/money";
 import { APPLICATION_CURRENCY } from "./application-currency";
 import type { Currency } from "./types";
 import type { PaymentProvider } from "./provider";
+import type { ConnectedPaymentAccount } from "./payment-account-repository";
 
 const inputSchema = z.object({
   username: z.string().trim().toLowerCase().min(3).max(30),
@@ -34,12 +35,21 @@ export interface TipRepository {
   attachPayment(tipId: string, payment: { providerPaymentId: string; status: "pending" | "confirmed" | "rejected" }): Promise<void>;
 }
 
-type Dependencies = { repository: TipRepository; provider: PaymentProvider; platformFeeBps: number };
+export interface PaymentAccountLookup {
+  findConnected(creatorId: string, provider: string): Promise<ConnectedPaymentAccount | null>;
+}
+
+type Dependencies = { repository: TipRepository; provider: PaymentProvider; platformFeeBps: number; paymentAccounts?: PaymentAccountLookup; providerAccountOverride?: string };
 
 export async function createTip(input: CreateTipInput, dependencies: Dependencies) {
   const value = inputSchema.parse(input);
   const creator = await dependencies.repository.findCreatorByUsername(value.username);
   if (!creator) throw new Error("creator_not_found");
+  const paymentAccount = dependencies.provider.name === "paypal" && !dependencies.providerAccountOverride
+    ? await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null
+    : null;
+  const providerAccountId = dependencies.providerAccountOverride ?? paymentAccount?.providerMerchantId ?? null;
+  if (dependencies.provider.name === "paypal" && !providerAccountId) throw new Error("paypal_account_not_connected");
 
   const breakdown = calculateTipBreakdown({
     amountMinor: value.amountMinor,
@@ -61,7 +71,9 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   const payment = await dependencies.provider.createPayment({
     tipId: tip.id,
     amountMinor: value.amountMinor,
+    platformFeeMinor: breakdown.platformFeeMinor,
     currency: APPLICATION_CURRENCY,
+    providerAccountId,
     idempotencyKey: `create:${tip.id}`,
   });
   await dependencies.repository.attachPayment(tip.id, {
@@ -69,5 +81,5 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     status: payment.status,
   });
 
-  return { tipId: tip.id, status: payment.status, redirectUrl: payment.checkoutUrl };
+  return { tipId: tip.id, providerPaymentId: payment.providerPaymentId, status: payment.status, checkout: payment.checkout };
 }

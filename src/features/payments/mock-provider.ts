@@ -28,7 +28,7 @@ export class MockPaymentProvider implements PaymentProvider {
     return {
       providerPaymentId,
       status: "pending",
-      checkoutUrl: `/pay/mock/${providerPaymentId}`,
+      checkout: { kind: "redirect", url: `/pay/mock/${providerPaymentId}` },
       gatewayFeeMinor: null,
     };
   }
@@ -37,12 +37,16 @@ export class MockPaymentProvider implements PaymentProvider {
     return "pending";
   }
 
-  verifyWebhook(rawBody: string, signature: string, nowSeconds?: number): boolean {
-    return verifyMockWebhook(rawBody, signature, this.webhookSecret, nowSeconds);
+  async capturePayment(): Promise<{ status: "pending"; providerCaptureId: null }> {
+    return { status: "pending", providerCaptureId: null };
   }
 
-  parseWebhook(rawBody: string): PaymentWebhookEvent {
-    return eventSchema.parse(JSON.parse(rawBody));
+  async verifyWebhook(input: { rawBody: string; headers: Headers }): Promise<boolean> {
+    return verifyMockWebhook(input.rawBody, input.headers.get("x-tipme-signature") ?? "", this.webhookSecret);
+  }
+
+  async parseWebhook(rawBody: string): Promise<PaymentWebhookEvent> {
+    return { ...eventSchema.parse(JSON.parse(rawBody)), providerCaptureId: null };
   }
 
   async createPayout(input: CreatePayoutInput): Promise<PayoutResult> {
@@ -53,4 +57,3 @@ export class MockPaymentProvider implements PaymentProvider {
     return "requested";
   }
 }
-

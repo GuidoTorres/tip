@@ -5,13 +5,13 @@ import { getPaymentProvider } from "@/features/payments/provider-factory";
 describe("MockPaymentProvider", () => {
   it("crea el mismo identificador para una clave idempotente", async () => {
     const provider = new MockPaymentProvider("secret-that-is-long-enough");
-    const input = { tipId: "tip-1", amountMinor: 2_000, currency: "USD" as const, idempotencyKey: "create:tip-1" };
+    const input = { tipId: "tip-1", amountMinor: 2_000, platformFeeMinor: 60, currency: "USD" as const, providerAccountId: null, idempotencyKey: "create:tip-1" };
     const first = await provider.createPayment(input);
     const second = await provider.createPayment(input);
 
     expect(first).toEqual(second);
     expect(first.status).toBe("pending");
-    expect(first.checkoutUrl).toContain(first.providerPaymentId);
+    expect(first.checkout).toEqual({ kind: "redirect", url: expect.stringContaining(first.providerPaymentId) });
   });
 
   it("crea payouts mock sin tocar el ledger", async () => {
@@ -28,4 +28,3 @@ describe("getPaymentProvider", () => {
     expect(() => getPaymentProvider({ provider: "nuvei", mockWebhookSecret: "secret-that-is-long-enough" })).toThrow("not implemented");
   });
 });
-

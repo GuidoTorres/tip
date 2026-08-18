@@ -11,7 +11,7 @@ function setup(overrides?: { balance?: number; verified?: boolean; newlyProcesse
     transitionFromProvider: vi.fn().mockResolvedValue({ newlyProcessed: overrides?.newlyProcessed ?? true, creatorId: "creator-1", payoutId: "payout-1", amountMinor: 1_000, currency: "USD", status: "completed" }),
   };
   const provider: PaymentProvider = {
-    name: "mock", createPayment: vi.fn(), getPaymentStatus: vi.fn(), verifyWebhook: vi.fn(), parseWebhook: vi.fn(),
+    name: "mock", createPayment: vi.fn(), getPaymentStatus: vi.fn(), capturePayment: vi.fn(), verifyWebhook: vi.fn(), parseWebhook: vi.fn(),
     createPayout: vi.fn().mockResolvedValue({ providerPayoutId: "mock_po_1", status: "requested" }), getPayoutStatus: vi.fn(),
   };
   return { repository, provider };

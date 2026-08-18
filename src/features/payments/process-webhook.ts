@@ -13,6 +13,7 @@ export interface WebhookRepository {
   reject(event: PaymentWebhookEvent, payloadDigest: string): Promise<boolean>;
   reverse(event: PaymentWebhookEvent, payloadDigest: string): Promise<boolean>;
   recordPending?(event: PaymentWebhookEvent, payloadDigest: string): Promise<boolean>;
+  recordIgnored?(event: PaymentWebhookEvent, payloadDigest: string): Promise<boolean>;
   markPushAttempted(eventId: string): Promise<void>;
 }
 
@@ -22,10 +23,15 @@ type Dependencies = {
   push(tip: TipPushData): Promise<unknown>;
 };
 
-export async function processPaymentWebhook(rawBody: string, signature: string, dependencies: Dependencies) {
-  if (!dependencies.provider.verifyWebhook(rawBody, signature)) throw new Error("invalid_webhook");
-  const event = dependencies.provider.parseWebhook(rawBody);
+export async function processPaymentWebhook(rawBody: string, headers: Headers, dependencies: Dependencies) {
+  if (!await dependencies.provider.verifyWebhook({ rawBody, headers })) throw new Error("invalid_webhook");
+  const event = await dependencies.provider.parseWebhook(rawBody);
   const digest = createHash("sha256").update(rawBody).digest("hex");
+
+  if (event.status === "ignored") {
+    const processed = await dependencies.repository.recordIgnored?.(event, digest);
+    return { ok: true, duplicate: processed === false, status: event.status } as const;
+  }
 
   if (event.status === "confirmed") {
     const result = await dependencies.repository.confirm(event, digest);

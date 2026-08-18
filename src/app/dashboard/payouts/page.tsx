@@ -8,11 +8,24 @@ import { sumWithdrawnByCurrency } from "@/features/ledger/money";
 import { PayoutForm } from "@/components/payouts/payout-form";
 import { MockPayoutActions } from "@/components/payouts/mock-payout-actions";
 import { mockSimulatorAllowed } from "@/lib/env/runtime";
+import { getServerEnv } from "@/lib/env/server";
+import { PayPalFundsPanel } from "@/components/payouts/paypal-funds-panel";
 
 export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ error?: string; success?: string }> }) {
   const query = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect("/login");
+  const serverEnv = getServerEnv();
+  if (serverEnv.PAYMENT_PROVIDER === "paypal") {
+    const [{ data: balances }, { data: paymentAccount }] = await Promise.all([
+      supabase.rpc("creator_balances", { requested_creator: user.id }),
+      supabase.from("payment_accounts").select("status,payments_receivable,email_confirmed,onboarding_completed").eq("creator_id", user.id).eq("provider", "paypal").maybeSingle(),
+    ]);
+    const currency: Currency = APPLICATION_CURRENCY;
+    const balance = (balances as Array<{ currency: Currency; available_minor: number; pending_minor: number }> | null)?.find((item) => item.currency === currency);
+    const connected = serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT || (paymentAccount?.status === "connected" && paymentAccount.payments_receivable && paymentAccount.email_confirmed && paymentAccount.onboarding_completed);
+    return <div className="mx-auto max-w-2xl"><h1 className="text-3xl font-semibold tracking-[-0.04em]">Tu dinero</h1><p className="mt-2 text-muted">{serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT ? "Vista de prueba basada en pagos confirmados por PayPal Sandbox." : "Los pagos se envían directamente a la cuenta PayPal conectada."}</p><PayPalFundsPanel netConfirmedMinor={Number(balance?.available_minor ?? 0)} pendingMinor={Number(balance?.pending_minor ?? 0)} currency={currency} connected={Boolean(connected)} sandboxSingleMerchant={serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT} /></div>;
+  }
   const [{ data: balances }, { data: account }, { data: payouts }, { data: payoutMovements }] = await Promise.all([
     supabase.rpc("creator_balances", { requested_creator: user.id }),
     supabase.from("payout_accounts").select("id,bank_name,last4,status").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),

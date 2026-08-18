@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env/server";
-import { getPaymentProvider } from "@/features/payments/provider-factory";
+import { getPaymentProviderFromEnv } from "@/features/payments/provider-factory";
 import { requestPayout } from "./service";
 import { SupabasePayoutRepository } from "./supabase-repository";
 import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
@@ -21,11 +21,12 @@ export async function requestPayoutAction(formData: FormData) {
   if (!user) redirect("/login");
   const admin = createAdminSupabaseClient();
   const env = getServerEnv();
+  if (env.PAYMENT_PROVIDER !== "mock") redirect("/dashboard/payouts?error=managed_by_provider");
   const idempotencyKey = createHash("sha256").update(`${user.id}:${parsed.data.accountId}:${parsed.data.amountMinor}:${randomUUID()}`).digest("hex");
   try {
     await requestPayout({ creatorId: user.id, ...parsed.data, idempotencyKey }, {
       repository: new SupabasePayoutRepository(userClient, admin),
-      provider: getPaymentProvider({ provider: env.PAYMENT_PROVIDER, mockWebhookSecret: env.MOCK_WEBHOOK_SECRET }),
+      provider: getPaymentProviderFromEnv(env),
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "payout_failed";

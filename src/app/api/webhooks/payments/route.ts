@@ -3,9 +3,8 @@ import { handlePaymentWebhook } from "@/features/payments/webhook-handler";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
-  const signature = request.headers.get("x-tipme-signature") ?? "";
   try {
-    const result = await handlePaymentWebhook(rawBody, signature);
+    const result = await handlePaymentWebhook(rawBody, request.headers);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "webhook_failed";
@@ -13,4 +12,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: code === "invalid_webhook" ? "invalid_webhook" : "webhook_failed" }, { status: code === "invalid_webhook" ? 401 : 500 });
   }
 }
-
