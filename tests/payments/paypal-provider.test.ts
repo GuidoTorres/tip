@@ -17,6 +17,21 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("PayPal partner primitives", () => {
+  it("looks up the seller created for TipMe's tracking ID", async () => {
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
+      if (url.endsWith("/merchant-integrations?tracking_id=creator-1")) return jsonResponse({ merchant_id: "MERCHANT-1", tracking_id: "creator-1" });
+      return jsonResponse({}, 404);
+    });
+    const client = new PayPalClient(config, fetchImpl as typeof fetch);
+    const lookup = (client as unknown as { getMerchantIntegrationByTrackingId?: (trackingId: string) => Promise<unknown> }).getMerchantIntegrationByTrackingId;
+    expect(lookup).toBeTypeOf("function");
+    if (!lookup) return;
+
+    await expect(lookup.call(client, "creator-1")).resolves.toMatchObject({ merchant_id: "MERCHANT-1" });
+  });
+
   it("creates a partner assertion scoped to the connected creator", () => {
     const assertion = createPayPalAuthAssertion("platform-client-id", "CREATOR-MERCHANT");
     const [header, payload, signature] = assertion.split(".");
@@ -53,6 +68,11 @@ describe("PayPal partner primitives", () => {
     const payload = JSON.parse(String(orderCall?.[1]?.body));
     expect(headers.get("PayPal-Request-Id")).toBe("create:tip-1");
     expect(headers.get("PayPal-Partner-Attribution-Id")).toBe("TIPME_SP_PPCP");
+    expect(payload.application_context).toEqual({
+      shipping_preference: "NO_SHIPPING",
+      user_action: "PAY_NOW",
+      landing_page: "BILLING",
+    });
     expect(payload.purchase_units[0]).toMatchObject({
       custom_id: "tip-1",
       payee: { merchant_id: "CREATOR-MERCHANT" },
@@ -91,6 +111,11 @@ describe("PayPal partner primitives", () => {
     expect(payload.purchase_units[0]).toEqual({
       reference_id: "tip-1", custom_id: "tip-1", description: "Voluntary support on TipMe",
       amount: { currency_code: "USD", value: "20.00" },
+    });
+    expect(payload.application_context).toEqual({
+      shipping_preference: "NO_SHIPPING",
+      user_action: "PAY_NOW",
+      landing_page: "BILLING",
     });
   });
 

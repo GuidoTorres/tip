@@ -24,15 +24,15 @@ export async function GET(request: NextRequest) {
     return response;
   };
   if (env.PAYMENT_PROVIDER !== "paypal" || !merchantId || !verifyOAuthState(expectedState, state)) {
-    return finish("/onboarding?step=2&error=paypal_invalid");
+    return finish("/onboarding?step=2&error=paypal_invalid&paypal=invalid");
   }
   try {
     const result = await completePayPalOnboarding({ creatorId: user.id, merchantId }, {
       client: new PayPalClient(payPalConfigFromEnv(env)),
       repository: new SupabasePaymentAccountRepository(createAdminSupabaseClient()),
     });
-    return finish(result.status === "connected" ? "/onboarding?step=3" : "/onboarding?step=2&error=paypal_restricted");
+    return finish(result.status === "connected" ? "/onboarding?step=2&paypal=connected" : "/onboarding?step=2&error=paypal_restricted&paypal=restricted");
   } catch {
-    return finish("/onboarding?step=2&error=paypal_unavailable");
+    return finish("/onboarding?step=2&error=paypal_unavailable&paypal=unavailable");
   }
 }

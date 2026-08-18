@@ -1,5 +1,6 @@
 export type PayPalMerchantIntegration = {
   merchant_id?: string;
+  tracking_id?: string;
   payments_receivable?: boolean;
   primary_email_confirmed?: boolean;
   products?: Array<{ name?: string; status?: string; vetting_status?: string }>;
@@ -10,6 +11,7 @@ export type PayPalMerchantIntegration = {
 export interface PayPalOnboardingClient {
   createPartnerReferral(payload: unknown): Promise<{ links?: Array<{ href: string; rel: string }> }>;
   getMerchantIntegration(merchantId: string): Promise<PayPalMerchantIntegration>;
+  getMerchantIntegrationByTrackingId(trackingId: string): Promise<PayPalMerchantIntegration>;
 }
 
 export type PayPalAccountWrite = {
@@ -47,6 +49,27 @@ export async function completePayPalOnboarding(
   dependencies: { client: PayPalOnboardingClient; repository: PaymentAccountWriter },
 ) {
   const integration = await dependencies.client.getMerchantIntegration(input.merchantId);
+  return savePayPalOnboardingIntegration(input, integration, dependencies.repository);
+}
+
+export async function refreshPayPalOnboarding(
+  input: { creatorId: string },
+  dependencies: { client: PayPalOnboardingClient; repository: PaymentAccountWriter },
+) {
+  const integration = await dependencies.client.getMerchantIntegrationByTrackingId(input.creatorId);
+  if (!integration.merchant_id) return { status: "pending" as const };
+  if (integration.tracking_id && integration.tracking_id !== input.creatorId) throw new Error("paypal_tracking_mismatch");
+  return completePayPalOnboarding(
+    { creatorId: input.creatorId, merchantId: integration.merchant_id },
+    dependencies,
+  );
+}
+
+async function savePayPalOnboardingIntegration(
+  input: { creatorId: string; merchantId: string },
+  integration: PayPalMerchantIntegration,
+  repository: PaymentAccountWriter,
+) {
   if (integration.merchant_id && integration.merchant_id !== input.merchantId) throw new Error("paypal_merchant_mismatch");
   const emailConfirmed = integration.primary_email_confirmed === true;
   const paymentsReceivable = integration.payments_receivable === true;
@@ -56,7 +79,7 @@ export async function completePayPalOnboarding(
   const cardPaymentsEnabled = integration.capabilities?.some((capability) => capability.name === "CUSTOM_CARD_PROCESSING" && capability.status === "ACTIVE") === true;
   const onboardingCompleted = emailConfirmed && paymentsReceivable && hasOauth && productReady;
   const status = onboardingCompleted ? "connected" as const : "restricted" as const;
-  await dependencies.repository.upsertPayPal({ creatorId: input.creatorId, providerMerchantId: input.merchantId, status,
+  await repository.upsertPayPal({ creatorId: input.creatorId, providerMerchantId: input.merchantId, status,
     onboardingCompleted, emailConfirmed, paymentsReceivable, cardPaymentsEnabled });
   return { status, cardPaymentsEnabled };
 }

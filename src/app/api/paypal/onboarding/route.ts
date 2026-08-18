@@ -5,20 +5,21 @@ import { getPublicEnv } from "@/lib/env/public";
 import { createOAuthState } from "@/lib/security/oauth-state";
 import { PayPalClient, payPalConfigFromEnv } from "@/features/payments/paypal-client";
 import { startPayPalOnboarding } from "@/features/payments/paypal-onboarding";
+import { addPayPalMiniBrowserDisplayMode } from "@/features/payments/paypal-onboarding-popup";
 
 export async function POST() {
   const appUrl = getPublicEnv().NEXT_PUBLIC_APP_URL;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/login", appUrl), 303);
+  if (!user) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   const env = getServerEnv();
-  if (env.PAYMENT_PROVIDER !== "paypal") return new NextResponse(null, { status: 404 });
+  if (env.PAYMENT_PROVIDER !== "paypal") return NextResponse.json({ error: "paypal_unavailable" }, { status: 404 });
   const state = createOAuthState();
   const callback = new URL("/api/paypal/onboarding/callback", appUrl);
   callback.searchParams.set("state", state);
   try {
     const url = await startPayPalOnboarding({ creatorId: user.id, returnUrl: callback.toString() }, new PayPalClient(payPalConfigFromEnv(env)));
-    const response = NextResponse.redirect(url, 303);
+    const response = NextResponse.json({ actionUrl: addPayPalMiniBrowserDisplayMode(url) });
     response.cookies.set("tipme_paypal_state", state, {
       httpOnly: true,
       secure: appUrl.startsWith("https://"),
@@ -28,6 +29,6 @@ export async function POST() {
     });
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/onboarding?step=2&error=paypal_unavailable", appUrl), 303);
+    return NextResponse.json({ error: "paypal_unavailable" }, { status: 503 });
   }
 }

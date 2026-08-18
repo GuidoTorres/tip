@@ -107,6 +107,11 @@ export class PayPalClient {
   }
 
   async createOrder(input: CreateOrderInput) {
+    const applicationContext = {
+      shipping_preference: "NO_SHIPPING" as const,
+      user_action: "PAY_NOW" as const,
+      landing_page: "BILLING" as const,
+    };
     const purchaseUnit = {
       reference_id: input.tipId,
       custom_id: input.tipId,
@@ -116,7 +121,7 @@ export class PayPalClient {
     if (this.config.singleMerchantSandbox) {
       return this.request<{ id: string; status: string }>("/v2/checkout/orders", {
         method: "POST", idempotencyKey: input.idempotencyKey,
-        body: { intent: "CAPTURE", purchase_units: [purchaseUnit] },
+        body: { intent: "CAPTURE", application_context: applicationContext, purchase_units: [purchaseUnit] },
       });
     }
     const paymentInstruction: { disbursement_mode: "INSTANT"; platform_fees?: Array<{ amount: { currency_code: "USD"; value: string } }> } = { disbursement_mode: "INSTANT" };
@@ -127,6 +132,7 @@ export class PayPalClient {
       idempotencyKey: input.idempotencyKey,
       body: {
         intent: "CAPTURE",
+        application_context: applicationContext,
         purchase_units: [{
           ...purchaseUnit,
           payee: { merchant_id: input.merchantId },
@@ -165,6 +171,16 @@ export class PayPalClient {
   }
 
   async getMerchantIntegration(merchantId: string) {
-    return this.request<Record<string, unknown>>(`/v1/customer/partners/${encodeURIComponent(this.config.partnerMerchantId)}/merchant-integrations/${encodeURIComponent(merchantId)}`);
+    return this.request<PayPalMerchantIntegration>(`/v1/customer/partners/${encodeURIComponent(this.config.partnerMerchantId)}/merchant-integrations/${encodeURIComponent(merchantId)}`);
+  }
+
+  async getMerchantIntegrationByTrackingId(trackingId: string) {
+    try {
+      return await this.request<PayPalMerchantIntegration>(`/v1/customer/partners/${encodeURIComponent(this.config.partnerMerchantId)}/merchant-integrations?tracking_id=${encodeURIComponent(trackingId)}`);
+    } catch (error) {
+      if (error instanceof PayPalApiError && error.status === 404) return {};
+      throw error;
+    }
   }
 }
+import type { PayPalMerchantIntegration } from "./paypal-onboarding";

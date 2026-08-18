@@ -38,7 +38,7 @@ export async function saveOnboardingProfile(formData: FormData) {
 
   const update = {
     public_name: parsed.data.publicName, username: username.value, bio: parsed.data.bio || null,
-    country: parsed.data.country, preferred_currency: parsed.data.currency, locale: parsed.data.locale,
+    preferred_currency: parsed.data.currency, locale: parsed.data.locale,
     ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
   };
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
@@ -52,14 +52,13 @@ export async function saveOnboardingProfile(formData: FormData) {
 export async function saveMockPayoutAccount(formData: FormData) {
   const bankName = z.string().trim().min(2).max(80).safeParse(formData.get("bankName"));
   const last4 = z.string().regex(/^\d{4}$/).safeParse(formData.get("last4"));
-  const country = z.string().regex(/^[A-Z]{2}$/).safeParse(formData.get("country"));
-  if (!bankName.success || !last4.success || !country.success) redirect("/onboarding?step=2&error=invalid_payout");
+  if (!bankName.success || !last4.success) redirect("/onboarding?step=2&error=invalid_payout");
   const { user } = await authenticatedUser();
   if (getServerEnv().PAYMENT_PROVIDER !== "mock") redirect("/onboarding?step=2&error=provider_unavailable");
   const admin = createAdminSupabaseClient();
   const { error } = await admin.from("payout_accounts").upsert({
     creator_id: user.id, provider: "mock", provider_account_id: `mock_${user.id}`,
-    bank_name: bankName.data, last4: last4.data, country: country.data, status: "verified",
+    bank_name: bankName.data, last4: last4.data, country: "ZZ", status: "verified",
   }, { onConflict: "creator_id,provider,provider_account_id" });
   if (error) redirect("/onboarding?step=2&error=save_payout");
   redirect("/onboarding?step=3");
@@ -99,7 +98,7 @@ export async function updateSettings(formData: FormData) {
     avatarUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
   }
   const { error } = await supabase.from("profiles").update({
-    public_name: parsed.data.publicName, username: username.value, bio: parsed.data.bio || null, country: parsed.data.country,
+    public_name: parsed.data.publicName, username: username.value, bio: parsed.data.bio || null,
     preferred_currency: parsed.data.currency, locale: parsed.data.locale, ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
   }).eq("id", user.id);
   if (error) redirect(`/dashboard/settings?error=${error.code === "23505" ? "username_taken" : "save_profile"}`);

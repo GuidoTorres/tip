@@ -15,6 +15,7 @@ describe("PayPal standard Sandbox mode", () => {
   it("builds the PayPal SDK script without a partner attribution attribute", () => {
     const script = buildPayPalSdkScript({ clientId: "client", merchantId: "merchant", clientToken: "token" });
     expect(script.src).toContain("components=buttons%2Ccard-fields");
+    expect(script.src).toContain("commit=true");
     expect(script.dataset).toEqual({ clientToken: "token" });
   });
 });

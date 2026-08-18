@@ -15,7 +15,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("public_name,username,avatar_url,bio,country,locale").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("public_name,username,avatar_url,bio,locale").eq("id", user.id).single();
   const url = `${getPublicEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/${profile?.username ?? ""}`;
 
   return <div className="mx-auto max-w-2xl">
@@ -29,13 +29,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
       <form action={updateSettings} className="mt-7 space-y-5">
         <label className="block text-sm font-semibold">Nueva foto<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-2 block w-full text-sm text-muted file:mr-3 file:rounded-full file:border-0 file:bg-surface-soft file:px-4 file:py-3 file:font-semibold" /></label>
-        <label className="block text-sm font-semibold">Nombre público<input className={inputClass} name="publicName" required maxLength={80} defaultValue={profile?.public_name ?? ""} /></label>
-        <label className="block text-sm font-semibold">Username<input className={inputClass} name="username" required minLength={3} maxLength={30} defaultValue={profile?.username ?? ""} /></label>
+        <label className="block text-sm font-semibold">Nombre visible<input className={inputClass} name="publicName" required maxLength={80} defaultValue={profile?.public_name ?? ""} /></label>
+        <label className="block text-sm font-semibold">Username<input className={inputClass} name="username" required minLength={3} maxLength={30} defaultValue={profile?.username ?? ""} /><span className="mt-2 block font-normal text-muted">Define tu enlace público: tipme.pro/username</span></label>
         <label className="block text-sm font-semibold">Descripción<textarea className={`${inputClass} min-h-24 py-3`} name="bio" maxLength={180} defaultValue={profile?.bio ?? ""} /></label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm font-semibold">País<select className={inputClass} name="country" defaultValue={profile?.country ?? "PE"}><option value="PE">Perú</option><option value="CO">Colombia</option><option value="BR">Brasil</option><option value="CL">Chile</option><option value="AR">Argentina</option><option value="US">Estados Unidos</option><option value="ES">España</option></select></label>
-          <ApplicationCurrencyField />
-        </div>
+        <ApplicationCurrencyField />
         <label className="block text-sm font-semibold">Idioma<select className={inputClass} name="locale" defaultValue={profile?.locale ?? "es"}><option value="es">Español</option><option value="en">English</option></select></label>
         <button className="pressable min-h-14 w-full rounded-full bg-accent px-6 font-bold text-on-accent">Guardar cambios</button>
       </form>

@@ -1,7 +1,6 @@
 type PayPalField = { render(selector: string): Promise<void> | void };
 export type PayPalCardFields = {
   isEligible(): boolean;
-  NameField(): PayPalField;
   NumberField(): PayPalField;
   ExpiryField(): PayPalField;
   CVVField(): PayPalField;
@@ -26,6 +25,7 @@ export function buildPayPalSdkScript(input: PayPalSdkInput) {
     "merchant-id": input.merchantId,
     currency: "USD",
     intent: "capture",
+    commit: "true",
     components: "buttons,card-fields",
   });
   return {
