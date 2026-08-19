@@ -15,6 +15,12 @@ const usdMigrationPath = fileURLToPath(
 const paypalMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608160002_paypal_payment_accounts.sql", import.meta.url),
 );
+const legalAcceptanceMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608180003_tip_legal_acceptance.sql", import.meta.url),
+);
+const creatorTotalsMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608180004_creator_tip_totals.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -55,5 +61,27 @@ describe("database migration safety", () => {
     expect(paypalMigration).toMatch(/add column provider_capture_id text/i);
     expect(paypalMigration).toMatch(/unique[^;]+provider_capture_id/is);
     expect(paypalMigration).not.toMatch(/grant (insert|update|delete)[^;]+payment_accounts[^;]+authenticated/i);
+  });
+
+  it("records legal acceptance without changing historical tips", () => {
+    expect(existsSync(legalAcceptanceMigrationPath)).toBe(true);
+    if (!existsSync(legalAcceptanceMigrationPath)) return;
+
+    const legalMigration = readFileSync(legalAcceptanceMigrationPath, "utf8");
+    expect(legalMigration).toMatch(/add column legal_terms_version text/i);
+    expect(legalMigration).toMatch(/add column legal_accepted_at timestamptz/i);
+    expect(legalMigration).not.toMatch(/update\s+public\.tips/i);
+  });
+
+  it("aggregates only confirmed creator tips behind an authenticated RPC", () => {
+    expect(existsSync(creatorTotalsMigrationPath)).toBe(true);
+    if (!existsSync(creatorTotalsMigrationPath)) return;
+
+    const totalsMigration = readFileSync(creatorTotalsMigrationPath, "utf8");
+    expect(totalsMigration).toMatch(/create or replace function public\.creator_tip_totals/i);
+    expect(totalsMigration).toMatch(/t\.status\s*=\s*'confirmed'/i);
+    expect(totalsMigration).toMatch(/auth\.uid\(\) is distinct from requested_creator/i);
+    expect(totalsMigration).toMatch(/grant execute on function public\.creator_tip_totals/i);
+    expect(totalsMigration).not.toMatch(/update\s+public\.(tips|ledger_entries)/i);
   });
 });

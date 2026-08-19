@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { BalanceSummary } from "@/components/dashboard/balance-summary";
 import { CreatorShareCard } from "@/components/dashboard/creator-share-card";
 import { PayPalConnectionBadge } from "@/components/dashboard/paypal-connection-badge";
+import { DashboardProfileHeader } from "@/components/dashboard/dashboard-profile-header";
 import { RecentTips, type RecentTip } from "@/components/dashboard/recent-tips";
 import { buildPublicProfileUrl } from "@/features/profiles/public-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -16,24 +17,35 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const serverEnv = getServerEnv();
   const currency: Currency = APPLICATION_CURRENCY;
+  const paymentProvider = serverEnv.PAYMENT_PROVIDER === "paypal" ? "paypal" : "mock";
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
-  const paymentAccountRequest = serverEnv.PAYMENT_PROVIDER === "paypal"
+  const paymentAccountRequest = paymentProvider === "paypal"
     ? supabase.from("payment_accounts").select("status,payments_receivable,email_confirmed,onboarding_completed").eq("creator_id", user.id).eq("provider", "paypal").maybeSingle()
     : Promise.resolve({ data: null });
-  const [{ data: profile }, { data: balances }, { data: tips }, { data: periodTips }, { data: paymentAccount }] = await Promise.all([
-    supabase.from("profiles").select("public_name,username").eq("id", user.id).single(),
+  const tipTotalsRequest = paymentProvider === "paypal"
+    ? supabase.rpc("creator_tip_totals", { requested_creator: user.id })
+    : Promise.resolve({ data: null });
+  const latestTipsBase = supabase.from("tips").select("id,payer_name,message,anonymous,amount_minor,net_amount_minor,currency,status,created_at").eq("creator_id", user.id).order("created_at", { ascending: false });
+  const latestTipsRequest = paymentProvider === "paypal"
+    ? latestTipsBase.eq("status", "confirmed").limit(6)
+    : latestTipsBase.limit(6);
+  const [{ data: profile }, { data: balances }, { data: tips }, { data: todayTips }, { data: paymentAccount }, { data: tipTotals }] = await Promise.all([
+    supabase.from("profiles").select("public_name,username,avatar_url").eq("id", user.id).single(),
     supabase.rpc("creator_balances", { requested_creator: user.id }),
-    supabase.from("tips").select("id,payer_name,message,anonymous,amount_minor,net_amount_minor,currency,status,created_at").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(6),
-    supabase.from("tips").select("amount_minor,net_amount_minor,currency,status,created_at").eq("creator_id", user.id).eq("status", "confirmed").gte("created_at", monthStart.toISOString()),
+    latestTipsRequest,
+    supabase.from("tips").select("amount_minor,net_amount_minor,currency,status,created_at,confirmed_at").eq("creator_id", user.id).eq("status", "confirmed").gte("confirmed_at", todayStart.toISOString()),
     paymentAccountRequest,
+    tipTotalsRequest,
   ]);
   const balance = (balances as Array<{ currency: Currency; available_minor: number; pending_minor: number }> | null)?.find((item) => item.currency === currency);
-  const confirmed = (periodTips ?? []).filter((tip) => tip.status === "confirmed");
-  const sumSince = (from: Date) => confirmed.filter((tip) => new Date(tip.created_at) >= from && tip.currency === currency).reduce((sum, tip) => sum + Number(tip.net_amount_minor ?? tip.amount_minor), 0);
+  const totals = (tipTotals as Array<{ currency: Currency; gross_confirmed_minor: number; platform_fees_minor: number; gateway_fees_minor: number; net_confirmed_minor: number }> | null)?.find((item) => item.currency === currency);
+  const confirmedToday = (todayTips ?? []).filter((tip) => tip.status === "confirmed" && tip.currency === currency);
+  const todayGrossMinor = confirmedToday.reduce((sum, tip) => sum + Number(tip.amount_minor), 0);
+  const todayNetMinor = confirmedToday.reduce((sum, tip) => sum + Number(tip.net_amount_minor ?? tip.amount_minor), 0);
   const publicUrl = profile?.username ? buildPublicProfileUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, profile.username) : null;
-  const paymentProvider = serverEnv.PAYMENT_PROVIDER === "paypal" ? "paypal" : "mock";
   const paypalConnected = paymentProvider === "paypal" && paymentAccount?.status === "connected" && paymentAccount.payments_receivable === true && paymentAccount.email_confirmed === true && paymentAccount.onboarding_completed === true;
+  const availableMinor = paymentProvider === "paypal" ? Number(totals?.net_confirmed_minor ?? 0) : Number(balance?.available_minor ?? 0);
+  const feesMinor = Number(totals?.platform_fees_minor ?? 0) + Number(totals?.gateway_fees_minor ?? 0);
 
-  return <><div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm text-muted">Hola</p><h1 className="text-3xl font-semibold tracking-[-0.04em]">{profile?.public_name ?? "Tu cuenta"}</h1></div>{paypalConnected && <PayPalConnectionBadge />}</div><BalanceSummary currency={currency} availableMinor={Number(balance?.available_minor ?? 0)} pendingMinor={Number(balance?.pending_minor ?? 0)} todayMinor={sumSince(todayStart)} monthMinor={sumSince(monthStart)} paymentProvider={paymentProvider} sandboxSingleMerchant={serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT} shareActions={publicUrl && profile?.username ? <CreatorShareCard publicUrl={publicUrl} username={profile.username} /> : undefined} /><div className="mt-6"><RecentTips tips={(tips ?? []) as RecentTip[]} showAllLink twoColumns /></div></>;
+  return <><div className="mb-6 flex flex-wrap items-end justify-between gap-3"><DashboardProfileHeader name={profile?.public_name ?? "Tu cuenta"} avatarUrl={profile?.avatar_url ?? null} />{paypalConnected && <PayPalConnectionBadge />}</div><BalanceSummary currency={currency} availableMinor={availableMinor} pendingMinor={Number(balance?.pending_minor ?? 0)} todayMinor={paymentProvider === "paypal" ? todayGrossMinor : todayNetMinor} monthMinor={todayNetMinor} grossConfirmedMinor={Number(totals?.gross_confirmed_minor ?? 0)} feesMinor={feesMinor} paymentProvider={paymentProvider} sandboxSingleMerchant={serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT} shareActions={publicUrl && profile?.username ? <CreatorShareCard publicUrl={publicUrl} username={profile.username} /> : undefined} /><div className="mt-6"><RecentTips tips={(tips ?? []) as RecentTip[]} showAllLink twoColumns /></div></>;
 }

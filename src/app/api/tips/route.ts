@@ -25,7 +25,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, receiptToken: createReceiptToken(result.tipId, env.RECEIPT_SIGNING_SECRET) }, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown_error";
-    const clientErrors = ["creator_not_found", "paypal_account_not_connected"];
-    return NextResponse.json({ error: clientErrors.includes(code) ? code : code.startsWith("[") ? "invalid_tip" : code }, { status: clientErrors.includes(code) ? 404 : code.includes("invalid") || code.startsWith("[") ? 400 : 500 });
+    const notFoundErrors = ["creator_not_found", "paypal_account_not_connected"];
+    const inputErrors = ["legal_acceptance_required"];
+    const publicCode = [...notFoundErrors, ...inputErrors].includes(code) ? code : code.startsWith("[") ? "invalid_tip" : code;
+    return NextResponse.json({ error: publicCode }, { status: notFoundErrors.includes(code) ? 404 : inputErrors.includes(code) || code.includes("invalid") || code.startsWith("[") ? 400 : 500 });
   }
 }

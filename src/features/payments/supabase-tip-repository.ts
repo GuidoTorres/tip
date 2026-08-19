@@ -18,6 +18,7 @@ export class SupabaseTipRepository implements TipRepository {
       creator_id: tip.creatorId, payer_name: tip.payerName, message: tip.message, anonymous: tip.anonymous,
       amount_minor: tip.amountMinor, currency: tip.currency, platform_fee_minor: tip.platformFeeMinor,
       gateway_fee_minor: tip.gatewayFeeMinor, net_amount_minor: tip.netAmountMinor, provider: tip.provider, status: "created",
+      legal_terms_version: tip.legalTermsVersion, legal_accepted_at: tip.legalAcceptedAt,
     }).select("id").single();
     if (error) throw new Error("tip_create_failed");
     return data as { id: string };
@@ -28,4 +29,3 @@ export class SupabaseTipRepository implements TipRepository {
     if (error) throw new Error("payment_attach_failed");
   }
 }
-

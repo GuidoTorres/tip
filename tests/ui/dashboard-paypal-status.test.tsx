@@ -19,6 +19,13 @@ const state = vi.hoisted(() => ({
     email_confirmed: boolean;
     onboarding_completed: boolean;
   },
+  totals: {
+    currency: "USD" as const,
+    gross_confirmed_minor: 8000,
+    platform_fees_minor: 240,
+    gateway_fees_minor: 404,
+    net_confirmed_minor: 7356,
+  },
 }));
 
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
@@ -31,7 +38,7 @@ vi.mock("@/lib/env/server", () => ({
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: "creator-1" } } }) },
-    rpc: async () => ({ data: [] }),
+    rpc: async (name: string) => ({ data: name === "creator_tip_totals" ? [state.totals] : [] }),
     from: (table: string) => {
       const query = {
         select: () => query,
@@ -91,11 +98,14 @@ describe("Dashboard PayPal connection status", () => {
     expect(html.indexOf("PayPal recibe")).toBeLessThan(html.indexOf("Últimos tips"));
   });
 
-  it("places today and monthly totals inside the balance summary before pending funds", async () => {
+  it("shows gross, fees and net confirmed totals without abandoned pending orders", async () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html.indexOf("Hoy")).toBeLessThan(html.indexOf("Pendiente"));
-    expect(html.indexOf("Este mes")).toBeLessThan(html.indexOf("Pendiente"));
+    expect(html).toContain("Total confirmado");
+    expect(html).toContain("Comisiones descontadas");
+    expect(html).toContain("Total neto");
+    expect(html).not.toContain("Pendiente");
+    expect(html).not.toContain("Este mes");
   });
 
   it("shows the six latest tips in two separate desktop cards and links to the full history", async () => {
@@ -122,17 +132,17 @@ describe("Dashboard PayPal connection status", () => {
     expect(html).toContain("Ver todos");
   });
 
-  it("keeps period totals based on every tip even when home lists only six", async () => {
+  it("keeps today's gross total based on every confirmed tip even when home lists only six", async () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).toContain("27,16 US$");
+    expect(html).toContain("28,00 US$");
   });
 
-  it("places sharing beside pending funds and removes the duplicate PayPal action", async () => {
+  it("places sharing beside the confirmed total and removes the duplicate PayPal action", async () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
     expect(html).not.toContain("VER EN PAYPAL");
-    expect(html.indexOf("Pendiente")).toBeLessThan(html.indexOf("tipme.pro/camila"));
+    expect(html.indexOf("Total confirmado")).toBeLessThan(html.indexOf("tipme.pro/camila"));
     expect(html.indexOf("tipme.pro/camila")).toBeLessThan(html.indexOf("PayPal recibe"));
   });
 });

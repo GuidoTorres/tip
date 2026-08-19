@@ -11,6 +11,7 @@ function renderReceipt(status: TipStatus, username: string | null) {
         status,
         amount_minor: 2000,
         currency: "USD",
+        provider: "paypal",
         message: "Gracias",
         profiles: username ? { public_name: "Camila", username } : null,
       }}
@@ -25,6 +26,8 @@ describe("ReceiptStatus repeat tip action", () => {
 
     expect(receipt).toContain('href="/camila"');
     expect(receipt).toContain("Enviar otro tip");
+    expect(receipt).toContain("Procesado por PayPal");
+    expect(receipt).toContain("operaciones no autorizadas");
   });
 
   it("lets a fan retry a rejected payment with the same creator", () => {

@@ -18,6 +18,7 @@ export const es = {
   tip: {
     send: "ENVIAR TIP",
     heading: "Enviar tip",
+    currencyNotice: "Todos los tips se procesan en dólares estadounidenses (USD).",
     otherAmount: "Otro monto",
     name: "Tu nombre (opcional)",
     message: "Mensaje (opcional)",
@@ -43,4 +44,3 @@ export const es = {
     disabled: "Las notificaciones están desactivadas.",
   },
 } as const;
-
