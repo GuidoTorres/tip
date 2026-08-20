@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { CreditCard, Heart, SpinnerGap } from "@phosphor-icons/react";
+import { Heart, PaypalLogo, SpinnerGap } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { createCheckoutAttempt, type CreatedCheckoutAttempt } from "@/features/payments/checkout-attempt";
 import type { EmbeddedCheckout } from "@/features/payments/provider";
@@ -109,8 +109,11 @@ export function PayPalCheckout({ checkout, locale, createOrder }: PayPalCheckout
 
   const busy = state === "loading" || state === "confirming";
   return <section className="mt-6 rounded-2xl border border-border bg-background p-4" aria-live="polite">
-    <div className="flex items-center gap-2"><CreditCard size={22} className="text-accent" /><h2 className="font-semibold">{es ? "Pagar de forma segura" : "Pay securely"}</h2></div>
-    {cardEligible ? <div className="mt-5 space-y-3">
+    <div className="flex items-center gap-3">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-soft"><PaypalLogo size={25} weight="fill" className="text-[#0070ba]" /></span>
+      <div><h2 className="font-semibold leading-tight">{es ? "Pago seguro" : "Secure payment"}</h2><p className="mt-0.5 text-xs text-muted">{es ? "Procesado por PayPal" : "Processed by PayPal"}</p></div>
+    </div>
+    {cardEligible ? <div className="mt-4 space-y-3">
       <PayPalField label={es ? "Número de tarjeta" : "Card number"} id="paypal-card-number" />
       <div className="grid grid-cols-2 gap-3"><PayPalField label={es ? "Vencimiento" : "Expiry"} id="paypal-card-expiry" /><PayPalField label="CVV" id="paypal-card-cvv" /></div>
       <button type="button" disabled={busy} onClick={submitCard} className="pressable flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-bold text-on-accent disabled:opacity-60">{busy ? <SpinnerGap className="animate-spin" size={21} /> : <Heart size={21} weight="fill" />} {state === "confirming" ? (es ? "Confirmando pago" : "Confirming payment") : (es ? "ENVIAR TIP" : "SEND TIP")}</button>
@@ -121,10 +124,10 @@ export function PayPalCheckout({ checkout, locale, createOrder }: PayPalCheckout
     </div>}
     {state === "rejected" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "El pago fue rechazado. Prueba otra tarjeta o PayPal." : "The payment was declined. Try another card or PayPal."}</p>}
     {state === "error" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "No pudimos completar este intento. Revisa los datos o inténtalo nuevamente." : "We could not complete this attempt. Check the details or try again."}</p>}
-    <p className="mt-3 text-center text-[11px] leading-relaxed text-muted">{es ? "PayPal procesa este pago. TipMe no recibe los datos de tu tarjeta." : "PayPal processes this payment. TipMe never receives your card details."}</p>
+    <p className="mt-3 text-center text-[11px] leading-relaxed text-muted">{es ? "PayPal protege y procesa tus datos de pago." : "PayPal protects and processes your payment details."}</p>
   </section>;
 }
 
 function PayPalField({ label, id }: { label: string; id: string }) {
-  return <label className="block text-xs font-semibold text-muted">{label}<span id={id} className="mt-1 block min-h-12 rounded-xl border border-border bg-surface px-3 py-3" /></label>;
+  return <label className="block text-xs font-semibold text-muted">{label}<span id={id} className="mt-1 block min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5" /></label>;
 }

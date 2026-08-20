@@ -19,4 +19,11 @@ describe("fan single-screen checkout", () => {
     expect(html).toContain("min-h-16");
     expect(html).not.toContain("Preparando pago</button>");
   });
+
+  it("keeps the optional processing support concise", () => {
+    const html = renderToStaticMarkup(<TipForm username="camila" currency="USD" locale="es" />);
+
+    expect(html).toContain("Ayudar con la comisión de pago");
+    expect(html).not.toContain("Aporte voluntario estimado");
+  });
 });

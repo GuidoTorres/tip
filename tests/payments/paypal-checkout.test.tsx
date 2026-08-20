@@ -5,7 +5,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 import { PayPalCheckout } from "@/components/payments/paypal-checkout";
 
 describe("PayPal embedded checkout", () => {
-  it("shows one final card action and PayPal as a visible alternative", () => {
+  it("presents the compact card form as a secure PayPal payment", () => {
     const html = renderToStaticMarkup(<PayPalCheckout
       checkout={{ kind: "embedded", clientId: "client", merchantId: "merchant", clientToken: "token", partnerAttributionId: "BN" }}
       locale="es"
@@ -20,7 +20,11 @@ describe("PayPal embedded checkout", () => {
     expect(html).toContain("O paga con");
     expect(html).toContain("paypal-button-container");
     expect(html).not.toContain('aria-hidden="true"');
-    expect(html).toContain("PayPal procesa este pago");
+    expect(html).toContain("Pago seguro");
+    expect(html).toContain("Procesado por PayPal");
+    expect(html).toContain("min-h-11");
+    expect(html).toContain("PayPal protege y procesa tus datos de pago");
+    expect(html).not.toContain("Pagar de forma segura");
     expect(html).not.toContain("Pago confirmado");
   });
 });

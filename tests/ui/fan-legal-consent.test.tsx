@@ -10,6 +10,8 @@ describe("fan legal consent", () => {
     expect(html).toContain("required");
     expect(html).toContain('href="/terms"');
     expect(html).toContain('href="/refund-policy"');
-    expect(html).toContain("apoyo voluntario");
+    expect(html).toContain("Es un apoyo voluntario, no una compra");
+    expect(html).toContain(">Reembolsos<");
+    expect(html).not.toContain("no compra contenido ni servicios");
   });
 });
