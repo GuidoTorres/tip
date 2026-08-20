@@ -101,7 +101,7 @@ describe("PayPal partner primitives", () => {
     });
     await provider.capturePayment({ providerPaymentId: "ORDER-STANDARD", providerAccountId: "PARTNER-MERCHANT", idempotencyKey: "capture:tip-1" });
 
-    expect(result.checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", merchantId: "PARTNER-MERCHANT", clientToken: "client-token" });
+    expect(result.checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", clientToken: "client-token" });
     const paypalCalls = fetchImpl.mock.calls.filter(([url]) => !String(url).endsWith("/v1/oauth2/token") && !String(url).endsWith("/v1/identity/generate-token"));
     for (const [, init] of paypalCalls) {
       const headers = new Headers(init?.headers);
@@ -139,7 +139,7 @@ describe("PayPal partner primitives", () => {
     });
 
     expect(result.checkout).toEqual({
-      kind: "embedded", clientId: "platform-client-id", merchantId: "PARTNER-MERCHANT", clientToken: "client-token",
+      kind: "embedded", clientId: "platform-client-id", clientToken: "client-token",
     });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
     const headers = new Headers(orderCall?.[1]?.headers);

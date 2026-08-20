@@ -32,7 +32,7 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
   - cuenta y payout simulados en modo mock;
   - un solo correo de destino PayPal personal en `platform_payouts`;
   - Partner Referrals únicamente en el modo Multiparty conservado.
-- Activación de Web Push mediante una acción explícita.
+- Activación de Web Push mediante una acción explícita desde el dashboard o Ajustes, sin bloquear el onboarding.
 - URL pública directa: `tipme.pro/username`.
 
 ### Experiencia del fan
@@ -165,7 +165,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 | --- | --- |
 | `/signup` | Crear una cuenta con email o Google |
 | `/login` | Iniciar sesión con email o Google |
-| `/onboarding` | Perfil, proveedor, push y link público |
+| `/onboarding` | Perfil, proveedor y link público |
 | `/[username]` | Página pública para enviar tips sin cuenta |
 | `/dashboard` | Resumen, link, QR y tips recientes |
 | `/dashboard/tips` | Historial completo |
@@ -332,7 +332,7 @@ VAPID_SUBJECT=https://tipme.pro
 
 La clave pública VAPID válida decodifica a 65 bytes. Las cadenas falsas de `.env.example` permiten compilar, pero no activar push.
 
-Web Push requiere HTTPS, salvo `localhost`. La petición de permiso siempre ocurre después de pulsar la campana o el botón de onboarding.
+Web Push requiere HTTPS, salvo `localhost`. La petición de permiso siempre ocurre después de pulsar la campana en el dashboard o Ajustes.
 
 En iPhone/iPad:
 

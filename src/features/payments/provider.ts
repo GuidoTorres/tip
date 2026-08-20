@@ -11,7 +11,7 @@ export type CreatePaymentInput = {
 
 export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
-  | { kind: "embedded"; clientId: string; merchantId: string; clientToken: string; partnerAttributionId?: string };
+  | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string };
 
 export type PaymentResult = {
   providerPaymentId: string;

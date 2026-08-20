@@ -18,4 +18,11 @@ describe("PayPal standard Sandbox mode", () => {
     expect(script.src).toContain("commit=true");
     expect(script.dataset).toEqual({ clientToken: "token" });
   });
+
+  it("omits merchant-id when TipMe collects the payment directly", () => {
+    const script = buildPayPalSdkScript({ clientId: "client", clientToken: "token" });
+
+    expect(script.src).not.toContain("merchant-id");
+    expect(script.dataset).toEqual({ clientToken: "token" });
+  });
 });

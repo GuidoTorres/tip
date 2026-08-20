@@ -37,18 +37,12 @@ vi.mock("@/features/profiles/actions", () => ({
 import SettingsPage from "@/app/dashboard/settings/page";
 
 describe("settings layout", () => {
-  it("keeps notification activation beside the avatar without duplicate lower sections", async () => {
+  it("keeps profile settings focused after moving notification activation to the header", async () => {
     const html = renderToStaticMarkup(await SettingsPage({ searchParams: Promise.resolve({}) }));
-    const identityStart = html.indexOf('aria-label="Perfil y notificaciones"');
-    const formStart = html.indexOf('aria-label="Datos del perfil"', identityStart);
-    const identityMarkup = html.slice(identityStart, formStart);
-
-    expect(identityStart).toBeGreaterThan(-1);
-    expect(identityMarkup).toContain("justify-between");
-    expect(identityMarkup).toContain('aria-label="Control de notificaciones"');
-    expect(identityMarkup).toContain("ml-auto");
-    expect(html.indexOf("Tu foto de perfil", identityStart)).toBeLessThan(formStart);
-    expect(html.indexOf("Comprobando notificaciones", identityStart)).toBeLessThan(formStart);
+    expect(html).toContain('aria-label="Perfil"');
+    expect(html).toContain('aria-label="Datos del perfil"');
+    expect(html).not.toContain('aria-label="Control de notificaciones"');
+    expect(html).not.toContain("Comprobando notificaciones");
     expect(html).not.toContain("Tu link");
     expect(html).not.toContain("Configurar notificaciones");
     expect(html).not.toContain('href="/dashboard/settings/notifications"');

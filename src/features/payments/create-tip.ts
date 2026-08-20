@@ -90,7 +90,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   const chargedAmountMinor = value.amountMinor + processingSupportMinor;
 
   const breakdown = calculateTipBreakdown({
-    amountMinor: chargedAmountMinor,
+    amountMinor: value.amountMinor,
     platformFeeBps: dependencies.platformFeeBps,
     gatewayFeeMinor: null,
   });

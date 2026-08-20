@@ -29,10 +29,14 @@ describe("PayPal mode interface", () => {
   });
 
   it("offers withdrawals when PayPal runs in platform payouts mode", () => {
-    const dashboard = renderToStaticMarkup(<BalanceSummary currency="USD" availableMinor={1839} pendingMinor={0} todayMinor={2000} paymentProvider="paypal" platformPayouts />);
+    const dashboard = renderToStaticMarkup(<BalanceSummary currency="USD" availableMinor={1839} pendingMinor={2146} todayMinor={2000} grossConfirmedMinor={2000} paymentProvider="paypal" platformPayouts />);
     const pendingBadge = renderToStaticMarkup(<PayPalConnectionBadge verified={false} />);
 
     expect(dashboard).toContain("Disponible");
+    expect(dashboard).toContain("Total recibido");
+    expect(dashboard).toContain("20,00");
+    expect(dashboard).not.toContain("21,46");
+    expect(dashboard).not.toContain("Pendiente");
     expect(dashboard).toContain("RETIRAR");
     expect(pendingBadge).toContain("PayPal configurado");
     expect(pendingBadge).not.toContain("PayPal verificado");

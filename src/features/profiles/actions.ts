@@ -86,7 +86,7 @@ export async function completeOnboarding() {
     if (!destination) redirect("/onboarding?step=2&error=paypal_required");
   }
   const { error } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
-  if (error) redirect("/onboarding?step=4&error=finish");
+  if (error) redirect("/onboarding?step=3&error=finish");
   redirect("/dashboard");
 }
 

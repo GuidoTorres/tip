@@ -93,7 +93,7 @@ describe("createTip", () => {
       processingSupportMinor: 146,
       amountMinor: 2_146,
       platformFeeMinor: 0,
-      netAmountMinor: 2_146,
+      netAmountMinor: 2_000,
     }));
     expect(deps.provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({
       amountMinor: 2_146,

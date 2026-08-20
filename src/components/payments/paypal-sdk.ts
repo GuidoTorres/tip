@@ -17,17 +17,17 @@ declare global { interface Window { paypal?: PayPalNamespace } }
 let activeKey: string | null = null;
 let loading: { key: string; promise: Promise<PayPalNamespace> } | null = null;
 
-type PayPalSdkInput = { clientId: string; merchantId: string; clientToken: string; partnerAttributionId?: string };
+type PayPalSdkInput = { clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string };
 
 export function buildPayPalSdkScript(input: PayPalSdkInput) {
   const query = new URLSearchParams({
     "client-id": input.clientId,
-    "merchant-id": input.merchantId,
     currency: "USD",
     intent: "capture",
     commit: "true",
     components: "buttons,card-fields",
   });
+  if (input.merchantId) query.set("merchant-id", input.merchantId);
   return {
     src: `https://www.paypal.com/sdk/js?${query.toString()}`,
     dataset: { clientToken: input.clientToken, ...(input.partnerAttributionId ? { partnerAttributionId: input.partnerAttributionId } : {}) },
@@ -35,7 +35,7 @@ export function buildPayPalSdkScript(input: PayPalSdkInput) {
 }
 
 export function loadPayPalSdk(input: PayPalSdkInput) {
-  const key = `${input.clientId}:${input.merchantId}:${input.clientToken}`;
+  const key = `${input.clientId}:${input.merchantId ?? "direct"}:${input.clientToken}`;
   if (window.paypal && activeKey === key) return Promise.resolve(window.paypal);
   if (loading?.key === key) return loading.promise;
   if (activeKey && activeKey !== key) {

@@ -23,4 +23,26 @@ describe("SupabaseWebhookRepository provider isolation", () => {
     expect(client.rpc).toHaveBeenCalledWith("confirm_tip_from_webhook", expect.objectContaining({ p_provider: "paypal", p_payment_id: "ORDER-1" }));
     expect(vi.mocked(tips.update as never)).toHaveBeenCalledWith({ provider_capture_id: "CAPTURE-1" });
   });
+
+  it("uses the base tip amount in the creator push instead of processing support", async () => {
+    const tips = queryResult({
+      id: "tip-1",
+      base_amount_minor: 2000,
+      amount_minor: 2146,
+      currency: "USD",
+      payer_name: "Mateo",
+      message: "Gracias",
+      anonymous: false,
+      profiles: { locale: "es" },
+    });
+    const client = {
+      from: vi.fn(() => tips),
+      rpc: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { newly_processed: true, notification_id: "note-1", creator_id: "creator-1", tip_id: "tip-1" }, error: null }) }),
+    };
+    const repository = new SupabaseWebhookRepository(client as never, "paypal");
+
+    const result = await repository.confirm({ kind: "payment", eventId: "WH-2", providerPaymentId: "ORDER-2", providerCaptureId: null, status: "confirmed", gatewayFeeMinor: 146, occurredAt: "2026-08-20T20:00:00.000Z" }, "digest");
+
+    expect(result.tip?.amountMinor).toBe(2000);
+  });
 });

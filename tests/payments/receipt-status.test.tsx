@@ -9,7 +9,9 @@ function renderReceipt(status: TipStatus, username: string | null) {
       initial={{
         id: "tip-123",
         status,
-        amount_minor: 2000,
+        base_amount_minor: 2000,
+        processing_support_minor: 146,
+        amount_minor: 2146,
         currency: "USD",
         provider: "paypal",
         message: "Gracias",
@@ -21,6 +23,15 @@ function renderReceipt(status: TipStatus, username: string | null) {
 }
 
 describe("ReceiptStatus repeat tip action", () => {
+  it("separates the creator tip from the fan's voluntary processing support", () => {
+    const receipt = renderReceipt("confirmed", "camila");
+
+    expect(receipt).toContain("20,00");
+    expect(receipt).toContain("Aporte al procesamiento");
+    expect(receipt).toContain("Total pagado");
+    expect(receipt).toContain("21,46");
+  });
+
   it("returns a confirmed fan to the same creator profile", () => {
     const receipt = renderReceipt("confirmed", "camila");
 

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PaymentWebhookEvent } from "./provider";
 import type { WebhookRepository } from "./process-webhook";
 import type { Currency } from "./types";
+import { creatorVisibleTipAmount } from "./creator-visible-amount";
 
 export class SupabaseWebhookRepository implements WebhookRepository {
   constructor(private readonly client: SupabaseClient, private readonly providerName: string) {}
@@ -29,13 +30,13 @@ export class SupabaseWebhookRepository implements WebhookRepository {
     if (error) throw new Error("confirm_tip_failed");
     const result = data as { newly_processed: boolean; notification_id: string | null; creator_id: string | null; tip_id: string | null };
     if (!result.newly_processed || !result.tip_id || !result.creator_id || !result.notification_id) return { newlyProcessed: false };
-    const { data: tip, error: tipError } = await this.client.from("tips").select("id,amount_minor,currency,payer_name,message,anonymous,profiles!tips_creator_id_fkey(locale)").eq("id", result.tip_id).single();
+    const { data: tip, error: tipError } = await this.client.from("tips").select("id,base_amount_minor,amount_minor,currency,payer_name,message,anonymous,profiles!tips_creator_id_fkey(locale)").eq("id", result.tip_id).single();
     if (tipError) throw new Error("confirmed_tip_read_failed");
-    const row = tip as unknown as { id: string; amount_minor: number; currency: Currency; payer_name: string | null; message: string | null; anonymous: boolean; profiles: { locale: "es" | "en" } | null };
+    const row = tip as unknown as { id: string; base_amount_minor: number | null; amount_minor: number; currency: Currency; payer_name: string | null; message: string | null; anonymous: boolean; profiles: { locale: "es" | "en" } | null };
     return {
       newlyProcessed: true,
       notification: { id: result.notification_id, creatorId: result.creator_id, type: "tip_confirmed" as const },
-      tip: { id: row.id, amountMinor: row.amount_minor, currency: row.currency, payerName: row.payer_name, message: row.message, anonymous: row.anonymous, locale: row.profiles?.locale ?? "es" },
+      tip: { id: row.id, amountMinor: creatorVisibleTipAmount(row), currency: row.currency, payerName: row.payer_name, message: row.message, anonymous: row.anonymous, locale: row.profiles?.locale ?? "es" },
     };
   }
 

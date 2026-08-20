@@ -55,7 +55,7 @@ export function BalanceSummary({ currency, availableMinor, pendingMinor, todayMi
       </dl>
     </div>
     <div className="mt-7 grid grid-cols-[auto_minmax(0,1fr)] items-end gap-4 border-t border-background/15 pt-5">
-      <div><p className="text-xs opacity-65">Pendiente</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(pendingMinor, currency, "es")}</p></div>
+      <div><p className="text-xs opacity-65">{platformPayouts ? "Total recibido" : "Pendiente"}</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(platformPayouts ? grossConfirmedMinor : pendingMinor, currency, "es")}</p></div>
       <div className="min-w-0">
         {shareActions}
         <Link href="/dashboard/payouts" className="pressable ml-auto mt-2 inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-5 font-bold text-on-accent">RETIRAR <ArrowUpRight size={18} weight="bold" /></Link>

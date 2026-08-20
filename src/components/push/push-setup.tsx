@@ -23,8 +23,9 @@ function toUint8Array(value: string) {
   return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
 }
 
-export function PushSetup({ vapidPublicKey, compact = false }: { vapidPublicKey: string; compact?: boolean }) {
+export function PushSetup({ vapidPublicKey, compact = false, header = false }: { vapidPublicKey: string; compact?: boolean; header?: boolean }) {
   const [state, setState] = useState<State>("checking");
+  const [showHeaderHelp, setShowHeaderHelp] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +58,20 @@ export function PushSetup({ vapidPublicKey, compact = false }: { vapidPublicKey:
       await persistPushSubscription(subscription);
       setState("active");
     } catch { setState("error"); }
+  }
+
+  if (header) {
+    if (state === "checking") return <div className="size-11 animate-pulse rounded-full bg-surface-soft" aria-label="Comprobando notificaciones" />;
+    if (state === "active") return <p role="status" aria-label="Notificaciones activadas" title="Notificaciones activadas" className="grid size-11 place-items-center rounded-full bg-accent text-on-accent"><Bell size={21} weight="fill" /></p>;
+    if (state === "ready" || state === "error") return <button type="button" aria-label={state === "error" ? "Reintentar activar notificaciones" : "Activar notificaciones"} title={state === "error" ? "Reintentar activar notificaciones" : "Activar notificaciones"} onClick={enable} className="pressable relative grid size-11 place-items-center rounded-full border border-border bg-surface-soft text-muted hover:border-accent hover:text-accent"><Bell size={21} />{state === "error" && <span aria-hidden="true" className="absolute right-0.5 top-0.5 size-2 rounded-full bg-accent-strong" />}</button>;
+
+    const help = state === "install-ios"
+      ? "Añade TipMe a la pantalla de inicio y ábrela desde su icono para activar las notificaciones."
+      : state === "denied"
+        ? "Las notificaciones están bloqueadas. Actívalas desde la configuración del navegador o dispositivo."
+        : "Este navegador no admite notificaciones Web Push.";
+
+    return <div className="relative"><button type="button" aria-label={help} title={help} aria-expanded={showHeaderHelp} onClick={() => setShowHeaderHelp((visible) => !visible)} className="pressable grid size-11 place-items-center rounded-full border border-border bg-surface-soft text-warning"><Bell size={21} /></button>{showHeaderHelp && <p role="status" className="absolute right-0 top-12 z-30 w-64 rounded-xl border border-border bg-surface p-3 text-left text-xs font-semibold text-foreground shadow-[var(--shadow)]">{help}</p>}</div>;
   }
 
   if (state === "checking") return <div className={`${compact ? "h-12 rounded-xl" : "h-32 rounded-2xl"} animate-pulse bg-surface-soft`} aria-label="Comprobando notificaciones" />;

@@ -59,7 +59,8 @@ export class PayPalPaymentProvider implements PaymentProvider {
       providerPaymentId: order.id,
       status: "pending",
       checkout: {
-        kind: "embedded", clientId: this.config.clientId, merchantId,
+        kind: "embedded", clientId: this.config.clientId,
+        ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox ? { merchantId } : {}),
         clientToken, ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId ? { partnerAttributionId: this.config.partnerAttributionId } : {}),
       },
       gatewayFeeMinor: null,

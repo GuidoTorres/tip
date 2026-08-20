@@ -26,6 +26,17 @@ async function renderCompactPush() {
   return { container, html: container.innerHTML, root };
 }
 
+async function renderHeaderPush() {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(<PushSetup vapidPublicKey="test-key" header />);
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return { container, html: container.innerHTML, root };
+}
+
 describe("compact push setup", () => {
   beforeEach(() => {
     pushState.current = "ready";
@@ -65,6 +76,17 @@ describe("compact push setup", () => {
     expect(html).toContain('aria-label="Notificaciones activadas"');
     expect(html).toContain("bg-accent");
     expect(status?.textContent?.trim()).toBe("");
+    await act(async () => root.unmount());
+  });
+
+  it("keeps the header control icon-only while notifications are inactive", async () => {
+    const { container, html, root } = await renderHeaderPush();
+    const button = container.querySelector("button");
+
+    expect(button?.getAttribute("aria-label")).toBe("Activar notificaciones");
+    expect(button?.textContent?.trim()).toBe("");
+    expect(html).toContain("size-11");
+    expect(html).not.toContain("No pudimos");
     await act(async () => root.unmount());
   });
 });

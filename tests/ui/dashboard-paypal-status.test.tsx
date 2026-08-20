@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
     payer_name: string;
     message: string | null;
     anonymous: boolean;
+    base_amount_minor: number;
     amount_minor: number;
     net_amount_minor: number;
     currency: "USD";
@@ -63,7 +64,8 @@ describe("Dashboard PayPal connection status", () => {
       payer_name: `Fan ${index + 1}`,
       message: null,
       anonymous: false,
-      amount_minor: (index + 1) * 100,
+      base_amount_minor: (index + 1) * 100,
+      amount_minor: (index + 1) * 100 + 20,
       net_amount_minor: (index + 1) * 97,
       currency: "USD" as const,
       status: "confirmed" as const,
@@ -136,6 +138,7 @@ describe("Dashboard PayPal connection status", () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
     expect(html).toContain("28,00 US$");
+    expect(html).not.toContain("29,40 US$");
   });
 
   it("places sharing beside the confirmed total and removes the duplicate PayPal action", async () => {

@@ -7,7 +7,7 @@ export default async function TipsHistoryPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: tips } = await supabase.from("tips")
-    .select("id,payer_name,message,anonymous,amount_minor,currency,status,created_at")
+    .select("id,payer_name,message,anonymous,base_amount_minor,amount_minor,currency,status,created_at")
     .eq("creator_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
