@@ -33,8 +33,7 @@ describe("PayPal mode interface", () => {
     const pendingBadge = renderToStaticMarkup(<PayPalConnectionBadge verified={false} />);
 
     expect(dashboard).toContain("Disponible");
-    expect(dashboard).toContain("Total recibido");
-    expect(dashboard).toContain("20,00");
+    expect(dashboard).not.toContain("Total recibido");
     expect(dashboard).not.toContain("21,46");
     expect(dashboard).not.toContain("Pendiente");
     expect(dashboard).toContain("RETIRAR");

@@ -29,7 +29,7 @@ const state = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/lib/env/public", () => ({
   getPublicEnv: () => ({ NEXT_PUBLIC_APP_URL: "https://tipme.pro" }),
 }));
@@ -108,6 +108,7 @@ describe("Dashboard PayPal connection status", () => {
     expect(html).toContain("Total neto");
     expect(html).not.toContain("Pendiente");
     expect(html).not.toContain("Este mes");
+    expect(html).toContain('aria-label="Actualizar saldo"');
   });
 
   it("shows the six latest tips in two separate desktop cards and links to the full history", async () => {
