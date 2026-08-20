@@ -54,6 +54,7 @@ describe("PayPal partner primitives", () => {
     const client = new PayPalClient(config, fetchImpl as typeof fetch);
     const provider = new PayPalPaymentProvider(client, config);
 
+    const checkout = await provider.prepareCheckout({ providerAccountId: "CREATOR-MERCHANT" });
     const result = await provider.createPayment({
       tipId: "tip-1",
       amountMinor: 2_000,
@@ -64,7 +65,8 @@ describe("PayPal partner primitives", () => {
     });
 
     expect(result.providerPaymentId).toBe("ORDER-1");
-    expect(result.checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", merchantId: "CREATOR-MERCHANT", clientToken: "client-token", partnerAttributionId: "TIPME_SP_PPCP" });
+    expect(result.checkout).toBeUndefined();
+    expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", merchantId: "CREATOR-MERCHANT", clientToken: "client-token", partnerAttributionId: "TIPME_SP_PPCP" });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
     const headers = new Headers(orderCall?.[1]?.headers);
     const payload = JSON.parse(String(orderCall?.[1]?.body));
@@ -95,13 +97,15 @@ describe("PayPal partner primitives", () => {
     });
     const provider = new PayPalPaymentProvider(new PayPalClient(standardConfig, fetchImpl as typeof fetch), standardConfig);
 
+    const checkout = await provider.prepareCheckout({ providerAccountId: null });
     const result = await provider.createPayment({
       tipId: "tip-1", amountMinor: 2_000, platformFeeMinor: 60, currency: "USD",
       providerAccountId: null, idempotencyKey: "create:tip-1",
     });
     await provider.capturePayment({ providerPaymentId: "ORDER-STANDARD", providerAccountId: "PARTNER-MERCHANT", idempotencyKey: "capture:tip-1" });
 
-    expect(result.checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", clientToken: "client-token" });
+    expect(result.checkout).toBeUndefined();
+    expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", clientToken: "client-token" });
     const paypalCalls = fetchImpl.mock.calls.filter(([url]) => !String(url).endsWith("/v1/oauth2/token") && !String(url).endsWith("/v1/identity/generate-token"));
     for (const [, init] of paypalCalls) {
       const headers = new Headers(init?.headers);
@@ -133,12 +137,14 @@ describe("PayPal partner primitives", () => {
     });
     const provider = new PayPalPaymentProvider(new PayPalClient(platformConfig, fetchImpl as typeof fetch), platformConfig);
 
+    const checkout = await provider.prepareCheckout({ providerAccountId: null });
     const result = await provider.createPayment({
       tipId: "tip-1", amountMinor: 2_146, platformFeeMinor: 0, currency: "USD",
       providerAccountId: null, idempotencyKey: "create:tip-1",
     });
 
-    expect(result.checkout).toEqual({
+    expect(result.checkout).toBeUndefined();
+    expect(checkout).toEqual({
       kind: "embedded", clientId: "platform-client-id", clientToken: "client-token",
     });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));

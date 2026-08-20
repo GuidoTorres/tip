@@ -39,17 +39,19 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
 
 - Perfil público sin autenticación en `/[username]`.
 - Importes rápidos de 5, 10, 20 y 50 USD, además de monto personalizado.
-- Nombre y mensaje opcionales.
-- Opción anónima que impide mostrar la identidad a la persona creadora.
+- Nombre y mensaje opcionales; si el nombre queda vacío, el tip se guarda como anónimo.
 - Consentimiento obligatorio de Términos y Política de reembolsos antes de iniciar el pago.
 - Aporte voluntario para ayudar a cubrir el procesamiento, calculado nuevamente por el servidor.
 - Pago mock para desarrollo y pruebas.
+- Checkout PayPal en una sola pantalla: datos del tip, tarjeta y un único botón final **ENVIAR TIP**.
 - PayPal Card Fields embebidos cuando la cuenta y el comprador son elegibles.
-- Botón PayPal como alternativa cuando la tarjeta directa no está disponible.
+- Botón oficial de PayPal visible como alternativa cuando PayPal Wallet es elegible.
+- La configuración segura se prepara sin crear una orden; el tip y la orden nacen al iniciar el pago.
 - Comprobante protegido mediante token firmado.
 - Estados de comprobante: pendiente, confirmado y rechazado.
 - Botón para enviar otro tip al mismo perfil.
-- Compartir comprobante mediante Web Share API o portapapeles.
+- Código de operación verificable y copiable en cada comprobante confirmado.
+- Comprobante confirmado compartible como imagen PNG mediante Web Share API, con descarga como fallback.
 
 El navegador nunca confirma un pago ni modifica un saldo. Incluso después de una captura iniciada desde el checkout, TipMe espera el webhook validado por el backend.
 
@@ -259,6 +261,8 @@ Ejecuta las migraciones en este orden:
 5. `202608180003_tip_legal_acceptance.sql`: versión y fecha de aceptación legal.
 6. `202608180004_creator_tip_totals.sql`: agregados seguros del resumen financiero PayPal.
 7. `202608200001_paypal_platform_payouts.sql`: importes base/aporte, destino PayPal protegido, reservas, Payouts, fees reales e idempotencia.
+8. `202608200002_creator_base_tip_amounts.sql`: reconstruye y muestra al creador el importe base del tip sin sumar el aporte voluntario.
+9. `202608200003_tip_operation_codes.sql`: añade códigos públicos únicos para verificar operaciones y buscar tips.
 
 Con Supabase CLI:
 
@@ -270,7 +274,7 @@ supabase db push
 
 También puedes copiar cada archivo, respetando el orden, en Supabase Dashboard → SQL Editor.
 
-La migración `202608200001_paypal_platform_payouts.sql` debe aplicarse antes de desplegar esta versión. Sin ella no se puede guardar el correo PayPal ni solicitar retiros.
+Las migraciones `202608200001`, `202608200002` y `202608200003` deben aplicarse, en ese orden, antes de desplegar esta versión. Sin ellas faltarán el flujo de retiros, los importes base y los códigos de operación.
 
 ### Supabase local y datos demo
 

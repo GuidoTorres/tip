@@ -88,6 +88,8 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     ? calculateProcessingSupportMinor(value.amountMinor, dependencies.checkoutFeeBps ?? 0, dependencies.checkoutFixedFeeMinor ?? 0)
     : 0;
   const chargedAmountMinor = value.amountMinor + processingSupportMinor;
+  const payerName = value.payerName || null;
+  const anonymous = payerName === null;
 
   const breakdown = calculateTipBreakdown({
     amountMinor: value.amountMinor,
@@ -96,9 +98,9 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   });
   const tip = await dependencies.repository.insertTip({
     creatorId: creator.id,
-    payerName: value.anonymous ? null : value.payerName || null,
+    payerName,
     message: value.message || null,
-    anonymous: value.anonymous,
+    anonymous,
     baseAmountMinor: value.amountMinor,
     processingSupportMinor,
     amountMinor: chargedAmountMinor,

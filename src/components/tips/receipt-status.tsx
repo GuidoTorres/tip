@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Clock, ShareNetwork, XCircle } from "@phosphor-icons/react";
+import { CheckCircle, Clock, XCircle } from "@phosphor-icons/react";
+import { ReceiptActions } from "@/components/tips/receipt-actions";
 import { creatorVisibleTipAmount } from "@/features/payments/creator-visible-amount";
 import { getTipStatusPresentation } from "@/features/payments/tip-status-presentation";
 import { formatMoney } from "@/lib/i18n";
@@ -44,11 +45,6 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
   const heading = confirmed ? "Tip enviado" : rejected ? "Pago rechazado" : reversed ? "Pago revertido" : "Pago pendiente";
   const description = confirmed ? `Le enviaste a ${creator}` : rejected ? "El pago no fue aprobado." : reversed ? "Este pago ya no está confirmado." : "Estamos esperando la confirmación del gateway.";
 
-  async function share() {
-    if (navigator.share) await navigator.share({ title: "Tip enviado con TipMe", text: `Envié un tip a ${creator} con TipMe. Código: ${tip.operation_code}`, url: window.location.origin });
-    else await navigator.clipboard.writeText(`${tip.operation_code} · ${window.location.origin}`);
-  }
-
   return <div className="text-center">
     {confirmed ? <CheckCircle size={52} weight="fill" className="mx-auto text-success" /> : rejected || reversed ? <XCircle size={52} weight="fill" className="mx-auto text-accent" /> : <Clock size={52} weight="fill" className="mx-auto text-warning" />}
     <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em]">{heading}</h1>
@@ -63,9 +59,10 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
       <p className="mt-1 break-all font-mono text-base font-bold tracking-[0.04em]">{tip.operation_code}</p>
       <p className="mt-1 text-xs text-muted">El creador puede verificar este código en su historial de TipMe.</p>
     </div>
+    <ReceiptActions tipId={tip.id} token={token} operationCode={tip.operation_code} canShare={confirmed} />
     {tip.message && <blockquote className="mt-6 rounded-2xl bg-surface-soft p-4 text-muted">“{tip.message}”</blockquote>}
     <p className={`mt-6 font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent" : "text-warning"}`}>{status.label}</p>
-    {repeatHref && repeatLabel && <div className="mt-7 flex flex-col items-center gap-3"><a href={repeatHref} className="pressable inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-7 font-semibold text-on-accent">{repeatLabel}</a>{confirmed && <button type="button" onClick={share} className="pressable inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-6 font-semibold"><ShareNetwork size={20} /> Compartir</button>}</div>}
+    {repeatHref && repeatLabel && <div className="mt-7"><a href={repeatHref} className="pressable inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-7 font-semibold text-on-accent">{repeatLabel}</a></div>}
     {confirmed && tip.provider === "paypal" && <p className="mt-6 rounded-xl bg-surface-soft p-3 text-xs leading-relaxed text-muted">Procesado por PayPal. Las disputas y operaciones no autorizadas se gestionan según PayPal y el emisor del medio de pago.</p>}
     <p className="mt-4 text-xs leading-relaxed text-muted">El dashboard de TipMe es la fuente de verdad.</p>
   </div>;

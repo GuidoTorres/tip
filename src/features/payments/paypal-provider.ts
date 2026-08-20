@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type {
   CapturePaymentInput, CapturePaymentResult, CreatePaymentInput, CreatePayoutInput, PaymentProvider,
-  PaymentResult, PaymentWebhookEvent, PayoutResult, PayoutStatus, ProviderWebhookEvent, WebhookVerificationInput,
+  EmbeddedCheckout, PaymentResult, PaymentWebhookEvent, PayoutResult, PayoutStatus, PrepareCheckoutInput, ProviderWebhookEvent, WebhookVerificationInput,
 } from "./provider";
 import { PayPalClient, type PayPalConfig } from "./paypal-client";
 
@@ -43,26 +43,35 @@ export class PayPalPaymentProvider implements PaymentProvider {
 
   constructor(private readonly client: PayPalClient, private readonly config: PayPalConfig) {}
 
+  async prepareCheckout(input: PrepareCheckoutInput): Promise<EmbeddedCheckout> {
+    const merchantId = this.config.flow === "platform_payouts" || this.config.singleMerchantSandbox
+      ? this.config.partnerMerchantId
+      : input.providerAccountId;
+    if (!merchantId) throw new Error("paypal_account_not_connected");
+    const clientToken = await this.client.generateClientToken();
+    return {
+      kind: "embedded",
+      clientId: this.config.clientId,
+      ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox ? { merchantId } : {}),
+      clientToken,
+      ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId
+        ? { partnerAttributionId: this.config.partnerAttributionId }
+        : {}),
+    };
+  }
+
   async createPayment(input: CreatePaymentInput): Promise<PaymentResult> {
     const merchantId = this.config.flow === "platform_payouts" || this.config.singleMerchantSandbox
       ? this.config.partnerMerchantId
       : input.providerAccountId;
     if (!merchantId) throw new Error("paypal_account_not_connected");
-    const [order, clientToken] = await Promise.all([
-      this.client.createOrder({
-        tipId: input.tipId, amountMinor: input.amountMinor, platformFeeMinor: input.platformFeeMinor,
-        merchantId, idempotencyKey: input.idempotencyKey,
-      }),
-      this.client.generateClientToken(),
-    ]);
+    const order = await this.client.createOrder({
+      tipId: input.tipId, amountMinor: input.amountMinor, platformFeeMinor: input.platformFeeMinor,
+      merchantId, idempotencyKey: input.idempotencyKey,
+    });
     return {
       providerPaymentId: order.id,
       status: "pending",
-      checkout: {
-        kind: "embedded", clientId: this.config.clientId,
-        ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox ? { merchantId } : {}),
-        clientToken, ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId ? { partnerAttributionId: this.config.partnerAttributionId } : {}),
-      },
       gatewayFeeMinor: null,
     };
   }

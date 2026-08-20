@@ -13,10 +13,13 @@ export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
   | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string };
 
+export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
+export type PrepareCheckoutInput = { providerAccountId: string | null };
+
 export type PaymentResult = {
   providerPaymentId: string;
   status: Extract<TipStatus, "pending" | "confirmed" | "rejected">;
-  checkout: CheckoutPresentation;
+  checkout?: CheckoutPresentation;
   gatewayFeeMinor: number | null;
 };
 
@@ -74,6 +77,7 @@ export type CapturePaymentResult = {
 
 export interface PaymentProvider {
   readonly name: string;
+  prepareCheckout?(input: PrepareCheckoutInput): Promise<EmbeddedCheckout | null>;
   createPayment(input: CreatePaymentInput): Promise<PaymentResult>;
   getPaymentStatus(providerPaymentId: string): Promise<PaymentResult["status"]>;
   capturePayment(input: CapturePaymentInput): Promise<CapturePaymentResult>;

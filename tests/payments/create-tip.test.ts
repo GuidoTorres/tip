@@ -122,10 +122,16 @@ describe("createTip", () => {
     expect(provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({ currency: "USD" }));
   });
 
-  it("elimina la identidad antes de persistir un tip anónimo", async () => {
+  it("derives anonymity when the optional payer name is empty", async () => {
     const { repository, provider } = dependencies();
-    await createTip({ username: "camila", amountMinor: 2_000, payerName: "Nombre secreto", message: "Hola", anonymous: true, ...legalAcceptance }, { repository, provider, platformFeeBps: 300 });
+    await createTip({ username: "camila", amountMinor: 2_000, payerName: "", message: "Hola", anonymous: false, ...legalAcceptance }, { repository, provider, platformFeeBps: 300 });
     expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ payerName: null, anonymous: true }));
+  });
+
+  it("keeps a provided payer name visible regardless of a stale client flag", async () => {
+    const { repository, provider } = dependencies();
+    await createTip({ username: "camila", amountMinor: 2_000, payerName: "Mateo", message: "Hola", anonymous: true, ...legalAcceptance }, { repository, provider, platformFeeBps: 300 });
+    expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ payerName: "Mateo", anonymous: false }));
   });
 
   it.each([

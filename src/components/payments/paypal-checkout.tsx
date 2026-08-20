@@ -1,46 +1,71 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CreditCard, SpinnerGap } from "@phosphor-icons/react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { CreditCard, Heart, SpinnerGap } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import type { CheckoutPresentation } from "@/features/payments/provider";
+import { createCheckoutAttempt, type CreatedCheckoutAttempt } from "@/features/payments/checkout-attempt";
+import type { EmbeddedCheckout } from "@/features/payments/provider";
 import type { Locale } from "@/lib/i18n/config";
 import { loadPayPalSdk, type PayPalCardFields } from "./paypal-sdk";
 
-type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
+type PayPalCheckoutProps = {
+  checkout: EmbeddedCheckout;
+  locale: Locale;
+  createOrder: () => Promise<CreatedCheckoutAttempt>;
+};
 
-export function PayPalCheckout({ tipId, orderId, receiptToken, checkout, locale }: {
-  tipId: string; orderId: string; receiptToken: string; checkout: EmbeddedCheckout; locale: Locale;
-}) {
+export function PayPalCheckout({ checkout, locale, createOrder }: PayPalCheckoutProps) {
   const es = locale === "es";
   const router = useRouter();
-  const [state, setState] = useState<"loading" | "ready" | "confirming" | "delayed" | "rejected" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "confirming" | "rejected" | "error">("loading");
   const [cardEligible, setCardEligible] = useState(true);
+  const [paypalEligible, setPaypalEligible] = useState(true);
   const fields = useRef<PayPalCardFields | null>(null);
+  const createLatestOrder = useEffectEvent(createOrder);
 
   useEffect(() => {
     let active = true;
+    const attempt = createCheckoutAttempt(() => createLatestOrder());
+
     async function captureAndWait() {
       if (!active) return;
       setState("confirming");
-      const capture = await fetch(`/api/paypal/tips/${tipId}/capture`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ receiptToken }) });
+      const current = await attempt.getOrCreate();
+      const capture = await fetch(`/api/paypal/tips/${current.tipId}/capture`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ receiptToken: current.receiptToken }),
+      });
       const captureResult = await capture.json().catch(() => ({})) as { status?: string };
       if (!capture.ok) throw new Error("capture_failed");
-      if (captureResult.status === "rejected") { setState("rejected"); return; }
-      for (let attempt = 0; attempt < 20 && active; attempt += 1) {
-        const response = await fetch(`/api/tips/${tipId}/status?token=${encodeURIComponent(receiptToken)}`, { cache: "no-store" });
+      if (captureResult.status === "rejected") {
+        attempt.clear();
+        setState("rejected");
+        return;
+      }
+      for (let poll = 0; poll < 20 && active; poll += 1) {
+        const response = await fetch(`/api/tips/${current.tipId}/status?token=${encodeURIComponent(current.receiptToken)}`, { cache: "no-store" });
         const tip = await response.json().catch(() => ({})) as { status?: string };
-        if (tip.status === "confirmed") { router.push(`/tips/${tipId}/receipt?token=${encodeURIComponent(receiptToken)}`); return; }
-        if (tip.status === "rejected") { setState("rejected"); return; }
+        if (tip.status === "confirmed") {
+          router.push(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`);
+          return;
+        }
+        if (tip.status === "rejected") {
+          attempt.clear();
+          setState("rejected");
+          return;
+        }
         await new Promise((resolve) => setTimeout(resolve, 1_000));
       }
-      if (active) setState("delayed");
+      if (active) router.push(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`);
     }
+
+    const sdkCreateOrder = async () => (await attempt.getOrCreate()).orderId;
     loadPayPalSdk(checkout).then((paypal) => {
       if (!active) return;
       const cardFields = paypal.CardFields({
         style: { input: { "font-size": "16px", color: "#231f20" } },
-        createOrder: () => Promise.resolve(orderId),
+        createOrder: sdkCreateOrder,
         onApprove: captureAndWait,
         onError: () => active && setState("error"),
         onCancel: () => active && setState("ready"),
@@ -50,39 +75,52 @@ export function PayPalCheckout({ tipId, orderId, receiptToken, checkout, locale 
         cardFields.NumberField().render("#paypal-card-number");
         cardFields.ExpiryField().render("#paypal-card-expiry");
         cardFields.CVVField().render("#paypal-card-cvv");
-      } else setCardEligible(false);
+      } else {
+        setCardEligible(false);
+      }
+
       const buttons = paypal.Buttons({
         style: { layout: "vertical", shape: "pill", height: 48, label: "paypal" },
-        createOrder: () => Promise.resolve(orderId),
+        createOrder: sdkCreateOrder,
         onApprove: captureAndWait,
         onError: () => active && setState("error"),
         onCancel: () => active && setState("ready"),
       });
       if (buttons.isEligible()) buttons.render("#paypal-button-container");
+      else setPaypalEligible(false);
       setState("ready");
     }).catch(() => active && setState("error"));
-    return () => { active = false; };
-  }, [checkout, orderId, receiptToken, router, tipId]);
+
+    return () => {
+      active = false;
+      fields.current = null;
+    };
+  }, [checkout, router]);
 
   async function submitCard() {
-    try { await fields.current?.submit(); } catch { setState("error"); }
+    if (!fields.current) return;
+    setState("ready");
+    try {
+      await fields.current.submit();
+    } catch {
+      setState("error");
+    }
   }
 
   const busy = state === "loading" || state === "confirming";
   return <section className="mt-6 rounded-2xl border border-border bg-background p-4" aria-live="polite">
     <div className="flex items-center gap-2"><CreditCard size={22} className="text-accent" /><h2 className="font-semibold">{es ? "Pagar de forma segura" : "Pay securely"}</h2></div>
-    {cardEligible && <div className="mt-5 space-y-3">
+    {cardEligible ? <div className="mt-5 space-y-3">
       <PayPalField label={es ? "Número de tarjeta" : "Card number"} id="paypal-card-number" />
       <div className="grid grid-cols-2 gap-3"><PayPalField label={es ? "Vencimiento" : "Expiry"} id="paypal-card-expiry" /><PayPalField label="CVV" id="paypal-card-cvv" /></div>
-      <button type="button" disabled={busy || state === "rejected"} onClick={submitCard} className="pressable flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-bold text-on-accent disabled:opacity-60">{busy ? <SpinnerGap className="animate-spin" size={21} /> : <CreditCard size={21} />} {state === "confirming" ? (es ? "Confirmando pago" : "Confirming payment") : (es ? "Pagar con tarjeta" : "Pay by card")}</button>
-    </div>}
-    <div aria-hidden={cardEligible} className={cardEligible ? "hidden" : "mt-4"}>
-      <p className="rounded-xl bg-surface-soft p-3 text-sm leading-relaxed text-muted">{es ? "La tarjeta directa no está disponible para este pago. Continúa con PayPal; podría pedirte iniciar sesión o verificar otros datos." : "Direct card payment is unavailable for this payment. Continue with PayPal; it may ask you to sign in or verify additional details."}</p>
+      <button type="button" disabled={busy} onClick={submitCard} className="pressable flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-bold text-on-accent disabled:opacity-60">{busy ? <SpinnerGap className="animate-spin" size={21} /> : <Heart size={21} weight="fill" />} {state === "confirming" ? (es ? "Confirmando pago" : "Confirming payment") : (es ? "ENVIAR TIP" : "SEND TIP")}</button>
+    </div> : <p className="mt-4 rounded-xl bg-surface-soft p-3 text-sm leading-relaxed text-muted">{es ? "La tarjeta directa no está disponible para este pago. Puedes continuar con PayPal." : "Direct card payment is unavailable for this payment. You can continue with PayPal."}</p>}
+    {paypalEligible && <div className="mt-5">
+      <div className="flex items-center gap-3 text-xs font-semibold text-muted"><span className="h-px flex-1 bg-border" /><span>{es ? "O paga con" : "Or pay with"}</span><span className="h-px flex-1 bg-border" /></div>
       <div id="paypal-button-container" className="mt-3 min-h-12" />
-    </div>
+    </div>}
     {state === "rejected" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "El pago fue rechazado. Prueba otra tarjeta o PayPal." : "The payment was declined. Try another card or PayPal."}</p>}
-    {state === "delayed" && <p className="mt-3 text-sm text-muted">{es ? "PayPal está terminando de confirmar el pago. Tu comprobante se actualizará automáticamente." : "PayPal is still confirming the payment. Your receipt will update automatically."}</p>}
-    {state === "error" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "No pudimos cargar el pago seguro. Recarga e inténtalo nuevamente." : "We could not load secure payment. Reload and try again."}</p>}
+    {state === "error" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "No pudimos completar este intento. Revisa los datos o inténtalo nuevamente." : "We could not complete this attempt. Check the details or try again."}</p>}
     <p className="mt-3 text-center text-[11px] leading-relaxed text-muted">{es ? "PayPal procesa este pago. TipMe no recibe los datos de tu tarjeta." : "PayPal processes this payment. TipMe never receives your card details."}</p>
   </section>;
 }

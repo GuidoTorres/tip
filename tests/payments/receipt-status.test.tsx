@@ -29,6 +29,8 @@ describe("ReceiptStatus repeat tip action", () => {
 
     expect(receipt).toContain("Código de operación");
     expect(receipt).toContain("TM-7A4F-91C2-D8B0-1234");
+    expect(receipt).toContain("Copiar código");
+    expect(receipt).toContain("Compartir recibo");
   });
 
   it("separates the creator tip from the fan's voluntary processing support", () => {
@@ -62,6 +64,8 @@ describe("ReceiptStatus repeat tip action", () => {
     expect(receipt).not.toContain('href="/camila"');
     expect(receipt).not.toContain("Enviar otro tip");
     expect(receipt).not.toContain("Intentar nuevamente");
+    expect(receipt).toContain("Copiar código");
+    expect(receipt).not.toContain("Compartir recibo");
   });
 
   it("omits the action when the protected receipt has no creator username", () => {
