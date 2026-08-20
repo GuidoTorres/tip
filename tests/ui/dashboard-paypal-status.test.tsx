@@ -80,8 +80,8 @@ describe("Dashboard PayPal connection status", () => {
   it("shows a verified PayPal badge when the stored account is fully connected", async () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).toContain("PayPal enlazado");
-    expect(html).toContain('aria-label="PayPal enlazado"');
+    expect(html).toContain("PayPal verificado");
+    expect(html).toContain('aria-label="PayPal verificado"');
   });
 
   it("does not claim PayPal is linked when there is no verified account", async () => {
@@ -89,7 +89,7 @@ describe("Dashboard PayPal connection status", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).not.toContain("PayPal enlazado");
+    expect(html).not.toContain("PayPal verificado");
   });
 
   it("places recent tips after the compact balance", async () => {

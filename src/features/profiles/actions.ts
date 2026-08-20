@@ -64,8 +64,27 @@ export async function saveMockPayoutAccount(formData: FormData) {
   redirect("/onboarding?step=3");
 }
 
+export async function savePayPalPayoutEmail(formData: FormData) {
+  const email = z.string().trim().toLowerCase().email().max(254).safeParse(formData.get("paypalEmail"));
+  const returnTo = formData.get("returnTo") === "/dashboard/payouts" ? "/dashboard/payouts" : "/onboarding?step=3";
+  if (!email.success) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=invalid_paypal_email`);
+  const { supabase } = await authenticatedUser();
+  const env = getServerEnv();
+  if (env.PAYMENT_PROVIDER !== "paypal" || env.PAYPAL_FLOW !== "platform_payouts") {
+    redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=provider_unavailable`);
+  }
+  const { error } = await supabase.rpc("set_my_paypal_payout_email", { p_email: email.data });
+  if (error) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=save_paypal_email`);
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}success=paypal_saved`);
+}
+
 export async function completeOnboarding() {
   const { supabase, user } = await authenticatedUser();
+  const env = getServerEnv();
+  if (env.PAYMENT_PROVIDER === "paypal" && env.PAYPAL_FLOW === "platform_payouts") {
+    const { data: destination } = await supabase.from("payout_accounts").select("id").eq("creator_id", user.id).eq("provider", "paypal").in("status", ["pending", "verified"]).limit(1).maybeSingle();
+    if (!destination) redirect("/onboarding?step=2&error=paypal_required");
+  }
   const { error } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
   if (error) redirect("/onboarding?step=4&error=finish");
   redirect("/dashboard");

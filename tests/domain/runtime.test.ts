@@ -14,6 +14,27 @@ describe("mockSimulatorAllowed", () => {
 });
 
 describe("PayPal runtime configuration", () => {
+  it("configura platform payouts y sus tarifas sin exponerlas como variables públicas", () => {
+    const previous = { ...process.env };
+    process.env.PAYPAL_FLOW = "platform_payouts";
+    process.env.PAYPAL_PAYOUT_FEE_BPS = "200";
+    process.env.PAYPAL_PAYOUT_FEE_CAP_MINOR = "100";
+    process.env.PAYPAL_CHECKOUT_FEE_BPS = "540";
+    process.env.PAYPAL_CHECKOUT_FIXED_FEE_MINOR = "30";
+    process.env.PAYOUT_HOLD_MINUTES = "0";
+    try {
+      const env = getServerEnv();
+      expect(env.PAYPAL_FLOW).toBe("platform_payouts");
+      expect(env.PAYPAL_PAYOUT_FEE_BPS).toBe(200);
+      expect(env.PAYPAL_PAYOUT_FEE_CAP_MINOR).toBe(100);
+      expect(env.PAYPAL_CHECKOUT_FEE_BPS).toBe(540);
+      expect(env.PAYPAL_CHECKOUT_FIXED_FEE_MINOR).toBe(30);
+      expect(env.PAYOUT_HOLD_MINUTES).toBe(0);
+    } finally {
+      process.env = previous;
+    }
+  });
+
   it("accepts PayPal sandbox and keeps receipt authorization independent from mock webhooks", () => {
     const previous = { ...process.env };
     process.env.PAYMENT_PROVIDER = "paypal";

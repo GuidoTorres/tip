@@ -10,6 +10,7 @@ const config = {
   partnerMerchantId: "PARTNER-MERCHANT",
   partnerAttributionId: "TIPME_SP_PPCP",
   singleMerchantSandbox: false,
+  flow: "multiparty" as const,
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -18,7 +19,8 @@ function jsonResponse(body: unknown, status = 200) {
 
 describe("PayPal partner primitives", () => {
   it("looks up the seller created for TipMe's tracking ID", async () => {
-    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      void init;
       const url = String(input);
       if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
       if (url.endsWith("/merchant-integrations?tracking_id=creator-1")) return jsonResponse({ merchant_id: "MERCHANT-1", tracking_id: "creator-1" });
@@ -82,7 +84,7 @@ describe("PayPal partner primitives", () => {
   });
 
   it("creates a standard Sandbox order without partner-only headers or fields", async () => {
-    const standardConfig = { ...config, partnerAttributionId: "MUST-NOT-BE-SENT", singleMerchantSandbox: true };
+    const standardConfig = { ...config, flow: "platform_payouts" as const, partnerAttributionId: "MUST-NOT-BE-SENT", singleMerchantSandbox: true };
     const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
@@ -119,6 +121,39 @@ describe("PayPal partner primitives", () => {
     });
   });
 
+  it("creates a centralized platform order without Multiparty fields or headers", async () => {
+    const platformConfig = { ...config, flow: "platform_payouts" as const, partnerAttributionId: "MUST-NOT-BE-SENT" };
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      void init;
+      const url = String(input);
+      if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
+      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-PLATFORM", status: "CREATED" }, 201);
+      if (url.endsWith("/v1/identity/generate-token")) return jsonResponse({ client_token: "client-token" });
+      return jsonResponse({}, 404);
+    });
+    const provider = new PayPalPaymentProvider(new PayPalClient(platformConfig, fetchImpl as typeof fetch), platformConfig);
+
+    const result = await provider.createPayment({
+      tipId: "tip-1", amountMinor: 2_146, platformFeeMinor: 0, currency: "USD",
+      providerAccountId: null, idempotencyKey: "create:tip-1",
+    });
+
+    expect(result.checkout).toEqual({
+      kind: "embedded", clientId: "platform-client-id", merchantId: "PARTNER-MERCHANT", clientToken: "client-token",
+    });
+    const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
+    const headers = new Headers(orderCall?.[1]?.headers);
+    const payload = JSON.parse(String(orderCall?.[1]?.body));
+    expect(headers.has("PayPal-Auth-Assertion")).toBe(false);
+    expect(headers.has("PayPal-Partner-Attribution-Id")).toBe(false);
+    expect(payload.purchase_units[0]).toEqual({
+      reference_id: "tip-1", custom_id: "tip-1", description: "Voluntary support on TipMe",
+      amount: { currency_code: "USD", value: "21.46" },
+    });
+    expect(payload.purchase_units[0]).not.toHaveProperty("payee");
+    expect(payload.purchase_units[0]).not.toHaveProperty("payment_instruction");
+  });
+
   it("verifies a webhook with PayPal before parsing money", async () => {
     const fetchImpl = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
@@ -151,5 +186,103 @@ describe("PayPal partner primitives", () => {
     }));
 
     expect(event).toMatchObject({ eventId: "WH-1", providerPaymentId: "ORDER-1", providerCaptureId: "CAPTURE-1", status: "confirmed", gatewayFeeMinor: 138 });
+  });
+
+  it("fetches the real capture fee before confirming a centralized payment", async () => {
+    const platformConfig = { ...config, flow: "platform_payouts" as const };
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
+      if (url.endsWith("/v2/payments/captures/CAPTURE-1")) return jsonResponse({
+        id: "CAPTURE-1",
+        seller_receivable_breakdown: { paypal_fee: { currency_code: "USD", value: "1.61" } },
+      });
+      return jsonResponse({}, 404);
+    });
+    const provider = new PayPalPaymentProvider(new PayPalClient(platformConfig, fetchImpl as typeof fetch), platformConfig);
+
+    const event = await provider.parseWebhook(JSON.stringify({
+      id: "WH-2",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      create_time: "2026-08-16T20:00:00.000Z",
+      resource: {
+        id: "CAPTURE-1",
+        supplementary_data: { related_ids: { order_id: "ORDER-1" } },
+      },
+    }));
+
+    if (event.kind !== "payment") throw new Error("expected payment event");
+    expect(event.gatewayFeeMinor).toBe(161);
+  });
+
+  it("creates one PayPal payout batch addressed to the configured email", async () => {
+    const platformConfig = { ...config, flow: "platform_payouts" as const };
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      void init;
+      const url = String(input);
+      if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
+      if (url.endsWith("/v1/payments/payouts")) return jsonResponse({ batch_header: { payout_batch_id: "BATCH-1", batch_status: "PENDING" } }, 201);
+      return jsonResponse({}, 404);
+    });
+    const provider = new PayPalPaymentProvider(new PayPalClient(platformConfig, fetchImpl as typeof fetch), platformConfig);
+
+    await expect(provider.createPayout({
+      payoutId: "payout-1",
+      amountMinor: 1_839,
+      recipientAmountMinor: 1_802,
+      estimatedFeeMinor: 37,
+      currency: "USD",
+      providerAccountId: "creator@example.com",
+      recipientType: "EMAIL",
+      idempotencyKey: "payout:payout-1",
+    })).resolves.toEqual({ providerBatchId: "BATCH-1", status: "processing" });
+
+    const payoutCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v1/payments/payouts"));
+    const payload = JSON.parse(String(payoutCall?.[1]?.body));
+    expect(payload).toEqual({
+      sender_batch_header: { sender_batch_id: "tipme:payout-1" },
+      items: [{
+        sender_item_id: "payout-1",
+        recipient_type: "EMAIL",
+        recipient_wallet: "PAYPAL",
+        receiver: "creator@example.com",
+        amount: { currency: "USD", value: "18.02" },
+      }],
+    });
+  });
+
+  it("maps a succeeded payout item using PayPal item details", async () => {
+    const platformConfig = { ...config, flow: "platform_payouts" as const };
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
+      if (url.endsWith("/v1/payments/payouts-item/ITEM-1")) return jsonResponse({
+        payout_item_id: "ITEM-1",
+        transaction_status: "SUCCESS",
+        payout_item_fee: { currency: "USD", value: "0.37" },
+        payout_item: { sender_item_id: "00000000-0000-4000-8000-000000000001" },
+      });
+      return jsonResponse({}, 404);
+    });
+    const provider = new PayPalPaymentProvider(new PayPalClient(platformConfig, fetchImpl as typeof fetch), platformConfig);
+
+    const event = await provider.parseWebhook(JSON.stringify({
+      id: "WH-PAYOUT-1",
+      event_type: "PAYMENT.PAYOUTS-ITEM.SUCCEEDED",
+      create_time: "2026-08-20T12:00:00.000Z",
+      resource: { id: "ITEM-1" },
+    }));
+
+    expect(event).toEqual({
+      kind: "payout",
+      eventId: "WH-PAYOUT-1",
+      payoutId: "00000000-0000-4000-8000-000000000001",
+      providerPayoutItemId: "ITEM-1",
+      status: "completed",
+      actualFeeMinor: 37,
+      providerStatus: "SUCCESS",
+      failureCode: null,
+      occurredAt: "2026-08-20T12:00:00.000Z",
+    });
   });
 });

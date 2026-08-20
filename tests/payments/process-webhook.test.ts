@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { processPaymentWebhook, type WebhookRepository } from "@/features/payments/process-webhook";
 import type { PaymentProvider, PaymentWebhookEvent } from "@/features/payments/provider";
 
-const event: PaymentWebhookEvent = { eventId: "evt-1", providerPaymentId: "pay-1", providerCaptureId: null, status: "confirmed", gatewayFeeMinor: 80, occurredAt: "2026-08-12T20:00:00.000Z" };
+const event: PaymentWebhookEvent = { kind: "payment", eventId: "evt-1", providerPaymentId: "pay-1", providerCaptureId: null, status: "confirmed", gatewayFeeMinor: 80, occurredAt: "2026-08-12T20:00:00.000Z" };
 
 function setup(overrides?: { verified?: boolean; newlyProcessed?: boolean; event?: PaymentWebhookEvent }) {
   const parsed = overrides?.event ?? event;
@@ -52,6 +52,31 @@ describe("processPaymentWebhook", () => {
     const deps = setup({ event: { ...event, status } });
     const result = await processPaymentWebhook("raw", new Headers({ "x-tipme-signature": "signature" }), deps);
     expect(result.status).toBe(status);
+    expect(deps.push).not.toHaveBeenCalled();
+  });
+
+  it("routes payout item events without touching the tip ledger", async () => {
+    const deps = setup();
+    const payoutEvent = {
+      kind: "payout" as const,
+      eventId: "WH-PAYOUT-1",
+      payoutId: "00000000-0000-4000-8000-000000000001",
+      providerPayoutItemId: "ITEM-1",
+      status: "completed" as const,
+      actualFeeMinor: 37,
+      providerStatus: "SUCCESS",
+      failureCode: null,
+      occurredAt: "2026-08-20T12:00:00.000Z",
+    };
+    vi.mocked(deps.provider.parseWebhook).mockResolvedValue(payoutEvent);
+    const processPayout = vi.fn().mockResolvedValue({ newlyProcessed: true });
+
+    await expect(processPaymentWebhook("raw", new Headers(), { ...deps, processPayout })).resolves.toEqual({
+      ok: true, duplicate: false, status: "completed",
+    });
+
+    expect(processPayout).toHaveBeenCalledWith(payoutEvent, expect.any(String));
+    expect(deps.repository.confirm).not.toHaveBeenCalled();
     expect(deps.push).not.toHaveBeenCalled();
   });
 });

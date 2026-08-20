@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { calculateTipBreakdown } from "@/features/ledger/money";
+import { calculateProcessingSupportMinor, calculateTipBreakdown } from "@/features/ledger/money";
 import { APPLICATION_CURRENCY } from "./application-currency";
 import type { Currency } from "./types";
 import type { PaymentProvider } from "./provider";
 import type { ConnectedPaymentAccount } from "./payment-account-repository";
 import { CURRENT_LEGAL_TERMS_VERSION } from "@/features/legal/terms";
+import type { PayPalFlow } from "./paypal-client";
 
 const inputSchema = z.object({
   username: z.string().trim().toLowerCase().min(3).max(30),
@@ -14,9 +15,10 @@ const inputSchema = z.object({
   anonymous: z.boolean(),
   legalAccepted: z.boolean(),
   legalTermsVersion: z.string().max(32),
+  coverProcessing: z.boolean().default(false),
 });
 
-export type CreateTipInput = z.infer<typeof inputSchema>;
+export type CreateTipInput = z.input<typeof inputSchema>;
 
 type CreatorReference = { id: string; currency: Currency };
 type NewTip = {
@@ -24,6 +26,8 @@ type NewTip = {
   payerName: string | null;
   message: string | null;
   anonymous: boolean;
+  baseAmountMinor: number;
+  processingSupportMinor: number;
   amountMinor: number;
   currency: Currency;
   platformFeeMinor: number;
@@ -44,7 +48,21 @@ export interface PaymentAccountLookup {
   findConnected(creatorId: string, provider: string): Promise<ConnectedPaymentAccount | null>;
 }
 
-type Dependencies = { repository: TipRepository; provider: PaymentProvider; platformFeeBps: number; paymentAccounts?: PaymentAccountLookup; providerAccountOverride?: string };
+export interface PayoutDestinationLookup {
+  findConfigured(creatorId: string): Promise<{ id: string; status: "pending" | "verified" } | null>;
+}
+
+type Dependencies = {
+  repository: TipRepository;
+  provider: PaymentProvider;
+  platformFeeBps: number;
+  paypalFlow?: PayPalFlow;
+  checkoutFeeBps?: number;
+  checkoutFixedFeeMinor?: number;
+  paymentAccounts?: PaymentAccountLookup;
+  payoutDestinations?: PayoutDestinationLookup;
+  providerAccountOverride?: string;
+};
 
 export async function createTip(input: CreateTipInput, dependencies: Dependencies) {
   const value = inputSchema.parse(input);
@@ -53,14 +71,26 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   }
   const creator = await dependencies.repository.findCreatorByUsername(value.username);
   if (!creator) throw new Error("creator_not_found");
-  const paymentAccount = dependencies.provider.name === "paypal" && !dependencies.providerAccountOverride
-    ? await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null
-    : null;
-  const providerAccountId = dependencies.providerAccountOverride ?? paymentAccount?.providerMerchantId ?? null;
-  if (dependencies.provider.name === "paypal" && !providerAccountId) throw new Error("paypal_account_not_connected");
+  const paypalFlow = dependencies.paypalFlow ?? "multiparty";
+  let providerAccountId: string | null = null;
+  if (dependencies.provider.name === "paypal" && paypalFlow === "platform_payouts") {
+    const destination = await dependencies.payoutDestinations?.findConfigured(creator.id) ?? null;
+    if (!destination) throw new Error("paypal_account_not_connected");
+  } else if (dependencies.provider.name === "paypal") {
+    const paymentAccount = dependencies.providerAccountOverride
+      ? null
+      : await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null;
+    providerAccountId = dependencies.providerAccountOverride ?? paymentAccount?.providerMerchantId ?? null;
+    if (!providerAccountId) throw new Error("paypal_account_not_connected");
+  }
+
+  const processingSupportMinor = value.coverProcessing
+    ? calculateProcessingSupportMinor(value.amountMinor, dependencies.checkoutFeeBps ?? 0, dependencies.checkoutFixedFeeMinor ?? 0)
+    : 0;
+  const chargedAmountMinor = value.amountMinor + processingSupportMinor;
 
   const breakdown = calculateTipBreakdown({
-    amountMinor: value.amountMinor,
+    amountMinor: chargedAmountMinor,
     platformFeeBps: dependencies.platformFeeBps,
     gatewayFeeMinor: null,
   });
@@ -69,7 +99,9 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     payerName: value.anonymous ? null : value.payerName || null,
     message: value.message || null,
     anonymous: value.anonymous,
-    amountMinor: value.amountMinor,
+    baseAmountMinor: value.amountMinor,
+    processingSupportMinor,
+    amountMinor: chargedAmountMinor,
     currency: APPLICATION_CURRENCY,
     platformFeeMinor: breakdown.platformFeeMinor,
     gatewayFeeMinor: null,
@@ -80,7 +112,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   });
   const payment = await dependencies.provider.createPayment({
     tipId: tip.id,
-    amountMinor: value.amountMinor,
+    amountMinor: chargedAmountMinor,
     platformFeeMinor: breakdown.platformFeeMinor,
     currency: APPLICATION_CURRENCY,
     providerAccountId,

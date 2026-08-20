@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type {
-  CapturePaymentInput, CapturePaymentResult, CreatePaymentInput, PaymentProvider,
-  PaymentResult, PaymentWebhookEvent, PayoutResult, PayoutStatus, WebhookVerificationInput,
+  CapturePaymentInput, CapturePaymentResult, CreatePaymentInput, CreatePayoutInput, PaymentProvider,
+  PaymentResult, PaymentWebhookEvent, PayoutResult, PayoutStatus, ProviderWebhookEvent, WebhookVerificationInput,
 } from "./provider";
 import { PayPalClient, type PayPalConfig } from "./paypal-client";
 
@@ -15,6 +15,14 @@ const webhookSchema = z.object({
     seller_receivable_breakdown: z.object({ paypal_fee: z.object({ currency_code: z.string(), value: z.string() }).optional() }).optional(),
   }).passthrough(),
 });
+
+const payoutItemSchema = z.object({
+  payout_item_id: z.string().min(1),
+  transaction_status: z.string().min(1),
+  payout_item_fee: z.object({ currency: z.string(), value: z.string() }).optional(),
+  payout_item: z.object({ sender_item_id: z.string().uuid() }),
+  errors: z.object({ name: z.string().optional() }).optional(),
+}).passthrough();
 
 function usdToMinor(amount?: { currency_code: string; value: string }) {
   if (!amount || amount.currency_code !== "USD" || !/^\d+(?:\.\d{1,2})?$/.test(amount.value)) return null;
@@ -36,7 +44,9 @@ export class PayPalPaymentProvider implements PaymentProvider {
   constructor(private readonly client: PayPalClient, private readonly config: PayPalConfig) {}
 
   async createPayment(input: CreatePaymentInput): Promise<PaymentResult> {
-    const merchantId = this.config.singleMerchantSandbox ? this.config.partnerMerchantId : input.providerAccountId;
+    const merchantId = this.config.flow === "platform_payouts" || this.config.singleMerchantSandbox
+      ? this.config.partnerMerchantId
+      : input.providerAccountId;
     if (!merchantId) throw new Error("paypal_account_not_connected");
     const [order, clientToken] = await Promise.all([
       this.client.createOrder({
@@ -50,7 +60,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
       status: "pending",
       checkout: {
         kind: "embedded", clientId: this.config.clientId, merchantId,
-        clientToken, ...(!this.config.singleMerchantSandbox && this.config.partnerAttributionId ? { partnerAttributionId: this.config.partnerAttributionId } : {}),
+        clientToken, ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId ? { partnerAttributionId: this.config.partnerAttributionId } : {}),
       },
       gatewayFeeMinor: null,
     };
@@ -67,8 +77,39 @@ export class PayPalPaymentProvider implements PaymentProvider {
 
   verifyWebhook(input: WebhookVerificationInput) { return this.client.verifyWebhook(input.rawBody, input.headers); }
 
-  async parseWebhook(rawBody: string): Promise<PaymentWebhookEvent> {
+  async parseWebhook(rawBody: string): Promise<ProviderWebhookEvent> {
     const value = webhookSchema.parse(JSON.parse(rawBody));
+    const payoutStatuses = {
+      "PAYMENT.PAYOUTS-ITEM.SUCCEEDED": "completed",
+      "PAYMENT.PAYOUTS-ITEM.FAILED": "failed",
+      "PAYMENT.PAYOUTS-ITEM.BLOCKED": "failed",
+      "PAYMENT.PAYOUTS-ITEM.RETURNED": "failed",
+      "PAYMENT.PAYOUTS-ITEM.CANCELED": "failed",
+      "PAYMENT.PAYOUTS-ITEM.REFUNDED": "failed",
+      "PAYMENT.PAYOUTS-ITEM.HELD": "processing",
+      "PAYMENT.PAYOUTS-ITEM.UNCLAIMED": "unclaimed",
+    } as const;
+    const payoutStatus = payoutStatuses[value.event_type as keyof typeof payoutStatuses];
+    if (payoutStatus) {
+      if (!value.resource.id) throw new Error("paypal_event_not_correlatable");
+      const details = payoutItemSchema.parse(await this.client.getPayoutItem(value.resource.id));
+      if (payoutStatus === "unclaimed") await this.client.cancelUnclaimedPayoutItem(details.payout_item_id);
+      const actualFeeMinor = usdToMinor(details.payout_item_fee
+        ? { currency_code: details.payout_item_fee.currency, value: details.payout_item_fee.value }
+        : undefined);
+      if (actualFeeMinor === null) throw new Error("paypal_payout_fee_unavailable");
+      return {
+        kind: "payout",
+        eventId: value.id,
+        payoutId: details.payout_item.sender_item_id,
+        providerPayoutItemId: details.payout_item_id,
+        status: payoutStatus,
+        actualFeeMinor,
+        providerStatus: details.transaction_status,
+        failureCode: details.errors?.name ?? null,
+        occurredAt: value.create_time,
+      };
+    }
     const related = value.resource.supplementary_data?.related_ids;
     const captureEvent = value.event_type.startsWith("PAYMENT.CAPTURE.");
     const status: PaymentWebhookEvent["status"] = ({
@@ -81,17 +122,58 @@ export class PayPalPaymentProvider implements PaymentProvider {
     } as Record<string, PaymentWebhookEvent["status"]>)[value.event_type] ?? "ignored";
     const captureId = captureEvent ? value.resource.id ?? null : related?.capture_id ?? null;
     const paymentId = related?.order_id ?? captureId;
+    if (status === "ignored") {
+      return {
+        kind: "payment",
+        eventId: value.id,
+        providerPaymentId: value.resource.id ?? value.id,
+        providerCaptureId: captureId,
+        status,
+        gatewayFeeMinor: null,
+        occurredAt: value.create_time,
+      };
+    }
     if (!paymentId) throw new Error("paypal_event_not_correlatable");
+    let gatewayFeeMinor = usdToMinor(value.resource.seller_receivable_breakdown?.paypal_fee);
+    if (status === "confirmed" && this.config.flow === "platform_payouts" && gatewayFeeMinor === null) {
+      if (!captureId) throw new Error("paypal_fee_unavailable");
+      const capture = await this.client.getCapture(captureId);
+      gatewayFeeMinor = usdToMinor(capture.seller_receivable_breakdown?.paypal_fee);
+      if (gatewayFeeMinor === null) throw new Error("paypal_fee_unavailable");
+    }
     return {
+      kind: "payment",
       eventId: value.id,
       providerPaymentId: paymentId,
       providerCaptureId: captureId,
       status,
-      gatewayFeeMinor: usdToMinor(value.resource.seller_receivable_breakdown?.paypal_fee),
+      gatewayFeeMinor,
       occurredAt: value.create_time,
     };
   }
 
-  async createPayout(): Promise<PayoutResult> { throw new Error("payouts_managed_by_paypal"); }
-  async getPayoutStatus(): Promise<PayoutStatus> { throw new Error("payouts_managed_by_paypal"); }
+  async createPayout(input: CreatePayoutInput): Promise<PayoutResult> {
+    if (this.config.flow !== "platform_payouts") throw new Error("payouts_managed_by_paypal");
+    if (input.currency !== "USD") throw new Error("unsupported_currency");
+    const result = await this.client.createPayoutBatch({
+      payoutId: input.payoutId,
+      recipientAmountMinor: input.recipientAmountMinor,
+      currency: input.currency,
+      receiver: input.providerAccountId,
+      recipientType: input.recipientType,
+      idempotencyKey: input.idempotencyKey,
+    });
+    const providerBatchId = result.batch_header?.payout_batch_id;
+    if (!providerBatchId) throw new Error("paypal_payout_batch_missing");
+    return { providerBatchId, status: "processing" };
+  }
+
+  async getPayoutStatus(providerPayoutId: string): Promise<PayoutStatus> {
+    if (this.config.flow !== "platform_payouts") throw new Error("payouts_managed_by_paypal");
+    const result = await this.client.getPayoutBatch(providerPayoutId);
+    const status = result.batch_header?.batch_status;
+    if (status === "SUCCESS") return "completed";
+    if (status === "DENIED" || status === "CANCELED") return "failed";
+    return "processing";
+  }
 }

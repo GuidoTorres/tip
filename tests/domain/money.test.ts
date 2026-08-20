@@ -1,5 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { calculateTipBreakdown, sumLedger, sumWithdrawnByCurrency } from "@/features/ledger/money";
+import {
+  calculateProcessingSupportMinor,
+  calculateTipBreakdown,
+  quotePayoutFromDebit,
+  sumLedger,
+  sumWithdrawnByCurrency,
+} from "@/features/ledger/money";
+
+describe("PayPal fee estimates", () => {
+  it("calcula el aporte voluntario con gross-up usando enteros", () => {
+    expect(calculateProcessingSupportMinor(2_000, 540, 30)).toBe(146);
+  });
+
+  it("reserva suficiente comisión para retirar todo sin fondos de TipMe", () => {
+    expect(quotePayoutFromDebit(1_839, 200, 100)).toEqual({
+      totalDebitMinor: 1_839,
+      recipientAmountMinor: 1_802,
+      estimatedFeeMinor: 37,
+    });
+  });
+
+  it.each([
+    () => calculateProcessingSupportMinor(-1, 540, 30),
+    () => calculateProcessingSupportMinor(2_000, 10_000, 30),
+    () => quotePayoutFromDebit(10.5, 200, 100),
+    () => quotePayoutFromDebit(1_000, -1, 100),
+  ])("rechaza dinero o tarifas inseguras", (operation) => {
+    expect(operation).toThrow("invalid_money");
+  });
+});
 
 describe("calculateTipBreakdown", () => {
   it("calcula 300 basis points sin usar decimales monetarios", () => {

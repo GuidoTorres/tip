@@ -1,3 +1,5 @@
+export type PayPalFlow = "platform_payouts" | "multiparty";
+
 export type PayPalConfig = {
   environment: "sandbox" | "live";
   clientId: string;
@@ -6,6 +8,7 @@ export type PayPalConfig = {
   partnerMerchantId: string;
   partnerAttributionId: string;
   singleMerchantSandbox: boolean;
+  flow: PayPalFlow;
 };
 
 export function payPalConfigFromEnv(env: {
@@ -16,6 +19,7 @@ export function payPalConfigFromEnv(env: {
   PAYPAL_PARTNER_MERCHANT_ID: string;
   PAYPAL_PARTNER_ATTRIBUTION_ID: string;
   PAYPAL_SANDBOX_SINGLE_MERCHANT: boolean;
+  PAYPAL_FLOW: PayPalFlow;
 }): PayPalConfig {
   return {
     environment: env.PAYPAL_ENVIRONMENT,
@@ -25,6 +29,7 @@ export function payPalConfigFromEnv(env: {
     partnerMerchantId: env.PAYPAL_PARTNER_MERCHANT_ID,
     partnerAttributionId: env.PAYPAL_PARTNER_ATTRIBUTION_ID,
     singleMerchantSandbox: env.PAYPAL_SANDBOX_SINGLE_MERCHANT,
+    flow: env.PAYPAL_FLOW,
   };
 }
 
@@ -39,13 +44,16 @@ type CreateOrderInput = {
   tipId: string;
   amountMinor: number;
   platformFeeMinor: number;
-  merchantId: string;
+  merchantId: string | null;
   idempotencyKey: string;
 };
 
 export class PayPalApiError extends Error {
+  readonly retryable: boolean;
+
   constructor(readonly status: number) {
     super("paypal_api_failed");
+    this.retryable = status === 408 || status === 429 || status >= 500;
   }
 }
 
@@ -88,7 +96,7 @@ export class PayPalClient {
 
   private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const headers = new Headers({ Authorization: `Bearer ${await this.token()}`, "content-type": "application/json" });
-    if (!this.config.singleMerchantSandbox && this.config.partnerAttributionId) headers.set("PayPal-Partner-Attribution-Id", this.config.partnerAttributionId);
+    if (this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId) headers.set("PayPal-Partner-Attribution-Id", this.config.partnerAttributionId);
     if (options.merchantId) headers.set("PayPal-Auth-Assertion", createPayPalAuthAssertion(this.config.clientId, options.merchantId));
     if (options.idempotencyKey) headers.set("PayPal-Request-Id", options.idempotencyKey);
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
@@ -118,12 +126,13 @@ export class PayPalClient {
       description: "Voluntary support on TipMe",
       amount: { currency_code: "USD" as const, value: usd(input.amountMinor) },
     };
-    if (this.config.singleMerchantSandbox) {
+    if (this.config.flow === "platform_payouts" || this.config.singleMerchantSandbox) {
       return this.request<{ id: string; status: string }>("/v2/checkout/orders", {
         method: "POST", idempotencyKey: input.idempotencyKey,
         body: { intent: "CAPTURE", application_context: applicationContext, purchase_units: [purchaseUnit] },
       });
     }
+    if (!input.merchantId) throw new Error("paypal_account_not_connected");
     const paymentInstruction: { disbursement_mode: "INSTANT"; platform_fees?: Array<{ amount: { currency_code: "USD"; value: string } }> } = { disbursement_mode: "INSTANT" };
     if (input.platformFeeMinor > 0) paymentInstruction.platform_fees = [{ amount: { currency_code: "USD", value: usd(input.platformFeeMinor) } }];
     return this.request<{ id: string; status: string }>("/v2/checkout/orders", {
@@ -142,10 +151,53 @@ export class PayPalClient {
     });
   }
 
-  async captureOrder(orderId: string, merchantId: string, idempotencyKey: string) {
+  async captureOrder(orderId: string, merchantId: string | null, idempotencyKey: string) {
     return this.request<Record<string, unknown>>(`/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
-      method: "POST", body: {}, ...(this.config.singleMerchantSandbox ? {} : { merchantId }), idempotencyKey,
+      method: "POST", body: {}, ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && merchantId ? { merchantId } : {}), idempotencyKey,
     });
+  }
+
+  async getCapture(captureId: string) {
+    return this.request<{
+      id?: string;
+      seller_receivable_breakdown?: { paypal_fee?: { currency_code: string; value: string } };
+    }>(`/v2/payments/captures/${encodeURIComponent(captureId)}`);
+  }
+
+  async createPayoutBatch(input: {
+    payoutId: string;
+    recipientAmountMinor: number;
+    currency: "USD";
+    receiver: string;
+    recipientType: "EMAIL" | "PAYPAL_ID";
+    idempotencyKey: string;
+  }) {
+    return this.request<{ batch_header?: { payout_batch_id?: string; batch_status?: string } }>("/v1/payments/payouts", {
+      method: "POST",
+      idempotencyKey: input.idempotencyKey,
+      body: {
+        sender_batch_header: { sender_batch_id: `tipme:${input.payoutId}` },
+        items: [{
+          sender_item_id: input.payoutId,
+          recipient_type: input.recipientType,
+          recipient_wallet: "PAYPAL",
+          receiver: input.receiver,
+          amount: { currency: input.currency, value: usd(input.recipientAmountMinor) },
+        }],
+      },
+    });
+  }
+
+  async getPayoutBatch(batchId: string) {
+    return this.request<{ batch_header?: { payout_batch_id?: string; batch_status?: string } }>(`/v1/payments/payouts/${encodeURIComponent(batchId)}`);
+  }
+
+  async getPayoutItem(itemId: string) {
+    return this.request<Record<string, unknown>>(`/v1/payments/payouts-item/${encodeURIComponent(itemId)}`);
+  }
+
+  async cancelUnclaimedPayoutItem(itemId: string) {
+    return this.request<Record<string, unknown>>(`/v1/payments/payouts-item/${encodeURIComponent(itemId)}/cancel`, { method: "POST", body: {} });
   }
 
   async verifyWebhook(rawBody: string, headers: Headers) {

@@ -14,13 +14,14 @@ type BalanceSummaryProps = {
   feesMinor?: number;
   paymentProvider?: "mock" | "paypal";
   sandboxSingleMerchant?: boolean;
+  platformPayouts?: boolean;
   shareActions?: ReactNode;
 };
 
-export function BalanceSummary({ currency, availableMinor, pendingMinor, todayMinor = 0, monthMinor = 0, grossConfirmedMinor = 0, feesMinor = 0, paymentProvider = "mock", sandboxSingleMerchant = false, shareActions }: BalanceSummaryProps) {
+export function BalanceSummary({ currency, availableMinor, pendingMinor, todayMinor = 0, monthMinor = 0, grossConfirmedMinor = 0, feesMinor = 0, paymentProvider = "mock", sandboxSingleMerchant = false, platformPayouts = false, shareActions }: BalanceSummaryProps) {
   const paypal = paymentProvider === "paypal";
 
-  if (paypal) return <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
+  if (paypal && !platformPayouts) return <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">

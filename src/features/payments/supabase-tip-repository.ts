@@ -16,6 +16,7 @@ export class SupabaseTipRepository implements TipRepository {
   async insertTip(tip: Parameters<TipRepository["insertTip"]>[0]) {
     const { data, error } = await this.client.from("tips").insert({
       creator_id: tip.creatorId, payer_name: tip.payerName, message: tip.message, anonymous: tip.anonymous,
+      base_amount_minor: tip.baseAmountMinor, processing_support_minor: tip.processingSupportMinor,
       amount_minor: tip.amountMinor, currency: tip.currency, platform_fee_minor: tip.platformFeeMinor,
       gateway_fee_minor: tip.gatewayFeeMinor, net_amount_minor: tip.netAmountMinor, provider: tip.provider, status: "created",
       legal_terms_version: tip.legalTermsVersion, legal_accepted_at: tip.legalAcceptedAt,

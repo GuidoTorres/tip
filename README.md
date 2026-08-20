@@ -4,17 +4,18 @@ TipMe es un MVP web mobile-first para que una persona creadora comparta una URL 
 
 ```text
 Fan envía tip
-  -> proveedor de pago
+  -> PayPal cobra en la cuenta Business de TipMe
   -> webhook verificado por el servidor
   -> tip confirmado
-  -> ledger y totales
+  -> ledger y saldo neto del creador
   -> notificación interna
   -> Web Push
+  -> retiro por PayPal Payouts
 ```
 
 Dominio previsto: `https://tipme.pro`
 
-Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal Sandbox**. El código permite configurar PayPal Live, pero no debe usarse con dinero real hasta que PayPal apruebe formalmente el modelo Multiparty, el onboarding de vendedores, `PARTNER_FEE` y las capacidades de tarjeta necesarias.
+Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal Sandbox en modo centralizado con Payouts**. El flujo Multiparty anterior se conserva desactivado. Antes de usar dinero real deben verificarse Payouts Live, elegibilidad de Checkout/Card Fields, liquidez, soporte de disputas y textos legales del operador.
 
 ## Qué está implementado
 
@@ -29,8 +30,8 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
 - Moneda operativa del piloto fijada en USD.
 - Onboarding adaptado al proveedor activo:
   - cuenta y payout simulados en modo mock;
-  - conexión de una cuenta PayPal mediante Partner Referrals en modo Multiparty;
-  - cuenta Business Sandbox compartida en el modo especial de prueba.
+  - un solo correo de destino PayPal personal en `platform_payouts`;
+  - Partner Referrals únicamente en el modo Multiparty conservado.
 - Activación de Web Push mediante una acción explícita.
 - URL pública directa: `tipme.pro/username`.
 
@@ -41,6 +42,7 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
 - Nombre y mensaje opcionales.
 - Opción anónima que impide mostrar la identidad a la persona creadora.
 - Consentimiento obligatorio de Términos y Política de reembolsos antes de iniciar el pago.
+- Aporte voluntario para ayudar a cubrir el procesamiento, calculado nuevamente por el servidor.
 - Pago mock para desarrollo y pruebas.
 - PayPal Card Fields embebidos cuando la cuenta y el comprador son elegibles.
 - Botón PayPal como alternativa cuando la tarjeta directa no está disponible.
@@ -54,7 +56,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 ### Dashboard
 
 - Saludo con foto de perfil o inicial como fallback.
-- Badge de PayPal enlazado cuando la cuenta conectada está completamente verificada.
+- Badge **PayPal configurado** al guardar el correo y **PayPal verificado** después del primer payout exitoso.
 - Resumen financiero PayPal:
   - **Total confirmado:** importe bruto histórico de tips actualmente confirmados;
   - **Hoy:** importe bruto confirmado durante el día;
@@ -75,7 +77,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 
 - Interfaz `PaymentProvider` independiente del gateway.
 - `MockPaymentProvider` para probar el recorrido sin dinero real.
-- `PayPalPaymentProvider` para PayPal Checkout y Multiparty.
+- `PayPalPaymentProvider` para Checkout centralizado, Payouts y el modo Multiparty conservado.
 - Creación, consulta y captura separadas de la confirmación financiera.
 - Webhook único en `/api/webhooks/payments`.
 - Verificación de firma HMAC para mock y verificación oficial de webhook para PayPal.
@@ -95,7 +97,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 - Service Worker y fallback offline.
 - Push API, Notifications API y claves VAPID.
 - Una persona puede registrar varios dispositivos.
-- Push al confirmar un tip y al completar o fallar un payout mock.
+- Push al confirmar un tip y al completar o fallar un payout mock o PayPal.
 - Tip anónimo sin filtración del nombre del fan.
 - Deep link de tip a `/dashboard/tips/[tipId]`.
 - Endpoints 404/410 se marcan como revocados.
@@ -122,7 +124,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 - Apple Pay o Google Pay integrados en la interfaz actual.
 - APIs ficticias de Nuvei, EBANX o dLocal.
 - KYC/KYB propio.
-- Retiro interno en modo PayPal: PayPal administra el dinero y su retiro.
+- Reembolsos manuales desde el panel: el ledger y los webhooks están preparados, pero todavía falta una interfaz operativa completa para disputas.
 - Gestión completa de todos los eventos `CUSTOMER.DISPUTE.*`; actualmente se procesan refunds y reversals de captura.
 - Rate limiting distribuido para tráfico alto.
 
@@ -169,7 +171,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 | `/dashboard/tips` | Historial completo |
 | `/dashboard/tips/[tipId]` | Detalle del tip |
 | `/dashboard/notifications` | Centro de avisos |
-| `/dashboard/payouts` | Payouts mock; no aparece en navegación PayPal |
+| `/dashboard/payouts` | Configurar PayPal, solicitar retiro y revisar historial |
 | `/dashboard/settings` | Perfil, foto, idioma y push |
 | `/admin` | Estado general protegido |
 | `/terms`, `/refund-policy`, `/privacy` | Documentos legales |
@@ -181,7 +183,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 - Proyecto Supabase.
 - Cuenta Vercel para despliegue.
 - Supabase CLI y Docker únicamente si se usará Supabase local.
-- Para PayPal: app REST Sandbox y, para Multiparty, cuenta Partner aprobada.
+- Para PayPal: app REST Sandbox con Checkout, Webhooks y Payouts habilitados. Multiparty solo requiere aprobación si se activa ese flujo.
 
 ## Instalación local
 
@@ -203,13 +205,20 @@ NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_PUBLISHABLE_O_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=TU_SECRET_O_SERVICE_ROLE_KEY
 
-PLATFORM_FEE_BPS=300
-PAYMENT_PROVIDER=mock
+PLATFORM_FEE_BPS=0
+PAYMENT_PROVIDER=paypal
 MOCK_WEBHOOK_SECRET=GENERA_UN_SECRETO_LARGO
 RECEIPT_SIGNING_SECRET=GENERA_OTRO_SECRETO_LARGO
 
 PAYPAL_ENVIRONMENT=sandbox
+PAYPAL_FLOW=platform_payouts
 PAYPAL_SANDBOX_SINGLE_MERCHANT=false
+PAYPAL_PAYOUT_FEE_BPS=200
+PAYPAL_PAYOUT_FEE_CAP_MINOR=100
+PAYPAL_CHECKOUT_FEE_BPS=540
+PAYPAL_CHECKOUT_FIXED_FEE_MINOR=30
+PAYOUT_HOLD_MINUTES=0
+PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID=ACCOUNT_ID_SANDBOX_DE_PRUEBA
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=REEMPLAZAR
 PAYPAL_CLIENT_SECRET=REEMPLAZAR
 PAYPAL_WEBHOOK_ID=REEMPLAZAR
@@ -230,7 +239,10 @@ Reglas importantes:
 
 - Una variable `NEXT_PUBLIC_*` queda incluida en el bundle del navegador. Solo coloca allí datos públicos como URL, publishable key, client ID o clave VAPID pública.
 - Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, `PAYPAL_CLIENT_SECRET`, `VAPID_PRIVATE_KEY`, `MOCK_WEBHOOK_SECRET` ni `RECEIPT_SIGNING_SECRET`.
-- `PLATFORM_FEE_BPS=300` equivale a 3 %. La comisión no está hardcodeada.
+- `PLATFORM_FEE_BPS=0` deja la comisión de TipMe en 0 % durante el piloto. Sigue siendo configurable.
+- `PAYPAL_CHECKOUT_*` solo estima el aporte voluntario del fan; el ledger espera el fee real de PayPal.
+- `PAYPAL_PAYOUT_FEE_*` reserva conservadoramente la comisión de envío; el webhook concilia la cifra real.
+- `PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID` es un Account ID falso/de prueba para Sandbox. En Live se usa el correo guardado por la persona.
 - Reinicia `npm run dev` después de modificar `.env.local`.
 - En Vercel, cambia una variable y vuelve a desplegar para que el cambio llegue al build.
 
@@ -246,6 +258,7 @@ Ejecuta las migraciones en este orden:
 4. `202608160002_paypal_payment_accounts.sql`: cuentas PayPal conectadas e identificadores de captura.
 5. `202608180003_tip_legal_acceptance.sql`: versión y fecha de aceptación legal.
 6. `202608180004_creator_tip_totals.sql`: agregados seguros del resumen financiero PayPal.
+7. `202608200001_paypal_platform_payouts.sql`: importes base/aporte, destino PayPal protegido, reservas, Payouts, fees reales e idempotencia.
 
 Con Supabase CLI:
 
@@ -257,7 +270,7 @@ supabase db push
 
 También puedes copiar cada archivo, respetando el orden, en Supabase Dashboard → SQL Editor.
 
-La última migración es necesaria para mostrar **Total confirmado**, **Comisiones descontadas** y **Total neto**. Si falta, “Hoy” puede mostrar datos mientras los otros totales permanecen en cero.
+La migración `202608200001_paypal_platform_payouts.sql` debe aplicarse antes de desplegar esta versión. Sin ella no se puede guardar el correo PayPal ni solicitar retiros.
 
 ### Supabase local y datos demo
 
@@ -332,6 +345,8 @@ Cada dispositivo debe activar sus propias notificaciones. Haberlas activado en u
 
 Consulta el checklist real en [docs/manual/push-device-checklist.md](docs/manual/push-device-checklist.md).
 
+Para el recorrido financiero Sandbox usa [docs/manual/paypal-platform-payouts-checklist.md](docs/manual/paypal-platform-payouts-checklist.md).
+
 ## Flujo de pagos mock
 
 Configura:
@@ -356,9 +371,9 @@ La implementación utiliza:
 
 - REST Orders API con `CAPTURE`.
 - JavaScript SDK con `buttons,card-fields`.
-- Partner Referrals para conectar cuentas creadoras.
-- `payee` y `payment_instruction.platform_fees` en modo Multiparty.
-- `disbursement_mode: INSTANT`.
+- Payouts API para enviar retiros a una cuenta PayPal personal.
+- Un `sender_batch_id` y `sender_item_id` derivados del UUID interno para evitar envíos duplicados.
+- Partner Referrals, `payee` y `payment_instruction.platform_fees` solo cuando `PAYPAL_FLOW=multiparty`.
 - `NO_SHIPPING` porque un tip no envía productos.
 - Verificación de firma mediante `/v1/notifications/verify-webhook-signature`.
 
@@ -369,7 +384,14 @@ Card Fields muestra número, vencimiento y CVV dentro de TipMe cuando PayPal dec
 ```dotenv
 PAYMENT_PROVIDER=paypal
 PAYPAL_ENVIRONMENT=sandbox
+PAYPAL_FLOW=platform_payouts
 PAYPAL_SANDBOX_SINGLE_MERCHANT=false
+PLATFORM_FEE_BPS=0
+PAYPAL_PAYOUT_FEE_BPS=200
+PAYPAL_PAYOUT_FEE_CAP_MINOR=100
+PAYPAL_CHECKOUT_FEE_BPS=540
+PAYPAL_CHECKOUT_FIXED_FEE_MINOR=30
+PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID=ACCOUNT_ID_SANDBOX
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=CLIENT_ID_SANDBOX
 PAYPAL_CLIENT_SECRET=SECRET_SANDBOX
 PAYPAL_WEBHOOK_ID=WEBHOOK_ID_SANDBOX
@@ -391,10 +413,24 @@ Eventos mínimos:
 - `PAYMENT.CAPTURE.DENIED`
 - `PAYMENT.CAPTURE.REFUNDED`
 - `PAYMENT.CAPTURE.REVERSED`
+- `PAYMENT.PAYOUTS-ITEM.SUCCEEDED`
+- `PAYMENT.PAYOUTS-ITEM.FAILED`
+- `PAYMENT.PAYOUTS-ITEM.BLOCKED`
+- `PAYMENT.PAYOUTS-ITEM.RETURNED`
+- `PAYMENT.PAYOUTS-ITEM.CANCELED`
+- `PAYMENT.PAYOUTS-ITEM.REFUNDED`
+- `PAYMENT.PAYOUTS-ITEM.HELD`
+- `PAYMENT.PAYOUTS-ITEM.UNCLAIMED`
 
 No selecciones `All Events` para el piloto.
 
-### Onboarding PayPal Multiparty
+### Onboarding PayPal del piloto
+
+Con `PAYPAL_FLOW=platform_payouts`, el paso 2 solicita un único correo PayPal. Se normaliza server-side y queda `pending`. TipMe no pide contraseña, banco, tarjeta ni OAuth. El destino cambia a `verified` únicamente después de un payout `SUCCESS`.
+
+En Sandbox, los retiros exitosos usan el Account ID configurado en `PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID`, porque muchos correos ficticios Sandbox no están confirmados. En Live el payout usa `recipient_type: EMAIL` y el correo guardado por la persona.
+
+### Multiparty conservado
 
 En el paso 2 del onboarding, TipMe abre Partner Referrals en una ventana tipo minibrowser. La aplicación:
 
@@ -405,9 +441,9 @@ En el paso 2 del onboarding, TipMe abre Partner Referrals en una ventana tipo mi
 - guarda únicamente merchant ID, capacidades y estado, nunca credenciales PayPal;
 - consulta periódicamente la base de datos y permite una comprobación manual si PayPal no cierra la ventana.
 
-Al estar conectada, el dashboard muestra el badge **PayPal enlazado**.
+Esta ruta solo se usa con `PAYPAL_FLOW=multiparty` y requiere las aprobaciones correspondientes. No es el modo activo del piloto.
 
-### Modo Sandbox con un solo merchant
+### Modo Sandbox legado con un solo merchant
 
 Si todavía no tienes Multiparty habilitado, puedes probar Checkout, captura, webhook, ledger y push con una sola cuenta Business Sandbox:
 
@@ -430,25 +466,25 @@ El BN Code es opcional en esta modalidad.
 
 ### Dinero real
 
-No cambies a Live solo porque ya existen credenciales. Antes se necesita confirmación de PayPal sobre:
+No cambies a Live solo porque Sandbox funciona. Antes comprueba:
 
-- PayPal Commerce Platform / Multiparty;
-- onboarding para Business o Casual Sellers según países admitidos;
-- `PARTNER_FEE`;
+- que la app Live tenga Payouts habilitado y fondos suficientes;
 - Advanced Credit and Debit Card Payments;
-- países de alta, cobro y retiro;
-- reglas de KYC/KYB, disputas, reservas y retenciones.
+- los países de cobro y recepción admitidos;
+- el proceso de refunds, contracargos, reservas, retenciones y saldo negativo;
+- los datos legales y de soporte del operador.
 
-En modo Multiparty aprobado, el tip se dirige a la cuenta PayPal conectada y la comisión de TipMe se separa automáticamente. TipMe no debe recibir el dinero para repartirlo manualmente.
+En `platform_payouts`, el fan paga a la cuenta Business de TipMe y TipMe envía después el saldo mediante Payouts. No debe describirse como un pago directo fan → creador. Multiparty puede retomarse más adelante sin cambiar el ledger ni la interfaz principal.
 
 ## Ledger, fees y totales
 
 - Moneda activa del piloto: USD.
 - `20.00 USD` se guarda como `2000`.
-- Comisión de plataforma: `amount_minor * PLATFORM_FEE_BPS / 10_000` con redondeo entero.
-- Fee PayPal: se registra únicamente cuando el webhook incluye `seller_receivable_breakdown.paypal_fee`.
+- Comisión de plataforma del piloto: 0 %, configurada con `PLATFORM_FEE_BPS=0`.
+- Fee de cobro PayPal: se registra desde `seller_receivable_breakdown.paypal_fee`; si el webhook no lo trae, el servidor consulta la captura antes de acreditar.
+- `base_amount_minor` guarda el tip elegido y `processing_support_minor` el aporte voluntario; ambos reconstruyen `amount_minor`.
 - Neto: tip bruto menos comisión de plataforma menos gateway fee.
-- `creator_balances` reconstruye el saldo mock desde `ledger_entries`.
+- `creator_balances` reconstruye siempre el saldo disponible desde `ledger_entries`.
 - `creator_tip_totals` calcula el resumen PayPal usando solo tips actualmente confirmados.
 
 Aunque los tipos de dominio y la base están preparados para códigos ISO adicionales, la interfaz del piloto fuerza USD y no realiza conversión de moneda.
@@ -466,7 +502,15 @@ Aunque los tipos de dominio y la base están preparados para códigos ISO adicio
 
 ### Modo PayPal
 
-No hay botón de retiro interno ni ruta de retiros en la navegación. El dinero, su disponibilidad y su retiro son administrados por PayPal. TipMe muestra solamente los tips procesados mediante la plataforma, no el saldo total de la cuenta PayPal.
+- La persona configura un correo PayPal personal, inicialmente `pending`.
+- Puede retirar cualquier monto positivo que no supere su saldo disponible; no hay máximo adicional.
+- La interfaz muestra cuánto se debita, cuánto se enviará y la comisión reservada estimada.
+- La reserva se crea en PostgreSQL antes de llamar PayPal.
+- Un 4xx definitivo libera la reserva; un timeout o 5xx la conserva para conciliación y evita reintentos con otro identificador.
+- `SUCCEEDED` registra `reserve_release`, `payout`, el fee real, verifica el destino y envía push.
+- `FAILED`, `RETURNED`, `CANCELED` o `REFUNDED` liberan el dinero no enviado y notifican el fallo.
+- `UNCLAIMED` solicita cancelación y conserva la reserva hasta recibir un estado final.
+- El historial muestra el importe enviado y diferencia comisión estimada de comisión real.
 
 ## Legal
 
@@ -496,14 +540,14 @@ La suite cubre, entre otros:
 - anonimato;
 - consentimiento legal;
 - MockPaymentProvider;
-- PayPal Orders, Card Fields, onboarding y callbacks;
+- PayPal Orders, Card Fields, Payouts y Multiparty conservado;
 - firma y procesamiento de webhooks;
 - idempotencia, refunds y chargebacks;
 - comprobantes firmados;
 - ledger y límites de payout;
 - subscriptions push, múltiples dispositivos y endpoints revocados;
 - OAuth y sanitización de redirects;
-- dashboard, QR, navegación, PayPal enlazado y ajustes.
+- dashboard, QR, navegación, destino PayPal pendiente/verificado y ajustes.
 
 La verificación SQL/RLS está en [docs/manual/database-verification.md](docs/manual/database-verification.md).
 
@@ -536,7 +580,7 @@ El build command es `npm run build`.
 
 1. Crear una cuenta nueva.
 2. Completar perfil, username y foto.
-3. Conectar PayPal Sandbox o configurar payout mock.
+3. Guardar el correo PayPal de destino o configurar payout mock.
 4. Instalar la PWA y activar push desde el dispositivo que recibirá avisos.
 5. Copiar el link o compartir el QR.
 6. Abrir el perfil desde incógnito u otro dispositivo.
@@ -545,7 +589,8 @@ El build command es `npm run build`.
 9. Confirmar que el dashboard se actualiza sin refresh manual.
 10. Tocar el push y verificar el deep link.
 11. Repetir el webhook y confirmar que no duplica dinero ni notificaciones.
-12. En modo mock, completar y fallar payouts de prueba.
+12. En PayPal Sandbox, completar un payout al Account ID de prueba y confirmar fee, ledger y push.
+13. Probar `UNCLAIMED` o un fallo Sandbox y verificar que la reserva solo se libera en un estado final.
 
 ## Seguridad
 

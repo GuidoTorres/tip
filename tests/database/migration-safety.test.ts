@@ -21,6 +21,9 @@ const legalAcceptanceMigrationPath = fileURLToPath(
 const creatorTotalsMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608180004_creator_tip_totals.sql", import.meta.url),
 );
+const platformPayoutsMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608200001_paypal_platform_payouts.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -83,5 +86,20 @@ describe("database migration safety", () => {
     expect(totalsMigration).toMatch(/auth\.uid\(\) is distinct from requested_creator/i);
     expect(totalsMigration).toMatch(/grant execute on function public\.creator_tip_totals/i);
     expect(totalsMigration).not.toMatch(/update\s+public\.(tips|ledger_entries)/i);
+  });
+
+  it("keeps PayPal payout verification and financial transitions server-controlled", () => {
+    expect(existsSync(platformPayoutsMigrationPath)).toBe(true);
+    if (!existsSync(platformPayoutsMigrationPath)) return;
+
+    const platformPayoutsMigration = readFileSync(platformPayoutsMigrationPath, "utf8");
+    expect(platformPayoutsMigration).toMatch(/create or replace function public\.set_my_paypal_payout_email/i);
+    expect(platformPayoutsMigration).toMatch(/revoke (insert|update|delete)[^;]+payout_accounts[^;]+authenticated/i);
+    expect(platformPayoutsMigration).toMatch(/grant execute on function public\.set_my_paypal_payout_email\(text\) to authenticated/i);
+    expect(platformPayoutsMigration).toMatch(/create or replace function public\.request_platform_payout/i);
+    expect(platformPayoutsMigration).toMatch(/grant execute on function public\.request_platform_payout[^;]+to service_role/i);
+    expect(platformPayoutsMigration).not.toMatch(/grant execute on function public\.request_platform_payout[^;]+to authenticated/i);
+    expect(platformPayoutsMigration).toMatch(/v_account\.status not in \('pending', 'verified'\)/i);
+    expect(platformPayoutsMigration).toMatch(/update public\.payout_accounts\s+set status = 'verified'/i);
   });
 });

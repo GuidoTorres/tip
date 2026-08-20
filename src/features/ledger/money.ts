@@ -20,6 +20,52 @@ function assertSafeInteger(value: number, name: string, allowZero = true): void 
   }
 }
 
+function assertFeeBps(value: number, allowFullRate = true): void {
+  if (!Number.isSafeInteger(value) || value < 0 || value > (allowFullRate ? 10_000 : 9_999)) {
+    throw new Error("invalid_money");
+  }
+}
+
+export function calculateProcessingSupportMinor(baseAmountMinor: number, feeBps: number, fixedFeeMinor: number): number {
+  if (!Number.isSafeInteger(baseAmountMinor) || baseAmountMinor <= 0 || !Number.isSafeInteger(fixedFeeMinor) || fixedFeeMinor < 0) {
+    throw new Error("invalid_money");
+  }
+  assertFeeBps(feeBps, false);
+  const numerator = (baseAmountMinor + fixedFeeMinor) * 10_000;
+  if (!Number.isSafeInteger(numerator)) throw new Error("invalid_money");
+  const grossAmountMinor = Math.ceil(numerator / (10_000 - feeBps));
+  if (!Number.isSafeInteger(grossAmountMinor)) throw new Error("invalid_money");
+  return grossAmountMinor - baseAmountMinor;
+}
+
+function estimatedPayoutFeeMinor(recipientAmountMinor: number, feeBps: number, feeCapMinor: number): number {
+  const numerator = recipientAmountMinor * feeBps;
+  if (!Number.isSafeInteger(numerator)) throw new Error("invalid_money");
+  return Math.min(Math.ceil(numerator / 10_000), feeCapMinor);
+}
+
+export function quotePayoutFromDebit(totalDebitMinor: number, feeBps: number, feeCapMinor: number) {
+  if (!Number.isSafeInteger(totalDebitMinor) || totalDebitMinor <= 0 || !Number.isSafeInteger(feeCapMinor) || feeCapMinor < 0) {
+    throw new Error("invalid_money");
+  }
+  assertFeeBps(feeBps);
+
+  let low = 0;
+  let high = totalDebitMinor;
+  while (low < high) {
+    const candidate = Math.ceil((low + high) / 2);
+    const fee = estimatedPayoutFeeMinor(candidate, feeBps, feeCapMinor);
+    if (candidate + fee <= totalDebitMinor) low = candidate;
+    else high = candidate - 1;
+  }
+  if (low <= 0) throw new Error("invalid_money");
+  return {
+    totalDebitMinor,
+    recipientAmountMinor: low,
+    estimatedFeeMinor: totalDebitMinor - low,
+  };
+}
+
 export function calculateTipBreakdown(input: BreakdownInput): TipBreakdown {
   assertSafeInteger(input.amountMinor, "amountMinor", false);
   assertSafeInteger(input.platformFeeBps, "platformFeeBps");

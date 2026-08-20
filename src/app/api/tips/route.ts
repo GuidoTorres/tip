@@ -7,6 +7,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createReceiptToken } from "@/lib/security/receipt";
+import { SupabasePayoutDestinationRepository } from "@/features/payouts/destination-repository";
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
@@ -18,8 +19,12 @@ export async function POST(request: Request) {
     const result = await createTip(input, {
       repository: new SupabaseTipRepository(admin),
       paymentAccounts: new SupabasePaymentAccountRepository(admin),
+      payoutDestinations: new SupabasePayoutDestinationRepository(admin),
       provider: getPaymentProviderFromEnv(env),
       platformFeeBps: env.PLATFORM_FEE_BPS,
+      paypalFlow: env.PAYPAL_FLOW,
+      checkoutFeeBps: env.PAYPAL_CHECKOUT_FEE_BPS,
+      checkoutFixedFeeMinor: env.PAYPAL_CHECKOUT_FIXED_FEE_MINOR,
       ...(env.PAYPAL_SANDBOX_SINGLE_MERCHANT ? { providerAccountOverride: env.PAYPAL_PARTNER_MERCHANT_ID } : {}),
     });
     return NextResponse.json({ ...result, receiptToken: createReceiptToken(result.tipId, env.RECEIPT_SIGNING_SECRET) }, { status: 201 });

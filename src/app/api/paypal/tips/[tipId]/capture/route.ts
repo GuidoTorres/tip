@@ -15,9 +15,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tip
   if (typeof body?.receiptToken !== "string") return NextResponse.json({ error: "invalid_capture" }, { status: 400 });
   try {
     const result = await captureTip({ tipId, receiptToken: body.receiptToken }, {
-      repository: new SupabaseCaptureTipRepository(createAdminSupabaseClient()),
+      repository: new SupabaseCaptureTipRepository(createAdminSupabaseClient(), env.PAYPAL_FLOW),
       provider: getPaymentProviderFromEnv(env),
       receiptSecret: env.RECEIPT_SIGNING_SECRET,
+      paypalFlow: env.PAYPAL_FLOW,
       ...(env.PAYPAL_SANDBOX_SINGLE_MERCHANT ? { providerAccountOverride: env.PAYPAL_PARTNER_MERCHANT_ID } : {}),
     });
     return NextResponse.json(result);

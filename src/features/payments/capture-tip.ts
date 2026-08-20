@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PaymentProvider } from "./provider";
 import { verifyReceiptToken } from "@/lib/security/receipt";
+import type { PayPalFlow } from "./paypal-client";
 
 export type CaptureTarget = {
   tipId: string;
@@ -16,12 +17,16 @@ export interface CaptureTipRepository {
 }
 
 export class SupabaseCaptureTipRepository implements CaptureTipRepository {
-  constructor(private readonly client: SupabaseClient) {}
+  constructor(private readonly client: SupabaseClient, private readonly paypalFlow: PayPalFlow = "multiparty") {}
 
   async getTarget(tipId: string): Promise<CaptureTarget | null> {
     const { data: tip, error } = await this.client.from("tips").select("id,creator_id,provider,provider_payment_id,status").eq("id", tipId).maybeSingle();
     if (error) throw new Error("capture_lookup_failed");
     if (!tip?.provider_payment_id) return null;
+    if (this.paypalFlow === "platform_payouts") {
+      return { tipId: tip.id, provider: tip.provider, providerPaymentId: tip.provider_payment_id,
+        providerAccountId: null, status: tip.status };
+    }
     const { data: account, error: accountError } = await this.client.from("payment_accounts").select("provider_merchant_id")
       .eq("creator_id", tip.creator_id).eq("provider", "paypal").eq("status", "connected").maybeSingle();
     if (accountError) throw new Error("capture_account_lookup_failed");
@@ -38,13 +43,13 @@ export class SupabaseCaptureTipRepository implements CaptureTipRepository {
 
 export async function captureTip(
   input: { tipId: string; receiptToken: string },
-  dependencies: { repository: CaptureTipRepository; provider: PaymentProvider; receiptSecret: string; providerAccountOverride?: string },
+  dependencies: { repository: CaptureTipRepository; provider: PaymentProvider; receiptSecret: string; paypalFlow?: PayPalFlow; providerAccountOverride?: string },
 ) {
   if (!verifyReceiptToken(input.tipId, input.receiptToken, dependencies.receiptSecret)) throw new Error("capture_not_found");
   const target = await dependencies.repository.getTarget(input.tipId);
   if (!target || target.provider !== "paypal" || dependencies.provider.name !== "paypal" || !["created", "pending"].includes(target.status)) throw new Error("capture_not_found");
   const providerAccountId = dependencies.providerAccountOverride ?? target.providerAccountId;
-  if (!providerAccountId) throw new Error("capture_not_found");
+  if (!providerAccountId && dependencies.paypalFlow !== "platform_payouts") throw new Error("capture_not_found");
   const result = await dependencies.provider.capturePayment({
     providerPaymentId: target.providerPaymentId,
     providerAccountId,

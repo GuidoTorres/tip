@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PayPalFundsPanel } from "@/components/payouts/paypal-funds-panel";
 import { BalanceSummary } from "@/components/dashboard/balance-summary";
+import { PayPalConnectionBadge } from "@/components/dashboard/paypal-connection-badge";
 
 describe("PayPal mode interface", () => {
   it("does not offer an internal TipMe withdrawal", () => {
@@ -25,5 +26,15 @@ describe("PayPal mode interface", () => {
     expect(dashboard).toContain("cuenta Sandbox de TipMe");
     expect(funds).toContain("No es un saldo retirable por la persona creadora");
     expect(funds).toContain("sandbox.paypal.com");
+  });
+
+  it("offers withdrawals when PayPal runs in platform payouts mode", () => {
+    const dashboard = renderToStaticMarkup(<BalanceSummary currency="USD" availableMinor={1839} pendingMinor={0} todayMinor={2000} paymentProvider="paypal" platformPayouts />);
+    const pendingBadge = renderToStaticMarkup(<PayPalConnectionBadge verified={false} />);
+
+    expect(dashboard).toContain("Disponible");
+    expect(dashboard).toContain("RETIRAR");
+    expect(pendingBadge).toContain("PayPal configurado");
+    expect(pendingBadge).not.toContain("PayPal verificado");
   });
 });

@@ -46,11 +46,11 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   async parseWebhook(rawBody: string): Promise<PaymentWebhookEvent> {
-    return { ...eventSchema.parse(JSON.parse(rawBody)), providerCaptureId: null };
+    return { kind: "payment", ...eventSchema.parse(JSON.parse(rawBody)), providerCaptureId: null };
   }
 
   async createPayout(input: CreatePayoutInput): Promise<PayoutResult> {
-    return { providerPayoutId: stableId("mock_po_", input.idempotencyKey), status: "requested" };
+    return { providerBatchId: stableId("mock_po_", input.idempotencyKey), status: "processing" };
   }
 
   async getPayoutStatus(): Promise<PayoutStatus> {

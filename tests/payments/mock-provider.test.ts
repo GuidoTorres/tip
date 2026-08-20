@@ -16,9 +16,9 @@ describe("MockPaymentProvider", () => {
 
   it("crea payouts mock sin tocar el ledger", async () => {
     const provider = new MockPaymentProvider("secret-that-is-long-enough");
-    const result = await provider.createPayout({ payoutId: "po-1", amountMinor: 500, currency: "USD", providerAccountId: "acct-1", idempotencyKey: "payout:po-1" });
-    expect(result.status).toBe("requested");
-    expect(result.providerPayoutId).toMatch(/^mock_po_/);
+    const result = await provider.createPayout({ payoutId: "po-1", amountMinor: 500, recipientAmountMinor: 500, estimatedFeeMinor: 0, currency: "USD", providerAccountId: "acct-1", recipientType: "EMAIL", idempotencyKey: "payout:po-1" });
+    expect(result.status).toBe("processing");
+    expect(result.providerBatchId).toMatch(/^mock_po_/);
   });
 });
 

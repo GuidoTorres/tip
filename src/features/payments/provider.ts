@@ -23,16 +23,20 @@ export type PaymentResult = {
 export type CreatePayoutInput = {
   payoutId: string;
   amountMinor: number;
+  recipientAmountMinor: number;
+  estimatedFeeMinor: number;
   currency: Currency;
   providerAccountId: string;
+  recipientType: "EMAIL" | "PAYPAL_ID";
   idempotencyKey: string;
 };
 
 export type PayoutStatus = "requested" | "processing" | "completed" | "failed";
 
-export type PayoutResult = { providerPayoutId: string; status: PayoutStatus };
+export type PayoutResult = { providerBatchId: string; status: "processing" };
 
 export type PaymentWebhookEvent = {
+  kind: "payment";
   eventId: string;
   providerPaymentId: string;
   providerCaptureId: string | null;
@@ -41,11 +45,25 @@ export type PaymentWebhookEvent = {
   occurredAt: string;
 };
 
+export type PayoutWebhookEvent = {
+  kind: "payout";
+  eventId: string;
+  payoutId: string;
+  providerPayoutItemId: string;
+  status: "processing" | "completed" | "failed" | "unclaimed";
+  actualFeeMinor: number;
+  providerStatus: string;
+  failureCode: string | null;
+  occurredAt: string;
+};
+
+export type ProviderWebhookEvent = PaymentWebhookEvent | PayoutWebhookEvent;
+
 export type WebhookVerificationInput = { rawBody: string; headers: Headers };
 
 export type CapturePaymentInput = {
   providerPaymentId: string;
-  providerAccountId: string;
+  providerAccountId: string | null;
   idempotencyKey: string;
 };
 
@@ -60,7 +78,7 @@ export interface PaymentProvider {
   getPaymentStatus(providerPaymentId: string): Promise<PaymentResult["status"]>;
   capturePayment(input: CapturePaymentInput): Promise<CapturePaymentResult>;
   verifyWebhook(input: WebhookVerificationInput): Promise<boolean>;
-  parseWebhook(rawBody: string): Promise<PaymentWebhookEvent>;
+  parseWebhook(rawBody: string): Promise<ProviderWebhookEvent>;
   createPayout(input: CreatePayoutInput): Promise<PayoutResult>;
   getPayoutStatus(providerPayoutId: string): Promise<PayoutStatus>;
 }

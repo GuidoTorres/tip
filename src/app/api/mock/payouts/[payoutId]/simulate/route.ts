@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pay
   const admin = createAdminSupabaseClient();
   const eventId = `mock_po_evt_${crypto.randomUUID()}`;
   const raw = JSON.stringify({ eventId, payoutId, providerPayoutId: payout.provider_payout_id, status: parsed.data.status });
-  const result = await processPayoutEvent({ provider: "mock", eventId, providerPayoutId: payout.provider_payout_id, status: parsed.data.status, payloadDigest: createHash("sha256").update(raw).digest("hex"), failureCode: parsed.data.status === "failed" ? "mock_failure" : null }, {
+  const result = await processPayoutEvent({ provider: "mock", eventId, payoutId, providerPayoutItemId: payout.provider_payout_id, status: parsed.data.status, actualFeeMinor: 0, providerStatus: parsed.data.status.toUpperCase(), payloadDigest: createHash("sha256").update(raw).digest("hex"), failureCode: parsed.data.status === "failed" ? "mock_failure" : null }, {
     repository: new SupabasePayoutRepository(admin, admin),
     notify: (payload) => sendPayoutPush(admin, payload),
   });
