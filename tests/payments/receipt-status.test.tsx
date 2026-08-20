@@ -14,6 +14,7 @@ function renderReceipt(status: TipStatus, username: string | null) {
         amount_minor: 2146,
         currency: "USD",
         provider: "paypal",
+        operation_code: "TM-7A4F-91C2-D8B0-1234",
         message: "Gracias",
         profiles: username ? { public_name: "Camila", username } : null,
       }}
@@ -23,6 +24,13 @@ function renderReceipt(status: TipStatus, username: string | null) {
 }
 
 describe("ReceiptStatus repeat tip action", () => {
+  it("shows the operation code that the creator can verify", () => {
+    const receipt = renderReceipt("confirmed", "camila");
+
+    expect(receipt).toContain("Código de operación");
+    expect(receipt).toContain("TM-7A4F-91C2-D8B0-1234");
+  });
+
   it("separates the creator tip from the fan's voluntary processing support", () => {
     const receipt = renderReceipt("confirmed", "camila");
 

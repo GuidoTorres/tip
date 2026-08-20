@@ -24,6 +24,9 @@ const creatorTotalsMigrationPath = fileURLToPath(
 const platformPayoutsMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608200001_paypal_platform_payouts.sql", import.meta.url),
 );
+const operationCodeMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608200003_tip_operation_codes.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -101,5 +104,17 @@ describe("database migration safety", () => {
     expect(platformPayoutsMigration).not.toMatch(/grant execute on function public\.request_platform_payout[^;]+to authenticated/i);
     expect(platformPayoutsMigration).toMatch(/v_account\.status not in \('pending', 'verified'\)/i);
     expect(platformPayoutsMigration).toMatch(/update public\.payout_accounts\s+set status = 'verified'/i);
+  });
+
+  it("assigns non-sequential unique operation codes to every tip", () => {
+    expect(existsSync(operationCodeMigrationPath)).toBe(true);
+    if (!existsSync(operationCodeMigrationPath)) return;
+
+    const operationCodeMigration = readFileSync(operationCodeMigrationPath, "utf8");
+    expect(operationCodeMigration).toMatch(/add column if not exists operation_code text/i);
+    expect(operationCodeMigration).toMatch(/alter column operation_code set not null/i);
+    expect(operationCodeMigration).toMatch(/unique[^;]+operation_code/is);
+    expect(operationCodeMigration).toMatch(/gen_random_uuid\(\)/i);
+    expect(operationCodeMigration).not.toMatch(/provider_payment_id\s*(?:\|\||::)/i);
   });
 });
