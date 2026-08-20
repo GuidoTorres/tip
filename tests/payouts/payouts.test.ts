@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { requestPayout, processPayoutEvent, type PayoutRepository } from "@/features/payouts/service";
+import { requestPayout, processPayoutEvent, PayoutReconciliationRequiredError, type PayoutRepository } from "@/features/payouts/service";
 import type { PaymentProvider } from "@/features/payments/provider";
 import { PayPalApiError } from "@/features/payments/paypal-client";
 
@@ -82,14 +82,36 @@ describe("requestPayout", () => {
     expect(deps.repository.failSubmission).toHaveBeenCalledWith("payout-1", "provider_rejected");
   });
 
-  it("keeps an ambiguous PayPal request reserved for reconciliation", async () => {
+  it("keeps an ambiguous PayPal request reserved without reporting success", async () => {
     const deps = setup();
     vi.mocked(deps.provider.createPayout).mockRejectedValue(new PayPalApiError(503));
 
     await expect(requestPayout(
       { creatorId: "creator-1", accountId: "acct-1", amountMinor: 1_000, currency: "USD", idempotencyKey: "key-0001" },
       deps,
-    )).resolves.toEqual({ payoutId: "payout-1", providerBatchId: null, status: "processing", reconciling: true });
+    )).rejects.toMatchObject({
+      message: "payout_reconciliation_required",
+      payoutId: "payout-1",
+      stage: "submission",
+      providerStatus: 503,
+    } satisfies Partial<PayoutReconciliationRequiredError>);
+
+    expect(deps.repository.failSubmission).not.toHaveBeenCalled();
+  });
+
+  it("preserves the PayPal batch id when attaching it requires reconciliation", async () => {
+    const deps = setup();
+    vi.mocked(deps.repository.attachProviderPayout).mockRejectedValue(new Error("database_unavailable"));
+
+    await expect(requestPayout(
+      { creatorId: "creator-1", accountId: "acct-1", amountMinor: 1_000, currency: "USD", idempotencyKey: "key-0001" },
+      deps,
+    )).rejects.toMatchObject({
+      message: "payout_reconciliation_required",
+      payoutId: "payout-1",
+      stage: "attachment",
+      providerBatchId: "mock_po_1",
+    } satisfies Partial<PayoutReconciliationRequiredError>);
 
     expect(deps.repository.failSubmission).not.toHaveBeenCalled();
   });

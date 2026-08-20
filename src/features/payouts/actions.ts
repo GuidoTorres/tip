@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env/server";
 import { getPaymentProviderFromEnv } from "@/features/payments/provider-factory";
-import { requestPayout } from "./service";
+import { PayoutReconciliationRequiredError, requestPayout } from "./service";
 import { SupabasePayoutRepository } from "./supabase-repository";
 import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 
@@ -37,6 +37,21 @@ export async function requestPayoutAction(formData: FormData) {
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "payout_failed";
+    console.error(JSON.stringify({
+      event: "payout_request_failed",
+      code,
+      creatorId: user.id,
+      accountId: parsed.data.accountId,
+      amountMinor: parsed.data.amountMinor,
+      currency: parsed.data.currency,
+      ...(error instanceof PayoutReconciliationRequiredError ? {
+        payoutId: error.payoutId,
+        stage: error.stage,
+        providerStatus: error.providerStatus,
+        providerBatchId: error.providerBatchId,
+      } : {}),
+      occurredAt: new Date().toISOString(),
+    }));
     redirect(`/dashboard/payouts?error=${encodeURIComponent(code)}`);
   }
   redirect("/dashboard/payouts?success=requested");

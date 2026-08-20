@@ -51,6 +51,24 @@ function isDefinitiveProviderRejection(error: unknown) {
   return typeof error === "object" && error !== null && "retryable" in error && error.retryable === false;
 }
 
+function providerStatus(error: unknown) {
+  return typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+    ? error.status
+    : null;
+}
+
+export class PayoutReconciliationRequiredError extends Error {
+  constructor(
+    readonly payoutId: string,
+    readonly stage: "submission" | "attachment" | "release",
+    readonly providerStatus: number | null,
+    readonly providerBatchId: string | null = null,
+  ) {
+    super("payout_reconciliation_required");
+    this.name = "PayoutReconciliationRequiredError";
+  }
+}
+
 export async function requestPayout(input: PayoutRequestInput, dependencies: RequestPayoutDependencies) {
   const value = requestSchema.parse(input);
   const account = await dependencies.repository.getAccount(value.accountId, value.creatorId);
@@ -72,8 +90,9 @@ export async function requestPayout(input: PayoutRequestInput, dependencies: Req
     platformPayouts,
   });
   const recipient = dependencies.payoutRecipientOverride ?? { recipientType: "EMAIL" as const, receiver: account.providerAccountId };
+  let providerResult: Awaited<ReturnType<PaymentProvider["createPayout"]>>;
   try {
-    const providerResult = await dependencies.provider.createPayout({
+    providerResult = await dependencies.provider.createPayout({
       payoutId: payout.id,
       amountMinor: quote.totalDebitMinor,
       recipientAmountMinor: quote.recipientAmountMinor,
@@ -83,14 +102,23 @@ export async function requestPayout(input: PayoutRequestInput, dependencies: Req
       recipientType: recipient.recipientType,
       idempotencyKey: `payout:${payout.id}`,
     });
+  } catch (error) {
+    if (!isDefinitiveProviderRejection(error)) {
+      throw new PayoutReconciliationRequiredError(payout.id, "submission", providerStatus(error));
+    }
+    try {
+      await dependencies.repository.failSubmission(payout.id, "provider_rejected");
+    } catch {
+      throw new PayoutReconciliationRequiredError(payout.id, "release", providerStatus(error));
+    }
+    throw new Error("payout_submission_failed");
+  }
+
+  try {
     await dependencies.repository.attachProviderPayout(payout.id, providerResult.providerBatchId, providerResult.status, platformPayouts);
     return { payoutId: payout.id, providerBatchId: providerResult.providerBatchId, status: providerResult.status };
-  } catch (error) {
-    if (isDefinitiveProviderRejection(error)) {
-      await dependencies.repository.failSubmission(payout.id, "provider_rejected");
-      throw new Error("payout_submission_failed");
-    }
-    return { payoutId: payout.id, providerBatchId: null, status: "processing" as const, reconciling: true };
+  } catch {
+    throw new PayoutReconciliationRequiredError(payout.id, "attachment", null, providerResult.providerBatchId);
   }
 }
 
