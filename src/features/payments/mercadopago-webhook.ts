@@ -6,6 +6,8 @@ import { currencyFractionDigits } from "./mercadopago-exchange-rate";
 export type MercadoPagoWebhookPayload = {
   id?: string | number;
   type?: string;
+  topic?: string;
+  resource?: string | number;
   action?: string;
   data?: { id?: string | number };
 };
@@ -33,9 +35,14 @@ function majorToMinor(value: unknown, currency: Currency) {
 export function parseMercadoPagoWebhook(rawBody: string): { payload: MercadoPagoWebhookPayload; dataId: string; action: string } {
   let payload: MercadoPagoWebhookPayload;
   try { payload = JSON.parse(rawBody) as MercadoPagoWebhookPayload; } catch { throw new Error("invalid_webhook"); }
-  const dataId = payload.data?.id === undefined ? "" : String(payload.data.id);
-  if (!dataId || (payload.type && payload.type !== "payment")) throw new Error("invalid_webhook");
-  return { payload, dataId, action: payload.action ?? payload.type ?? "payment.updated" };
+  const dataId = payload.data?.id !== undefined
+    ? String(payload.data.id)
+    : payload.resource !== undefined
+      ? String(payload.resource)
+      : "";
+  const eventType = payload.type ?? payload.topic;
+  if (!dataId || (eventType && eventType !== "payment")) throw new Error("invalid_webhook");
+  return { payload, dataId, action: payload.action ?? eventType ?? "payment.updated" };
 }
 
 export function verifyMercadoPagoWebhook(headers: Headers, dataId: string, secret: string) {
