@@ -214,8 +214,8 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     <fieldset disabled={submitting || checkoutLocked}>
       <legend className="text-lg font-semibold">{t.tip.heading}</legend>
       <p className="mt-2 text-sm leading-relaxed text-muted">{t.tip.currencyNotice}</p>
-      <div className="mt-4 grid grid-cols-4 gap-2">{presets.map((amount) => <button key={amount} type="button" onClick={() => { setAmountMinor(amount); setShowCustom(false); }} className={`pressable min-h-12 rounded-xl border px-2 font-bold ${!showCustom && amountMinor === amount ? "border-accent bg-accent text-on-accent" : "border-border bg-background hover:border-accent"}`}>{amount / unit}</button>)}</div>
-      <button type="button" onClick={() => setShowCustom(true)} className={`pressable mt-2 min-h-12 w-full rounded-xl border font-semibold ${showCustom ? "border-accent text-accent" : "border-border"}`}>{t.tip.otherAmount}</button>
+      <div className="mt-3 grid grid-cols-4 gap-1.5">{presets.map((amount) => <button key={amount} type="button" onClick={() => { setAmountMinor(amount); setShowCustom(false); }} className={`pressable min-h-10 rounded-lg border px-2 text-sm font-bold ${!showCustom && amountMinor === amount ? "border-accent bg-accent text-on-accent" : "border-border bg-background hover:border-accent"}`}>{amount / unit}</button>)}</div>
+      <button type="button" onClick={() => setShowCustom(true)} className={`pressable mt-1.5 min-h-10 w-full rounded-lg border text-sm font-semibold ${showCustom ? "border-accent text-accent" : "border-border"}`}>{t.tip.otherAmount}</button>
       {showCustom && <label className="mt-3 block text-sm font-semibold">{locale === "es" ? "Monto entero en" : "Whole amount in"} {currency}<input autoFocus inputMode="numeric" pattern="[0-9]+" value={custom} onChange={(event) => setCustom(event.target.value.replace(/\D/g, ""))} placeholder="20" className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 text-lg outline-none focus:border-accent" /></label>}
       <div className="mt-6 space-y-4">
         <details className="rounded-xl border border-border bg-surface-soft px-4">
