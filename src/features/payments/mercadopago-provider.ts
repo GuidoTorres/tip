@@ -20,7 +20,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
   private readonly appUrl: string;
 
   constructor(config: { appUrl: string; fetchImpl?: typeof fetch }) {
-    this.appUrl = config.appUrl.replace(/\/$/, "");
+    // Vercel values are sometimes pasted with quotes or whitespace. Normalize
+    // them before building the externally reachable webhook URL.
+    this.appUrl = config.appUrl.trim().replace(/^['"]|['"]$/g, "").replace(/\/$/, "");
     this.fetchImpl = config.fetchImpl ?? fetch;
   }
 
@@ -30,6 +32,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     if (!["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(input.currency)) throw new Error("unsupported_currency");
     const card = input.paymentMethodData;
     const unit = 10 ** currencyFractionDigits(input.currency);
+    const notificationUrl = `${this.appUrl}/api/webhooks/mercadopago/${input.providerCountry}`;
     const body = {
       transaction_amount: input.amountMinor / unit,
       application_fee: input.platformFeeMinor / unit,
@@ -43,9 +46,15 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       },
       description: "Tip mediante TipMe",
       external_reference: input.tipId,
-      notification_url: `${this.appUrl}/api/webhooks/mercadopago/${input.providerCountry}`,
+      notification_url: notificationUrl,
       metadata: { tip_id: input.tipId, tipme_creator_id: input.providerAccountId },
     };
+    console.info(JSON.stringify({
+      event: "mercadopago_payment_request",
+      appUrl: this.appUrl,
+      providerCountry: input.providerCountry,
+      notificationUrl,
+    }));
     const response = await this.fetchImpl("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
@@ -66,6 +75,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         ...(safeProviderText(result?.message) ? { message: safeProviderText(result?.message) } : {}),
         ...(cause?.code !== undefined ? { causeCode: String(cause.code).slice(0, 80) } : {}),
         ...(safeProviderText(cause?.description) ? { causeDescription: safeProviderText(cause?.description) } : {}),
+        notificationUrl,
       }));
       throw new Error("mercadopago_payment_create_failed");
     }
