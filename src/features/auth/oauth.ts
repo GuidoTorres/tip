@@ -1,5 +1,9 @@
 const DEFAULT_AUTH_DESTINATION = "/dashboard";
 
+export function getGoogleCallbackUrl(appUrl: string) {
+  return `${appUrl.replace(/\/$/, "")}/auth/callback`;
+}
+
 export function sanitizeInternalPath(value: string | null | undefined): string {
   if (!value?.startsWith("/") || value.startsWith("//")) return DEFAULT_AUTH_DESTINATION;
   return value;

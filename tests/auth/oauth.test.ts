@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOAuthDestination, sanitizeInternalPath } from "@/features/auth/oauth";
+import { getGoogleCallbackUrl, getOAuthDestination, sanitizeInternalPath } from "@/features/auth/oauth";
 
 describe("sanitizeInternalPath", () => {
   it("accepts a local TipMe path", () => {
@@ -23,5 +23,11 @@ describe("getOAuthDestination", () => {
 
   it("does not send a returning creator back through onboarding", () => {
     expect(getOAuthDestination({ onboardingCompleted: true, requestedNext: "/onboarding" })).toBe("/dashboard");
+  });
+});
+
+describe("getGoogleCallbackUrl", () => {
+  it("uses the exact allow-listed callback without dynamic query parameters", () => {
+    expect(getGoogleCallbackUrl("https://tipme.pro/")).toBe("https://tipme.pro/auth/callback");
   });
 });

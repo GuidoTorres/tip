@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { sanitizeInternalPath } from "@/features/auth/oauth";
+import { getGoogleCallbackUrl, sanitizeInternalPath } from "@/features/auth/oauth";
 import { getPublicEnv } from "@/lib/env/public";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -33,11 +33,9 @@ export async function login(formData: FormData) {
   redirect(sanitizeInternalPath(String(formData.get("next") ?? "/dashboard")));
 }
 
-export async function signInWithGoogle(formData: FormData) {
+export async function signInWithGoogle() {
   const supabase = await createServerSupabaseClient();
-  const next = sanitizeInternalPath(String(formData.get("next") ?? "/dashboard"));
-  const appUrl = getPublicEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-  const callbackUrl = `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`;
+  const callbackUrl = getGoogleCallbackUrl(getPublicEnv().NEXT_PUBLIC_APP_URL);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: callbackUrl },
