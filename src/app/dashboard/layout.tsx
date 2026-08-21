@@ -14,7 +14,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("onboarding_completed").eq("id", user.id).single();
   if (!profile?.onboarding_completed) redirect("/onboarding");
-  const showPayouts = getServerEnv().PAYMENT_PROVIDER !== "paypal";
+  const serverEnv = getServerEnv();
+  const showPayouts = serverEnv.PAYMENT_PROVIDER !== "mercadopago" && serverEnv.PAYMENT_PROVIDER !== "paypal";
   const vapidPublicKey = getPublicEnv().NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   return <div className="min-h-[100dvh] pb-24 md:pb-8"><ServiceWorkerRegister /><RealtimeRefresh creatorId={user.id} /><header className="sticky top-0 z-10 border-b border-border bg-background/92 backdrop-blur"><div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6"><Link href="/dashboard" className="text-xl font-bold tracking-[-0.04em]">TipMe<span className="text-accent">.</span></Link><DesktopNav showPayouts={showPayouts} /><DashboardHeaderActions vapidPublicKey={vapidPublicKey} /></div></header><main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-10">{children}</main><MobileNav showPayouts={showPayouts} /></div>;
 }
