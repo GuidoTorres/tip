@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
+import { SpinnerGap } from "@phosphor-icons/react";
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from "@mercadopago/sdk-react/esm/bricks/cardPayment/type";
 import type { Locale } from "@/lib/i18n/config";
 import type { MercadoPagoCardPaymentData } from "@/features/payments/provider";
@@ -22,9 +23,11 @@ export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, on
     return true;
   });
   const [error, setError] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   async function submit(data: ICardPaymentFormData<ICardPaymentBrickPayer>) {
     setError(false);
+    setProcessing(true);
     try {
       if (!data.payer.email) throw new Error("payer_email_missing");
       const result = await onPay({
@@ -41,6 +44,7 @@ export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, on
       });
       router.push(`/tips/${result.tipId}/receipt?token=${encodeURIComponent(result.receiptToken)}`);
     } catch (reason) {
+      setProcessing(false);
       setError(true);
       throw reason;
     }
@@ -48,13 +52,14 @@ export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, on
 
   return <section className="mt-6 rounded-2xl border border-border bg-background p-3" aria-live="polite">
     <div className="mb-2 flex items-center justify-between px-2"><div><h2 className="font-semibold">{locale === "es" ? "Pago seguro" : "Secure payment"}</h2><p className="text-xs text-muted">{locale === "es" ? "Procesado por Mercado Pago" : "Processed by Mercado Pago"}</p></div><span className="rounded-lg bg-[#009ee3] px-2.5 py-1 text-xs font-bold text-white">mercado pago</span></div>
-    {ready && amount > 0 && <CardPayment
+    {ready && amount > 0 && !processing && <CardPayment
       initialization={{ amount }}
       customization={{ paymentMethods: { types: { included: ["credit_card", "debit_card", "prepaid_card"] } }, visual: { hideFormTitle: false } }}
       locale={mercadoPagoLocale}
       onSubmit={submit}
-      onError={() => setError(true)}
+      onError={() => { setProcessing(false); setError(true); }}
     />}
+    {processing && <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-surface-soft px-4 py-3 text-sm font-semibold text-muted" role="status" aria-live="polite"><SpinnerGap size={19} className="animate-spin" />{locale === "es" ? "Procesando pago seguro…" : "Processing secure payment…"}</div>}
     {error && <p role="alert" className="px-2 pb-2 text-sm font-semibold text-accent-strong">{locale === "es" ? "No pudimos procesar este pago. Revisa los datos e inténtalo nuevamente." : "We could not process this payment. Check the details and try again."}</p>}
   </section>;
 }
