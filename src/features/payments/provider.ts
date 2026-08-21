@@ -1,3 +1,4 @@
+import type { MercadoPagoCountry, MercadoPagoCurrency } from "./mercadopago-regions";
 import type { Currency, TipStatus } from "./types";
 
 export type CreatePaymentInput = {
@@ -23,7 +24,7 @@ export type MercadoPagoCardPaymentData = {
 export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
   | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string }
-  | { kind: "mercadopago"; publicKey: string; country: "MX" | "CO"; currency: Extract<Currency, "MXN" | "COP"> };
+  | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
 
 export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
 export type PrepareCheckoutInput = { providerAccountId: string | null };

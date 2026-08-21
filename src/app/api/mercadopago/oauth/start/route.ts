@@ -5,9 +5,9 @@ import { getPublicEnv } from "@/lib/env/public";
 import { getServerEnv } from "@/lib/env/server";
 import { createOAuthState } from "@/lib/security/oauth-state";
 import { createMercadoPagoAuthorizationUrl, createMercadoPagoPkce } from "@/features/payments/mercadopago-oauth";
-import { getMercadoPagoRegion, isMercadoPagoRegionConfigured } from "@/features/payments/mercadopago-regions";
+import { getMercadoPagoRegion, isMercadoPagoRegionConfigured, mercadoPagoCountries } from "@/features/payments/mercadopago-regions";
 
-const inputSchema = z.object({ country: z.enum(["MX", "CO"]) });
+const inputSchema = z.object({ country: z.enum(mercadoPagoCountries) });
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();

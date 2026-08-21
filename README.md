@@ -15,19 +15,20 @@ Fan envía tip
 
 Dominio previsto: `https://tipme.pro`
 
-Estado actual: **MVP con Mock, PayPal y Mercado Pago regional**. El modo `mercadopago` implementa Split Payments 1:1 para cuentas conectadas de México (MXN) y Colombia (COP), con checkout de tarjeta embebido, comisión TipMe configurable y confirmación exclusiva por webhook. Debe probarse con credenciales regionales reales antes del piloto; el código no equivale a aprobación comercial de Mercado Pago.
+Estado actual: **MVP con Mock, PayPal y Mercado Pago regional**. El modo `mercadopago` implementa Split Payments 1:1 para Argentina, Brasil, Chile, Colombia, México, Perú y Uruguay, con checkout de tarjeta embebido, comisión TipMe configurable y confirmación exclusiva por webhook. Cada región requiere credenciales reales propias; el código no equivale a aprobación comercial de Mercado Pago.
 
-## Mercado Pago regional (modo recomendado para MX/CO)
+## Mercado Pago regional
 
 Con `PAYMENT_PROVIDER=mercadopago`, cada creador conecta su propia cuenta mediante OAuth. El pago se crea usando el access token del creador y `application_fee`; el dinero no pasa por una cuenta TipMe. Los tokens se cifran con AES-256-GCM y se guardan en `payment_account_credentials`, una tabla sin permisos para `anon` ni `authenticated`.
 
 ```text
-México:    cuenta Mercado Pago MX -> cobro y retiro en MXN
-Colombia:  cuenta Mercado Pago CO -> cobro y retiro en COP
-TipMe:     recibe PLATFORM_FEE_BPS=100 (1 %) mediante application_fee
+Argentina -> ARS    Brasil -> BRL       Chile -> CLP
+Colombia  -> COP    México -> MXN       Perú  -> PEN
+Uruguay   -> UYU
+TipMe recibe PLATFORM_FEE_BPS=100 (1 %) mediante application_fee
 ```
 
-Configura dos aplicaciones Marketplace regionales si atenderás ambos países. Redirect URI OAuth para ambas:
+Configura una aplicación Marketplace y credenciales por cada región que vayas a habilitar. Todas usan esta Redirect URI OAuth:
 
 ```text
 https://tipme.pro/api/mercadopago/oauth/callback
@@ -38,7 +39,10 @@ Webhooks de pagos:
 ```text
 https://tipme.pro/api/webhooks/mercadopago/MX
 https://tipme.pro/api/webhooks/mercadopago/CO
+https://tipme.pro/api/webhooks/mercadopago/PE
 ```
+
+Sustituye el último segmento por `AR`, `BR`, `CL`, `CO`, `MX`, `PE` o `UY` según la región.
 
 Suscribe eventos de pagos (`payment.created` y `payment.updated`). Cada URL usa el secret de firma de su región. El handler valida firma y antigüedad, consulta `/v1/payments/{id}` con el token del vendedor, cruza vendedor, tip, importe, moneda y `application_fee`, y recién después actualiza ledger, notificación y push. Una respuesta `approved` en el navegador nunca confirma el tip.
 
@@ -49,6 +53,10 @@ PAYMENT_PROVIDER=mercadopago
 PLATFORM_FEE_BPS=100
 MERCADOPAGO_ENVIRONMENT=sandbox
 PAYMENT_TOKEN_ENCRYPTION_KEY=BASE64_DE_32_BYTES
+MERCADOPAGO_PE_CLIENT_ID=REEMPLAZAR
+MERCADOPAGO_PE_CLIENT_SECRET=REEMPLAZAR
+NEXT_PUBLIC_MERCADOPAGO_PE_PUBLIC_KEY=REEMPLAZAR
+MERCADOPAGO_PE_WEBHOOK_SECRET=REEMPLAZAR
 MERCADOPAGO_MX_CLIENT_ID=REEMPLAZAR
 MERCADOPAGO_MX_CLIENT_SECRET=REEMPLAZAR
 NEXT_PUBLIC_MERCADOPAGO_MX_PUBLIC_KEY=REEMPLAZAR
@@ -58,6 +66,8 @@ MERCADOPAGO_CO_CLIENT_SECRET=REEMPLAZAR
 NEXT_PUBLIC_MERCADOPAGO_CO_PUBLIC_KEY=REEMPLAZAR
 MERCADOPAGO_CO_WEBHOOK_SECRET=REEMPLAZAR
 ```
+
+El archivo `.env.example` contiene además los bloques equivalentes para `AR`, `BR`, `CL` y `UY`. Solo es obligatorio reemplazar las regiones que realmente se habiliten.
 
 Genera la clave de cifrado una sola vez, guárdala también fuera de Vercel y no la cambies mientras existan conexiones activas:
 
@@ -77,7 +87,7 @@ Las public keys pueden llegar al navegador. Client secrets, secrets de webhook, 
 - Perfil con nombre visible, username, foto, descripción e idioma.
 - Username único, normalizado y con nombres del sistema reservados.
 - Foto almacenada en Supabase Storage, con reemplazo y eliminación.
-- Moneda según el proveedor: USD en los flujos PayPal existentes, MXN para Mercado Pago México y COP para Mercado Pago Colombia.
+- Moneda según el proveedor: USD en los flujos PayPal existentes y la moneda local de la cuenta Mercado Pago conectada (ARS, BRL, CLP, COP, MXN, PEN o UYU).
 - Onboarding adaptado al proveedor activo:
   - cuenta y payout simulados en modo mock;
   - un solo correo de destino PayPal personal en `platform_payouts`;
@@ -314,6 +324,7 @@ Ejecuta las migraciones en este orden:
 9. `202608200003_tip_operation_codes.sql`: añade códigos públicos únicos para verificar operaciones y buscar tips.
 10. `202608200004_fix_payout_ledger_conflicts.sql`: corrige transiciones idempotentes de payouts.
 11. `202608200005_mercadopago_regional_accounts.sql`: añade MXN, cuentas regionales y credenciales OAuth privadas.
+12. `202608210001_mercadopago_all_regions.sql`: habilita las siete regiones de Split Payments y añade UYU.
 
 Con Supabase CLI:
 
@@ -533,7 +544,7 @@ En `platform_payouts`, el fan paga a la cuenta Business de TipMe y TipMe envía 
 
 ## Ledger, fees y totales
 
-- Monedas activas: USD en PayPal, MXN en Mercado Pago México y COP en Mercado Pago Colombia.
+- Monedas activas: USD en PayPal; ARS, BRL, CLP, COP, MXN, PEN y UYU en Mercado Pago regional.
 - `20.00` se guarda como `2000` en las monedas con dos decimales.
 - Comisión de plataforma recomendada para Mercado Pago: 1 %, configurada con `PLATFORM_FEE_BPS=100`.
 - Fee de cobro PayPal: se registra desde `seller_receivable_breakdown.paypal_fee`; si el webhook no lo trae, el servidor consulta la captura antes de acreditar.

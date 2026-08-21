@@ -1,4 +1,4 @@
-export const supportedCurrencies = ["USD", "EUR", "PEN", "COP", "MXN", "BRL", "CLP", "ARS"] as const;
+export const supportedCurrencies = ["USD", "EUR", "PEN", "COP", "MXN", "BRL", "CLP", "ARS", "UYU"] as const;
 export type Currency = (typeof supportedCurrencies)[number];
 
 export const tipStatuses = ["created", "pending", "confirmed", "rejected", "refunded", "chargeback"] as const;

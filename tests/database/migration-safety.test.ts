@@ -34,6 +34,9 @@ const payoutConflictFixPath = fileURLToPath(
 const mercadoPagoMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608200005_mercadopago_regional_accounts.sql", import.meta.url),
 );
+const mercadoPagoAllRegionsMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608210001_mercadopago_all_regions.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -147,5 +150,16 @@ describe("database migration safety", () => {
     expect(mercadoPagoMigration).toMatch(/revoke all on public\.payment_account_credentials from public, anon, authenticated/i);
     expect(mercadoPagoMigration).not.toMatch(/grant select[^;]+payment_account_credentials[^;]+authenticated/i);
     expect(mercadoPagoMigration).toMatch(/grant select, insert, update, delete on public\.payment_account_credentials to service_role/i);
+  });
+
+  it("extends Mercado Pago accounts to every supported Split Payments region", () => {
+    expect(existsSync(mercadoPagoAllRegionsMigrationPath)).toBe(true);
+    if (!existsSync(mercadoPagoAllRegionsMigrationPath)) return;
+
+    const regionalMigration = readFileSync(mercadoPagoAllRegionsMigrationPath, "utf8");
+    expect(regionalMigration).toMatch(/alter type public\.currency_code add value if not exists 'UYU'/i);
+    for (const country of ["AR", "BR", "CL", "CO", "MX", "PE", "UY"]) {
+      expect(regionalMigration).toContain(`provider_country = '${country}'`);
+    }
   });
 });

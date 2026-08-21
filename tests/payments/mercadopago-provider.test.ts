@@ -32,4 +32,23 @@ describe("MercadoPagoPaymentProvider", () => {
     const provider = new MercadoPagoPaymentProvider({ appUrl: "https://tipme.pro", fetchImpl: vi.fn() });
     await expect(provider.createPayment({ tipId: "tip-1", amountMinor: 2_000, platformFeeMinor: 20, currency: "COP", providerAccountId: "42", idempotencyKey: "key" })).rejects.toThrow("mercadopago_credentials_missing");
   });
+
+  it("creates payments in Peruvian soles", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 992, status: "pending" }), { status: 201 }));
+    const provider = new MercadoPagoPaymentProvider({ appUrl: "https://tipme.pro", fetchImpl });
+
+    const result = await provider.createPayment({
+      tipId: "tip-pe", amountMinor: 2_000, platformFeeMinor: 20, currency: "PEN",
+      providerAccountId: "seller-pe", providerAccessToken: "seller-token", providerCountry: "PE",
+      idempotencyKey: "key-pe",
+      paymentMethodData: { token: "card-token", paymentMethodId: "visa", issuerId: null, installments: 1, payer: { email: "fan@example.com" } },
+    });
+
+    const [, options] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(options.body))).toEqual(expect.objectContaining({
+      transaction_amount: 20,
+      notification_url: "https://tipme.pro/api/webhooks/mercadopago/PE",
+    }));
+    expect(result).toMatchObject({ providerPaymentId: "992", status: "pending" });
+  });
 });

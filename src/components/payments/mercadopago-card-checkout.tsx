@@ -5,18 +5,20 @@ import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from "@mercadopago/sdk-react/esm/bricks/cardPayment/type";
 import type { Locale } from "@/lib/i18n/config";
 import type { MercadoPagoCardPaymentData } from "@/features/payments/provider";
+import { getMercadoPagoCountryOption, type MercadoPagoCountry } from "@/features/payments/mercadopago-regions";
 import { useRouter } from "next/navigation";
 
 export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, onPay }: {
   publicKey: string;
-  country: "MX" | "CO";
+  country: MercadoPagoCountry;
   amount: number;
   locale: Locale;
   onPay: (data: MercadoPagoCardPaymentData) => Promise<{ tipId: string; receiptToken: string }>;
 }) {
   const router = useRouter();
+  const mercadoPagoLocale = getMercadoPagoCountryOption(country).locale;
   const [ready] = useState(() => {
-    initMercadoPago(publicKey, { locale: country === "MX" ? "es-MX" : "es-CO" });
+    initMercadoPago(publicKey, { locale: mercadoPagoLocale });
     return true;
   });
   const [error, setError] = useState(false);
@@ -49,7 +51,7 @@ export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, on
     {ready && amount > 0 && <CardPayment
       initialization={{ amount }}
       customization={{ paymentMethods: { types: { included: ["credit_card", "debit_card", "prepaid_card"] } }, visual: { hideFormTitle: true } }}
-      locale={country === "MX" ? "es-MX" : "es-CO"}
+      locale={mercadoPagoLocale}
       onSubmit={submit}
       onError={() => setError(true)}
     />}

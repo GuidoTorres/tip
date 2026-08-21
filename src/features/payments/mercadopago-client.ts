@@ -1,4 +1,4 @@
-import type { MercadoPagoRegion } from "./mercadopago-regions";
+import { getMercadoPagoCountryOption, type MercadoPagoCountry, type MercadoPagoRegion } from "./mercadopago-regions";
 
 export type MercadoPagoOAuthToken = {
   access_token: string;
@@ -60,8 +60,8 @@ export class MercadoPagoClient {
   }
 }
 
-export function assertMercadoPagoUserRegion(user: MercadoPagoUser, country: "MX" | "CO") {
-  const expectedSite = country === "MX" ? "MLM" : "MCO";
+export function assertMercadoPagoUserRegion(user: MercadoPagoUser, country: MercadoPagoCountry) {
+  const expectedSite = getMercadoPagoCountryOption(country).siteId;
   if (user.country_id && user.country_id !== country) throw new Error("mercadopago_country_mismatch");
   if (user.site_id && user.site_id !== expectedSite) throw new Error("mercadopago_country_mismatch");
 }

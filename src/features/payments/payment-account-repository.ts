@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PaymentAccountWriter, PayPalAccountWrite } from "./paypal-onboarding";
 
 import type { Currency } from "./types";
-import type { MercadoPagoCountry } from "./mercadopago-regions";
+import type { MercadoPagoCountry, MercadoPagoCurrency } from "./mercadopago-regions";
 
 export type ConnectedPaymentAccount = {
   id: string;
@@ -40,7 +40,7 @@ export class SupabasePaymentAccountRepository implements PaymentAccountWriter {
     if (error) throw new Error("payment_account_save_failed");
   }
 
-  async upsertMercadoPago(account: { creatorId: string; providerMerchantId: string; country: MercadoPagoCountry; currency: Extract<Currency, "MXN" | "COP"> }) {
+  async upsertMercadoPago(account: { creatorId: string; providerMerchantId: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency }) {
     const { data, error } = await this.client.from("payment_accounts").upsert({
       creator_id: account.creatorId,
       provider: "mercadopago",

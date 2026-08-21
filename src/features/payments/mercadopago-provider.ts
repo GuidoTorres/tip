@@ -16,7 +16,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
   async createPayment(input: CreatePaymentInput): Promise<PaymentResult> {
     if (!input.providerAccountId || !input.providerAccessToken || !input.providerCountry) throw new Error("mercadopago_credentials_missing");
     if (!input.paymentMethodData) throw new Error("mercadopago_payment_data_missing");
-    if (!['MXN', 'COP'].includes(input.currency)) throw new Error("unsupported_currency");
+    if (!["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(input.currency)) throw new Error("unsupported_currency");
     const card = input.paymentMethodData;
     const body = {
       transaction_amount: input.amountMinor / 100,

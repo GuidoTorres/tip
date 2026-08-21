@@ -102,7 +102,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     if (!providerAccountId) throw new Error("paypal_account_not_connected");
   } else if (dependencies.provider.name === "mercadopago") {
     const paymentAccount = await dependencies.paymentAccounts?.findConnected(creator.id, "mercadopago") ?? null;
-    if (!paymentAccount?.country || !paymentAccount.currency || !["MXN", "COP"].includes(paymentAccount.currency)) {
+    if (!paymentAccount?.country || !paymentAccount.currency || !["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(paymentAccount.currency)) {
       throw new Error("mercadopago_account_not_connected");
     }
     const credential = await dependencies.mercadoPagoCredentials?.findByAccountId(paymentAccount.id, paymentAccount.country) ?? null;

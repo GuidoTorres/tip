@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { PaymentAccountLookup, PayoutDestinationLookup, TipRepository } from "./create-tip";
 import type { PayPalFlow } from "./paypal-client";
 import type { EmbeddedCheckout, PaymentProvider } from "./provider";
-import type { MercadoPagoRegionEnv } from "./mercadopago-regions";
+import type { MercadoPagoCountry, MercadoPagoCurrency, MercadoPagoRegionEnv } from "./mercadopago-regions";
 import { getMercadoPagoRegion } from "./mercadopago-regions";
 
 const inputSchema = z.object({
@@ -12,7 +12,7 @@ const inputSchema = z.object({
 export type CheckoutBootstrap =
   | { kind: "redirect" }
   | { kind: "embedded"; checkout: EmbeddedCheckout }
-  | { kind: "mercadopago"; publicKey: string; country: "MX" | "CO"; currency: "MXN" | "COP" };
+  | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
 
 type Dependencies = {
   provider: PaymentProvider;
