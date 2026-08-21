@@ -8,6 +8,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { country } = await params;
   if (!isMercadoPagoCountry(country)) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const rawBody = await request.text();
+  console.info(JSON.stringify({
+    event: "mercadopago_webhook_http_received",
+    country,
+    method: request.method,
+    bodyLength: rawBody.length,
+    bodyPrefix: rawBody.slice(0, 240),
+    query: new URL(request.url).search,
+    signaturePresent: Boolean(request.headers.get("x-signature")),
+    requestIdPresent: Boolean(request.headers.get("x-request-id")),
+  }));
   try {
     const result = await handleMercadoPagoWebhook({ rawBody, headers: request.headers, country }, { admin: createAdminSupabaseClient(), env: getServerEnv() });
     return NextResponse.json(result);
