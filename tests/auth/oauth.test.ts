@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGoogleCallbackUrl, getOAuthDestination, sanitizeInternalPath } from "@/features/auth/oauth";
+import { getGoogleCallbackUrl, getMisroutedOAuthCallback, getOAuthDestination, sanitizeInternalPath } from "@/features/auth/oauth";
 
 describe("sanitizeInternalPath", () => {
   it("accepts a local TipMe path", () => {
@@ -29,5 +29,17 @@ describe("getOAuthDestination", () => {
 describe("getGoogleCallbackUrl", () => {
   it("uses the exact allow-listed callback without dynamic query parameters", () => {
     expect(getGoogleCallbackUrl("https://tipme.pro/")).toBe("https://tipme.pro/auth/callback");
+  });
+});
+
+describe("getMisroutedOAuthCallback", () => {
+  it("forwards a Supabase authorization code received at the home page", () => {
+    expect(getMisroutedOAuthCallback("9f9f6cb7-18de-453b-b990-b55aaffd2145"))
+      .toBe("/auth/callback?code=9f9f6cb7-18de-453b-b990-b55aaffd2145");
+  });
+
+  it("ignores missing or malformed codes", () => {
+    expect(getMisroutedOAuthCallback(undefined)).toBeNull();
+    expect(getMisroutedOAuthCallback("bad code")).toBeNull();
   });
 });

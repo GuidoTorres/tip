@@ -1,10 +1,14 @@
 import { ArrowRight, Heart, LockKey, Lightning } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getDictionary } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { getMisroutedOAuthCallback } from "@/features/auth/oauth";
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
+  const callback = getMisroutedOAuthCallback((await searchParams).code);
+  if (callback) redirect(callback);
   const locale = await getRequestLocale();
   const t = getDictionary(locale);
 

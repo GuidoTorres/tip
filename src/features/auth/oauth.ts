@@ -4,6 +4,11 @@ export function getGoogleCallbackUrl(appUrl: string) {
   return `${appUrl.replace(/\/$/, "")}/auth/callback`;
 }
 
+export function getMisroutedOAuthCallback(code: string | undefined) {
+  if (!code || !/^[A-Za-z0-9._~-]{20,512}$/.test(code)) return null;
+  return `/auth/callback?code=${encodeURIComponent(code)}`;
+}
+
 export function sanitizeInternalPath(value: string | null | undefined): string {
   if (!value?.startsWith("/") || value.startsWith("//")) return DEFAULT_AUTH_DESTINATION;
   return value;
