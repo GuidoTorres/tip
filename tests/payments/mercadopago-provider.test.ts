@@ -2,6 +2,36 @@ import { describe, expect, it, vi } from "vitest";
 import { MercadoPagoPaymentProvider } from "@/features/payments/mercadopago-provider";
 
 describe("MercadoPagoPaymentProvider", () => {
+  it("logs only safe Mercado Pago error details when a payment is rejected", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      message: "Invalid transaction_amount",
+      error: "bad_request",
+      cause: [{ code: 1004, description: "Transaction amount below minimum" }],
+      token: "must-not-be-logged",
+    }), { status: 400, headers: { "content-type": "application/json" } }));
+    const provider = new MercadoPagoPaymentProvider({ appUrl: "https://tipme.pro", fetchImpl });
+
+    await expect(provider.createPayment({
+      tipId: "tip-error", amountMinor: 100, platformFeeMinor: 1, currency: "PEN",
+      providerAccountId: "seller-pe", providerAccessToken: "seller-token", providerCountry: "PE",
+      idempotencyKey: "key-error",
+      paymentMethodData: { token: "card-token", paymentMethodId: "visa", issuerId: null, installments: 1, payer: { email: "fan@example.com" } },
+    })).rejects.toThrow("mercadopago_payment_create_failed");
+
+    expect(consoleError).toHaveBeenCalledWith(JSON.stringify({
+      event: "mercadopago_payment_create_failed",
+      status: 400,
+      error: "bad_request",
+      message: "Invalid transaction_amount",
+      causeCode: "1004",
+      causeDescription: "Transaction amount below minimum",
+    }));
+    expect(consoleError.mock.calls.flat().join(" ")).not.toContain("must-not-be-logged");
+    expect(consoleError.mock.calls.flat().join(" ")).not.toContain("card-token");
+    consoleError.mockRestore();
+  });
+
   it("creates a direct seller charge with the TipMe application fee", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 991, status: "approved" }), { status: 201, headers: { "content-type": "application/json" } }));
     const provider = new MercadoPagoPaymentProvider({ appUrl: "https://tipme.pro", fetchImpl });

@@ -3,6 +3,16 @@ import type {
   PaymentProvider, PaymentResult, PayoutResult, PayoutStatus, ProviderWebhookEvent,
 } from "./provider";
 
+type MercadoPagoErrorResponse = {
+  error?: unknown;
+  message?: unknown;
+  cause?: Array<{ code?: unknown; description?: unknown }>;
+};
+
+function safeProviderText(value: unknown) {
+  return typeof value === "string" ? value.slice(0, 240) : undefined;
+}
+
 export class MercadoPagoPaymentProvider implements PaymentProvider {
   readonly name = "mercadopago";
   private readonly fetchImpl: typeof fetch;
@@ -44,9 +54,17 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       body: JSON.stringify(body),
       cache: "no-store",
     });
-    const result = await response.json().catch(() => null) as { id?: string | number; message?: string } | null;
+    const result = await response.json().catch(() => null) as ({ id?: string | number } & MercadoPagoErrorResponse) | null;
     if (!response.ok || result?.id === undefined) {
-      console.error(JSON.stringify({ event: "mercadopago_payment_create_failed", status: response.status }));
+      const cause = Array.isArray(result?.cause) ? result.cause[0] : undefined;
+      console.error(JSON.stringify({
+        event: "mercadopago_payment_create_failed",
+        status: response.status,
+        ...(safeProviderText(result?.error) ? { error: safeProviderText(result?.error) } : {}),
+        ...(safeProviderText(result?.message) ? { message: safeProviderText(result?.message) } : {}),
+        ...(cause?.code !== undefined ? { causeCode: String(cause.code).slice(0, 80) } : {}),
+        ...(safeProviderText(cause?.description) ? { causeDescription: safeProviderText(cause?.description) } : {}),
+      }));
       throw new Error("mercadopago_payment_create_failed");
     }
     return { providerPaymentId: String(result.id), status: "pending", gatewayFeeMinor: null };
