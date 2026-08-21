@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMercadoPagoPkce, createMercadoPagoAuthorizationUrl } from "@/features/payments/mercadopago-oauth";
 import { getMercadoPagoRegion } from "@/features/payments/mercadopago-regions";
-import { assertMercadoPagoUserRegion, MercadoPagoClient } from "@/features/payments/mercadopago-client";
+import { assertMercadoPagoSellerToken, assertMercadoPagoUserRegion, MercadoPagoClient } from "@/features/payments/mercadopago-client";
 
 const env = {
   MERCADOPAGO_AR_CLIENT_ID: "ar-client", MERCADOPAGO_AR_CLIENT_SECRET: "ar-secret",
@@ -67,5 +67,11 @@ describe("Mercado Pago OAuth", () => {
   it("accepts a Peruvian account only for the Peru regional connection", () => {
     expect(() => assertMercadoPagoUserRegion({ id: 42, country_id: "PE", site_id: "MPE" }, "PE")).not.toThrow();
     expect(() => assertMercadoPagoUserRegion({ id: 42, country_id: "PE", site_id: "MPE" }, "MX")).toThrow("mercadopago_country_mismatch");
+  });
+
+  it("requires a renewable seller token with payment write permissions", () => {
+    expect(() => assertMercadoPagoSellerToken({ access_token: "token", refresh_token: "refresh", user_id: 42, scope: "offline_access payments write" })).not.toThrow();
+    expect(() => assertMercadoPagoSellerToken({ access_token: "token", user_id: 42, scope: "payments write" })).toThrow("mercadopago_seller_account_required");
+    expect(() => assertMercadoPagoSellerToken({ access_token: "token", refresh_token: "refresh", user_id: 42, scope: "read" })).toThrow("mercadopago_seller_account_required");
   });
 });

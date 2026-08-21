@@ -5,7 +5,7 @@ import { getPublicEnv } from "@/lib/env/public";
 import { getServerEnv } from "@/lib/env/server";
 import { verifyOAuthState } from "@/lib/security/oauth-state";
 import { getMercadoPagoRegion, isMercadoPagoCountry } from "@/features/payments/mercadopago-regions";
-import { assertMercadoPagoUserRegion, MercadoPagoClient } from "@/features/payments/mercadopago-client";
+import { assertMercadoPagoSellerToken, assertMercadoPagoUserRegion, MercadoPagoClient } from "@/features/payments/mercadopago-client";
 import { SupabasePaymentAccountRepository } from "@/features/payments/payment-account-repository";
 import { SupabaseMercadoPagoCredentialRepository } from "@/features/payments/mercadopago-credential-repository";
 
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       code, redirectUri, codeVerifier: verifier, state: params.get("state") ?? "",
       testToken: env.MERCADOPAGO_ENVIRONMENT === "sandbox",
     });
+    assertMercadoPagoSellerToken(token);
     const mpUser = await client.getCurrentUser(token.access_token);
     assertMercadoPagoUserRegion(mpUser, country);
     if (String(mpUser.id) !== String(token.user_id)) throw new Error("mercadopago_user_mismatch");
@@ -55,7 +56,8 @@ export async function GET(request: NextRequest) {
     await accounts.markMercadoPagoConnected(account.id);
     return finish("/onboarding?step=2&mercadopago=connected");
   } catch (error) {
-    console.error(JSON.stringify({ event: "mercadopago_oauth_error", code: error instanceof Error ? error.message : "unknown" }));
-    return finish("/onboarding?step=2&error=mercadopago_unavailable");
+    const code = error instanceof Error ? error.message : "unknown";
+    console.error(JSON.stringify({ event: "mercadopago_oauth_error", code }));
+    return finish(`/onboarding?step=2&error=${code === "mercadopago_seller_account_required" ? "mercadopago_seller_required" : "mercadopago_unavailable"}`);
   }
 }

@@ -5,6 +5,7 @@ import { CheckCircle, SpinnerGap } from "@phosphor-icons/react";
 import Link from "next/link";
 import {
   getMercadoPagoCountryOption,
+  getMercadoPagoSignupUrl,
   isMercadoPagoCountry,
   mercadoPagoCountryOptions,
   type MercadoPagoCountry,
@@ -50,7 +51,9 @@ export function MercadoPagoConnect({ connected, country }: { connected: boolean;
       </select>
     </label>
     <p className="mt-3 text-sm text-muted">Debes conectar una cuenta del mismo país. Mercado Pago verificará tu identidad y administrará tus retiros.</p>
-    <button type="button" disabled={loading} onClick={connect} className="pressable mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#009ee3] px-6 font-bold text-white disabled:opacity-60">{loading && <SpinnerGap className="animate-spin" />} Conectar Mercado Pago</button>
+    <button type="button" disabled={loading} onClick={connect} className="pressable mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#009ee3] px-6 font-bold text-white disabled:opacity-60">{loading && <SpinnerGap className="animate-spin" />} Conectar cuenta existente</button>
+    <a href={getMercadoPagoSignupUrl(selectedCountry)} target="_blank" rel="noopener noreferrer" className="pressable mt-3 flex min-h-12 items-center justify-center text-sm font-semibold text-[#007eb5] underline-offset-4 hover:underline">¿No tienes cuenta? Créala gratis</a>
+    <p className="text-center text-xs text-muted">Después vuelve a TipMe para conectarla.</p>
     {error && <p role="alert" className="mt-3 text-sm font-semibold text-accent-strong">No pudimos iniciar la conexión. Inténtalo nuevamente.</p>}
   </div>;
 }

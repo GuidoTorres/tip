@@ -46,7 +46,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
     <div className="flex items-center justify-between"><span className="text-xl font-bold tracking-[-0.04em]">TipMe<span className="text-accent">.</span></span><span className="text-sm text-muted">{step} de 3</span></div>
     <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface-soft"><div className="h-full bg-accent transition-[width]" style={{ width: `${Math.min(3, Math.max(1, Number(step))) * (100 / 3)}%` }} /></div>
     <section className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
-      {error && <p role="alert" className="mb-5 rounded-xl bg-surface-soft p-3 text-sm text-accent-strong">No pudimos guardar este paso. Revisa los datos.</p>}
+      {error && <p role="alert" className="mb-5 rounded-xl bg-surface-soft p-3 text-sm text-accent-strong">{error === "mercadopago_seller_required" ? "Necesitas una cuenta de Mercado Pago verificada y habilitada para recibir pagos." : "No pudimos guardar este paso. Revisa los datos."}</p>}
       {step === "1" && <>
         <UserCircle size={32} className="text-accent" weight="fill" />
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">Tu página pública</h1>

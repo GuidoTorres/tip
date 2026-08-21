@@ -49,6 +49,11 @@ export function getMercadoPagoCountryOption(country: string) {
   return option;
 }
 
+export function getMercadoPagoSignupUrl(country: string) {
+  const option = getMercadoPagoCountryOption(country);
+  return `${option.authBaseUrl.replace("https://auth.", "https://www.")}/signup/splitter`;
+}
+
 export function isMercadoPagoRegionConfigured(region: MercadoPagoRegion) {
   return [region.clientId, region.clientSecret, region.publicKey, region.webhookSecret]
     .every((value) => value.length > 0 && !value.startsWith("fake-"));

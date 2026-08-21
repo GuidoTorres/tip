@@ -71,3 +71,10 @@ export function assertMercadoPagoUserRegion(user: MercadoPagoUser, country: Merc
   if (user.country_id && user.country_id !== country) throw new Error("mercadopago_country_mismatch");
   if (user.site_id && user.site_id !== expectedSite) throw new Error("mercadopago_country_mismatch");
 }
+
+export function assertMercadoPagoSellerToken(token: MercadoPagoOAuthToken) {
+  const scopes = new Set(token.scope?.split(/\s+/).filter(Boolean) ?? []);
+  if (!token.refresh_token || !scopes.has("offline_access") || !scopes.has("payments") || !scopes.has("write")) {
+    throw new Error("mercadopago_seller_account_required");
+  }
+}

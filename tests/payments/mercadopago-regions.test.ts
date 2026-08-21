@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getMercadoPagoCountryOption,
   getMercadoPagoRegion,
+  getMercadoPagoSignupUrl,
   isMercadoPagoCountry,
   isMercadoPagoRegionConfigured,
   mercadoPagoCountryOptions,
@@ -61,5 +62,10 @@ describe("Mercado Pago regional configuration", () => {
   it("does not treat placeholder credentials as a configured region", () => {
     expect(isMercadoPagoRegionConfigured(getMercadoPagoRegion("PE", env))).toBe(true);
     expect(isMercadoPagoRegionConfigured(getMercadoPagoRegion("PE", { ...env, MERCADOPAGO_PE_CLIENT_ID: "fake-mp-pe-client-id-replace-me" }))).toBe(false);
+  });
+
+  it("builds the official registration page for the selected country", () => {
+    expect(getMercadoPagoSignupUrl("PE")).toBe("https://www.mercadopago.com.pe/signup/splitter");
+    expect(getMercadoPagoSignupUrl("MX")).toBe("https://www.mercadopago.com.mx/signup/splitter");
   });
 });
