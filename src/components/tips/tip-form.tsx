@@ -18,12 +18,10 @@ function currencyDigits(currency: Currency) {
   return new Intl.NumberFormat("es", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
 }
 
-function decimalToMinor(value: string, digits: number): number | null {
-  const normalized = value.trim().replace(",", ".");
-  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
-  const [whole, fraction = ""] = normalized.split(".");
-  if (fraction.length > digits) return null;
-  const result = Number(whole) * 10 ** digits + Number(fraction.padEnd(digits, "0") || 0);
+function integerToMinor(value: string, digits: number): number | null {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const result = Number(normalized) * 10 ** digits;
   return Number.isSafeInteger(result) ? result : null;
 }
 
@@ -101,7 +99,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     return () => controller.abort();
   }, [bootstrapAttempt, username]);
 
-  const selectedAmount = showCustom ? decimalToMinor(custom, digits) : amountMinor;
+  const selectedAmount = showCustom ? integerToMinor(custom, digits) : amountMinor;
   const supportMinor = coverProcessing && selectedAmount && selectedAmount > 0
     ? calculateProcessingSupportMinor(selectedAmount, checkoutFeeBps, checkoutFixedFeeMinor)
     : 0;
@@ -135,7 +133,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   function buildPayload(): TipPayload {
     const form = formRef.current;
     if (!form || !form.reportValidity()) throw new Error("invalid_tip_form");
-    const finalAmount = showCustom ? decimalToMinor(custom, digits) : amountMinor;
+    const finalAmount = showCustom ? integerToMinor(custom, digits) : amountMinor;
     if (!finalAmount || finalAmount < unit) {
       setError(locale === "es" ? "Ingresa un monto válido." : "Enter a valid amount.");
       throw new Error("invalid_tip_amount");
@@ -218,7 +216,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       <p className="mt-2 text-sm leading-relaxed text-muted">{t.tip.currencyNotice}</p>
       <div className="mt-4 grid grid-cols-4 gap-2">{presets.map((amount) => <button key={amount} type="button" onClick={() => { setAmountMinor(amount); setShowCustom(false); }} className={`pressable min-h-12 rounded-xl border px-2 font-bold ${!showCustom && amountMinor === amount ? "border-accent bg-accent text-on-accent" : "border-border bg-background hover:border-accent"}`}>{amount / unit}</button>)}</div>
       <button type="button" onClick={() => setShowCustom(true)} className={`pressable mt-2 min-h-12 w-full rounded-xl border font-semibold ${showCustom ? "border-accent text-accent" : "border-border"}`}>{t.tip.otherAmount}</button>
-      {showCustom && <label className="mt-3 block text-sm font-semibold">{locale === "es" ? "Monto en" : "Amount in"} {currency}<input autoFocus inputMode="decimal" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder={digits ? "20.00" : "20000"} className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 text-lg outline-none focus:border-accent" /></label>}
+      {showCustom && <label className="mt-3 block text-sm font-semibold">{locale === "es" ? "Monto entero en" : "Whole amount in"} {currency}<input autoFocus inputMode="numeric" pattern="[0-9]+" value={custom} onChange={(event) => setCustom(event.target.value.replace(/\D/g, ""))} placeholder="20" className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 text-lg outline-none focus:border-accent" /></label>}
       <div className="mt-6 space-y-4">
         <details className="rounded-xl border border-border bg-surface-soft px-4">
           <summary className="pressable cursor-pointer py-3 text-sm font-semibold">{locale === "es" ? "Añadir nombre o mensaje (opcional)" : "Add name or message (optional)"}</summary>
