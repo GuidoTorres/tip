@@ -20,4 +20,8 @@ describe("getOAuthDestination", () => {
   it("sends a returning creator to the requested safe page", () => {
     expect(getOAuthDestination({ onboardingCompleted: true, requestedNext: "/dashboard/payouts" })).toBe("/dashboard/payouts");
   });
+
+  it("does not send a returning creator back through onboarding", () => {
+    expect(getOAuthDestination({ onboardingCompleted: true, requestedNext: "/onboarding" })).toBe("/dashboard");
+  });
 });

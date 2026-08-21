@@ -13,5 +13,6 @@ export function getOAuthDestination({
   requestedNext: string | null | undefined;
 }): string {
   if (!onboardingCompleted) return "/onboarding";
-  return sanitizeInternalPath(requestedNext);
+  const destination = sanitizeInternalPath(requestedNext);
+  return destination === "/onboarding" ? DEFAULT_AUTH_DESTINATION : destination;
 }
