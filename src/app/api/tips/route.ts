@@ -8,6 +8,7 @@ import { getServerEnv } from "@/lib/env/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createReceiptToken } from "@/lib/security/receipt";
 import { SupabasePayoutDestinationRepository } from "@/features/payouts/destination-repository";
+import { MercadoPagoCredentialManager } from "@/features/payments/mercadopago-credential-manager";
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
       repository: new SupabaseTipRepository(admin),
       paymentAccounts: new SupabasePaymentAccountRepository(admin),
       payoutDestinations: new SupabasePayoutDestinationRepository(admin),
+      mercadoPagoCredentials: new MercadoPagoCredentialManager(admin, env),
       provider: getPaymentProviderFromEnv(env),
       platformFeeBps: env.PLATFORM_FEE_BPS,
       paypalFlow: env.PAYPAL_FLOW,
@@ -30,8 +32,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, receiptToken: createReceiptToken(result.tipId, env.RECEIPT_SIGNING_SECRET) }, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown_error";
-    const notFoundErrors = ["creator_not_found", "paypal_account_not_connected"];
-    const inputErrors = ["legal_acceptance_required"];
+    const notFoundErrors = ["creator_not_found", "paypal_account_not_connected", "mercadopago_account_not_connected"];
+    const inputErrors = ["legal_acceptance_required", "mercadopago_payment_data_missing"];
     const publicCode = [...notFoundErrors, ...inputErrors].includes(code) ? code : code.startsWith("[") ? "invalid_tip" : code;
     return NextResponse.json({ error: publicCode }, { status: notFoundErrors.includes(code) ? 404 : inputErrors.includes(code) || code.includes("invalid") || code.startsWith("[") ? 400 : 500 });
   }

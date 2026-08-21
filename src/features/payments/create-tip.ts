@@ -9,13 +9,23 @@ import type { PayPalFlow } from "./paypal-client";
 
 const inputSchema = z.object({
   username: z.string().trim().toLowerCase().min(3).max(30),
-  amountMinor: z.number().int().min(100).max(1_000_000),
+  amountMinor: z.number().int().min(100).max(100_000_000),
   payerName: z.string().trim().max(60).nullable().optional(),
   message: z.string().trim().max(280).nullable().optional(),
   anonymous: z.boolean(),
   legalAccepted: z.boolean(),
   legalTermsVersion: z.string().max(32),
   coverProcessing: z.boolean().default(false),
+  paymentMethodData: z.object({
+    token: z.string().min(8).max(512),
+    paymentMethodId: z.string().min(1).max(80),
+    issuerId: z.string().min(1).max(80).nullable().optional(),
+    installments: z.number().int().min(1).max(48),
+    payer: z.object({
+      email: z.string().email().max(254),
+      identification: z.object({ type: z.string().min(1).max(20), number: z.string().min(1).max(40) }).optional(),
+    }),
+  }).optional(),
 });
 
 export type CreateTipInput = z.input<typeof inputSchema>;
@@ -52,6 +62,10 @@ export interface PayoutDestinationLookup {
   findConfigured(creatorId: string): Promise<{ id: string; status: "pending" | "verified" } | null>;
 }
 
+export interface MercadoPagoCredentialLookup {
+  findByAccountId(accountId: string, country?: string): Promise<{ accessToken: string } | null>;
+}
+
 type Dependencies = {
   repository: TipRepository;
   provider: PaymentProvider;
@@ -62,6 +76,7 @@ type Dependencies = {
   paymentAccounts?: PaymentAccountLookup;
   payoutDestinations?: PayoutDestinationLookup;
   providerAccountOverride?: string;
+  mercadoPagoCredentials?: MercadoPagoCredentialLookup;
 };
 
 export async function createTip(input: CreateTipInput, dependencies: Dependencies) {
@@ -73,6 +88,9 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   if (!creator) throw new Error("creator_not_found");
   const paypalFlow = dependencies.paypalFlow ?? "multiparty";
   let providerAccountId: string | null = null;
+  let providerAccessToken: string | undefined;
+  let providerCountry: string | undefined;
+  let paymentCurrency: Currency = APPLICATION_CURRENCY;
   if (dependencies.provider.name === "paypal" && paypalFlow === "platform_payouts") {
     const destination = await dependencies.payoutDestinations?.findConfigured(creator.id) ?? null;
     if (!destination) throw new Error("paypal_account_not_connected");
@@ -82,9 +100,24 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
       : await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null;
     providerAccountId = dependencies.providerAccountOverride ?? paymentAccount?.providerMerchantId ?? null;
     if (!providerAccountId) throw new Error("paypal_account_not_connected");
+  } else if (dependencies.provider.name === "mercadopago") {
+    const paymentAccount = await dependencies.paymentAccounts?.findConnected(creator.id, "mercadopago") ?? null;
+    if (!paymentAccount?.country || !paymentAccount.currency || !["MXN", "COP"].includes(paymentAccount.currency)) {
+      throw new Error("mercadopago_account_not_connected");
+    }
+    const credential = await dependencies.mercadoPagoCredentials?.findByAccountId(paymentAccount.id, paymentAccount.country) ?? null;
+    if (!credential) throw new Error("mercadopago_credentials_missing");
+    if (!value.paymentMethodData) throw new Error("mercadopago_payment_data_missing");
+    providerAccountId = paymentAccount.providerMerchantId;
+    providerAccessToken = credential.accessToken;
+    providerCountry = paymentAccount.country;
+    paymentCurrency = paymentAccount.currency;
   }
+  const maximumMinor = paymentCurrency === "COP" ? 100_000_000 : paymentCurrency === "MXN" ? 10_000_000 : 1_000_000;
+  const minimumMinor = paymentCurrency === "COP" ? 100_000 : paymentCurrency === "MXN" ? 1_000 : 100;
+  if (value.amountMinor < minimumMinor || value.amountMinor > maximumMinor) throw new Error("invalid_tip_amount");
 
-  const processingSupportMinor = value.coverProcessing
+  const processingSupportMinor = value.coverProcessing && dependencies.provider.name !== "mercadopago"
     ? calculateProcessingSupportMinor(value.amountMinor, dependencies.checkoutFeeBps ?? 0, dependencies.checkoutFixedFeeMinor ?? 0)
     : 0;
   const chargedAmountMinor = value.amountMinor + processingSupportMinor;
@@ -104,7 +137,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     baseAmountMinor: value.amountMinor,
     processingSupportMinor,
     amountMinor: chargedAmountMinor,
-    currency: APPLICATION_CURRENCY,
+    currency: paymentCurrency,
     platformFeeMinor: breakdown.platformFeeMinor,
     gatewayFeeMinor: null,
     netAmountMinor: breakdown.netAmountMinor,
@@ -116,9 +149,12 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     tipId: tip.id,
     amountMinor: chargedAmountMinor,
     platformFeeMinor: breakdown.platformFeeMinor,
-    currency: APPLICATION_CURRENCY,
+    currency: paymentCurrency,
     providerAccountId,
     idempotencyKey: `create:${tip.id}`,
+    ...(providerAccessToken ? { providerAccessToken } : {}),
+    ...(providerCountry ? { providerCountry } : {}),
+    ...(value.paymentMethodData ? { paymentMethodData: value.paymentMethodData } : {}),
   });
   await dependencies.repository.attachPayment(tip.id, {
     providerPaymentId: payment.providerPaymentId,

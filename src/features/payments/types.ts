@@ -1,4 +1,4 @@
-export const supportedCurrencies = ["USD", "EUR", "PEN", "COP", "BRL", "CLP", "ARS"] as const;
+export const supportedCurrencies = ["USD", "EUR", "PEN", "COP", "MXN", "BRL", "CLP", "ARS"] as const;
 export type Currency = (typeof supportedCurrencies)[number];
 
 export const tipStatuses = ["created", "pending", "confirmed", "rejected", "refunded", "chargeback"] as const;
@@ -14,4 +14,3 @@ export type LedgerEntryType =
   | "reserve_hold"
   | "reserve_release"
   | "adjustment_admin";
-

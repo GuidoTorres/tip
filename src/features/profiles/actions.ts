@@ -85,6 +85,10 @@ export async function completeOnboarding() {
     const { data: destination } = await supabase.from("payout_accounts").select("id").eq("creator_id", user.id).eq("provider", "paypal").in("status", ["pending", "verified"]).limit(1).maybeSingle();
     if (!destination) redirect("/onboarding?step=2&error=paypal_required");
   }
+  if (env.PAYMENT_PROVIDER === "mercadopago") {
+    const { data: account } = await supabase.from("payment_accounts").select("id").eq("creator_id", user.id).eq("provider", "mercadopago").eq("status", "connected").eq("onboarding_completed", true).limit(1).maybeSingle();
+    if (!account) redirect("/onboarding?step=2&error=mercadopago_required");
+  }
   const { error } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
   if (error) redirect("/onboarding?step=3&error=finish");
   redirect("/dashboard");

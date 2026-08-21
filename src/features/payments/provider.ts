@@ -7,11 +7,23 @@ export type CreatePaymentInput = {
   currency: Currency;
   providerAccountId: string | null;
   idempotencyKey: string;
+  providerAccessToken?: string;
+  providerCountry?: string;
+  paymentMethodData?: MercadoPagoCardPaymentData;
+};
+
+export type MercadoPagoCardPaymentData = {
+  token: string;
+  paymentMethodId: string;
+  issuerId?: string | null;
+  installments: number;
+  payer: { email: string; identification?: { type: string; number: string } };
 };
 
 export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
-  | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string };
+  | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string }
+  | { kind: "mercadopago"; publicKey: string; country: "MX" | "CO"; currency: Extract<Currency, "MXN" | "COP"> };
 
 export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
 export type PrepareCheckoutInput = { providerAccountId: string | null };

@@ -28,12 +28,13 @@ export async function GET(request: Request) {
       paymentAccounts: new SupabasePaymentAccountRepository(admin),
       payoutDestinations: new SupabasePayoutDestinationRepository(admin),
       paypalFlow: env.PAYPAL_FLOW,
+      mercadoPagoEnv: env,
       ...(env.PAYPAL_SANDBOX_SINGLE_MERCHANT ? { providerAccountOverride: env.PAYPAL_PARTNER_MERCHANT_ID } : {}),
     });
     return NextResponse.json(result, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
     const code = error instanceof Error ? error.message : "checkout_unavailable";
-    if (["creator_not_found", "paypal_account_not_connected"].includes(code)) {
+    if (["creator_not_found", "paypal_account_not_connected", "mercadopago_account_not_connected"].includes(code)) {
       return NextResponse.json({ error: code }, { status: 404 });
     }
     return NextResponse.json({ error: "checkout_unavailable" }, { status: 503 });

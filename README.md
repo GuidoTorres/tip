@@ -4,18 +4,68 @@ TipMe es un MVP web mobile-first para que una persona creadora comparta una URL 
 
 ```text
 Fan envía tip
-  -> PayPal cobra en la cuenta Business de TipMe
+  -> el proveedor cobra en la cuenta conectada del creador
   -> webhook verificado por el servidor
   -> tip confirmado
   -> ledger y saldo neto del creador
   -> notificación interna
   -> Web Push
-  -> retiro por PayPal Payouts
+  -> retiro administrado por el proveedor
 ```
 
 Dominio previsto: `https://tipme.pro`
 
-Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal Sandbox en modo centralizado con Payouts**. El flujo Multiparty anterior se conserva desactivado. Antes de usar dinero real deben verificarse Payouts Live, elegibilidad de Checkout/Card Fields, liquidez, soporte de disputas y textos legales del operador.
+Estado actual: **MVP con Mock, PayPal y Mercado Pago regional**. El modo `mercadopago` implementa Split Payments 1:1 para cuentas conectadas de México (MXN) y Colombia (COP), con checkout de tarjeta embebido, comisión TipMe configurable y confirmación exclusiva por webhook. Debe probarse con credenciales regionales reales antes del piloto; el código no equivale a aprobación comercial de Mercado Pago.
+
+## Mercado Pago regional (modo recomendado para MX/CO)
+
+Con `PAYMENT_PROVIDER=mercadopago`, cada creador conecta su propia cuenta mediante OAuth. El pago se crea usando el access token del creador y `application_fee`; el dinero no pasa por una cuenta TipMe. Los tokens se cifran con AES-256-GCM y se guardan en `payment_account_credentials`, una tabla sin permisos para `anon` ni `authenticated`.
+
+```text
+México:    cuenta Mercado Pago MX -> cobro y retiro en MXN
+Colombia:  cuenta Mercado Pago CO -> cobro y retiro en COP
+TipMe:     recibe PLATFORM_FEE_BPS=100 (1 %) mediante application_fee
+```
+
+Configura dos aplicaciones Marketplace regionales si atenderás ambos países. Redirect URI OAuth para ambas:
+
+```text
+https://tipme.pro/api/mercadopago/oauth/callback
+```
+
+Webhooks de pagos:
+
+```text
+https://tipme.pro/api/webhooks/mercadopago/MX
+https://tipme.pro/api/webhooks/mercadopago/CO
+```
+
+Suscribe eventos de pagos (`payment.created` y `payment.updated`). Cada URL usa el secret de firma de su región. El handler valida firma y antigüedad, consulta `/v1/payments/{id}` con el token del vendedor, cruza vendedor, tip, importe, moneda y `application_fee`, y recién después actualiza ledger, notificación y push. Una respuesta `approved` en el navegador nunca confirma el tip.
+
+Variables:
+
+```dotenv
+PAYMENT_PROVIDER=mercadopago
+PLATFORM_FEE_BPS=100
+MERCADOPAGO_ENVIRONMENT=sandbox
+PAYMENT_TOKEN_ENCRYPTION_KEY=BASE64_DE_32_BYTES
+MERCADOPAGO_MX_CLIENT_ID=REEMPLAZAR
+MERCADOPAGO_MX_CLIENT_SECRET=REEMPLAZAR
+NEXT_PUBLIC_MERCADOPAGO_MX_PUBLIC_KEY=REEMPLAZAR
+MERCADOPAGO_MX_WEBHOOK_SECRET=REEMPLAZAR
+MERCADOPAGO_CO_CLIENT_ID=REEMPLAZAR
+MERCADOPAGO_CO_CLIENT_SECRET=REEMPLAZAR
+NEXT_PUBLIC_MERCADOPAGO_CO_PUBLIC_KEY=REEMPLAZAR
+MERCADOPAGO_CO_WEBHOOK_SECRET=REEMPLAZAR
+```
+
+Genera la clave de cifrado una sola vez, guárdala también fuera de Vercel y no la cambies mientras existan conexiones activas:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Las public keys pueden llegar al navegador. Client secrets, secrets de webhook, tokens OAuth y la clave de cifrado son exclusivamente server-side. El checkout usa Card Payment Brick; los campos adicionales y métodos disponibles dependen del país, riesgo y configuración que Mercado Pago otorgue a la aplicación.
 
 ## Qué está implementado
 
@@ -27,7 +77,7 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
 - Perfil con nombre visible, username, foto, descripción e idioma.
 - Username único, normalizado y con nombres del sistema reservados.
 - Foto almacenada en Supabase Storage, con reemplazo y eliminación.
-- Moneda operativa del piloto fijada en USD.
+- Moneda según el proveedor: USD en los flujos PayPal existentes, MXN para Mercado Pago México y COP para Mercado Pago Colombia.
 - Onboarding adaptado al proveedor activo:
   - cuenta y payout simulados en modo mock;
   - un solo correo de destino PayPal personal en `platform_payouts`;
@@ -38,7 +88,7 @@ Estado actual: **MVP funcional para pruebas con MockPaymentProvider y PayPal San
 ### Experiencia del fan
 
 - Perfil público sin autenticación en `/[username]`.
-- Importes rápidos de 5, 10, 20 y 50 USD, además de monto personalizado.
+- Importes rápidos adaptados a la moneda regional, además de monto personalizado.
 - Nombre y mensaje opcionales; si el nombre queda vacío, el tip se guarda como anónimo.
 - Consentimiento obligatorio de Términos y Política de reembolsos antes de iniciar el pago.
 - Aporte voluntario para ayudar a cubrir el procesamiento, calculado nuevamente por el servidor.
@@ -80,6 +130,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 - Interfaz `PaymentProvider` independiente del gateway.
 - `MockPaymentProvider` para probar el recorrido sin dinero real.
 - `PayPalPaymentProvider` para Checkout centralizado, Payouts y el modo Multiparty conservado.
+- `MercadoPagoPaymentProvider` para cobro directo regional con `application_fee` y Card Payment Brick.
 - Creación, consulta y captura separadas de la confirmación financiera.
 - Webhook único en `/api/webhooks/payments`.
 - Verificación de firma HMAC para mock y verificación oficial de webhook para PayPal.
@@ -173,7 +224,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 | `/dashboard/tips` | Historial completo |
 | `/dashboard/tips/[tipId]` | Detalle del tip |
 | `/dashboard/notifications` | Centro de avisos |
-| `/dashboard/payouts` | Configurar PayPal, solicitar retiro y revisar historial |
+| `/dashboard/payouts` | Retiros TipMe en mock/PayPal o estado directo administrado por Mercado Pago |
 | `/dashboard/settings` | Perfil, foto, idioma y push |
 | `/admin` | Estado general protegido |
 | `/terms`, `/refund-policy`, `/privacy` | Documentos legales |
@@ -207,8 +258,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_PUBLISHABLE_O_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=TU_SECRET_O_SERVICE_ROLE_KEY
 
-PLATFORM_FEE_BPS=0
-PAYMENT_PROVIDER=paypal
+PLATFORM_FEE_BPS=100
+PAYMENT_PROVIDER=mercadopago
 MOCK_WEBHOOK_SECRET=GENERA_UN_SECRETO_LARGO
 RECEIPT_SIGNING_SECRET=GENERA_OTRO_SECRETO_LARGO
 
@@ -235,13 +286,11 @@ LEGAL_OPERATOR_NAME=
 LEGAL_CONTACT_EMAIL=
 ```
 
-Las variables Nuvei, EBANX y dLocal presentes en `.env.example` son marcadores futuros; no existe ningún adapter falso.
-
 Reglas importantes:
 
 - Una variable `NEXT_PUBLIC_*` queda incluida en el bundle del navegador. Solo coloca allí datos públicos como URL, publishable key, client ID o clave VAPID pública.
 - Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, `PAYPAL_CLIENT_SECRET`, `VAPID_PRIVATE_KEY`, `MOCK_WEBHOOK_SECRET` ni `RECEIPT_SIGNING_SECRET`.
-- `PLATFORM_FEE_BPS=0` deja la comisión de TipMe en 0 % durante el piloto. Sigue siendo configurable.
+- `PLATFORM_FEE_BPS=100` aplica 1 % en Mercado Pago Split Payments. Sigue siendo configurable.
 - `PAYPAL_CHECKOUT_*` solo estima el aporte voluntario del fan; el ledger espera el fee real de PayPal.
 - `PAYPAL_PAYOUT_FEE_*` reserva conservadoramente la comisión de envío; el webhook concilia la cifra real.
 - `PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID` es un Account ID falso/de prueba para Sandbox. En Live se usa el correo guardado por la persona.
@@ -263,6 +312,8 @@ Ejecuta las migraciones en este orden:
 7. `202608200001_paypal_platform_payouts.sql`: importes base/aporte, destino PayPal protegido, reservas, Payouts, fees reales e idempotencia.
 8. `202608200002_creator_base_tip_amounts.sql`: reconstruye y muestra al creador el importe base del tip sin sumar el aporte voluntario.
 9. `202608200003_tip_operation_codes.sql`: añade códigos públicos únicos para verificar operaciones y buscar tips.
+10. `202608200004_fix_payout_ledger_conflicts.sql`: corrige transiciones idempotentes de payouts.
+11. `202608200005_mercadopago_regional_accounts.sql`: añade MXN, cuentas regionales y credenciales OAuth privadas.
 
 Con Supabase CLI:
 
@@ -482,16 +533,16 @@ En `platform_payouts`, el fan paga a la cuenta Business de TipMe y TipMe envía 
 
 ## Ledger, fees y totales
 
-- Moneda activa del piloto: USD.
-- `20.00 USD` se guarda como `2000`.
-- Comisión de plataforma del piloto: 0 %, configurada con `PLATFORM_FEE_BPS=0`.
+- Monedas activas: USD en PayPal, MXN en Mercado Pago México y COP en Mercado Pago Colombia.
+- `20.00` se guarda como `2000` en las monedas con dos decimales.
+- Comisión de plataforma recomendada para Mercado Pago: 1 %, configurada con `PLATFORM_FEE_BPS=100`.
 - Fee de cobro PayPal: se registra desde `seller_receivable_breakdown.paypal_fee`; si el webhook no lo trae, el servidor consulta la captura antes de acreditar.
 - `base_amount_minor` guarda el tip elegido y `processing_support_minor` el aporte voluntario; ambos reconstruyen `amount_minor`.
 - Neto: tip bruto menos comisión de plataforma menos gateway fee.
 - `creator_balances` reconstruye siempre el saldo disponible desde `ledger_entries`.
 - `creator_tip_totals` calcula el resumen PayPal usando solo tips actualmente confirmados.
 
-Aunque los tipos de dominio y la base están preparados para códigos ISO adicionales, la interfaz del piloto fuerza USD y no realiza conversión de moneda.
+No se realiza conversión de moneda: cada cuenta conectada recibe y muestra la moneda de su región.
 
 ## Payouts
 

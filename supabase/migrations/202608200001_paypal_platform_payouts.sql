@@ -268,7 +268,7 @@ begin
 
   insert into public.ledger_entries (creator_id, payout_id, type, amount_minor, currency)
   values (v_payout.creator_id, v_payout.id, 'reserve_release', v_payout.amount_minor, v_payout.currency)
-  on conflict (payout_id, type) where payout_id is not null do nothing;
+  on conflict do nothing;
 
   update public.payouts
   set status = 'failed',
@@ -362,7 +362,7 @@ begin
   elsif p_status = 'completed' then
     insert into public.ledger_entries (creator_id, payout_id, type, amount_minor, currency)
     values (v_payout.creator_id, v_payout.id, 'reserve_release', v_payout.amount_minor, v_payout.currency)
-    on conflict (payout_id, type) where payout_id is not null do nothing;
+    on conflict do nothing;
 
     insert into public.ledger_entries (creator_id, payout_id, type, amount_minor, currency, metadata)
     values (
@@ -373,7 +373,7 @@ begin
       v_payout.currency,
       jsonb_build_object('provider', 'paypal')
     )
-    on conflict (payout_id, type) where payout_id is not null do nothing;
+    on conflict do nothing;
 
     if p_actual_fee_minor > 0 then
       insert into public.ledger_entries (creator_id, payout_id, type, amount_minor, currency, metadata)
@@ -385,7 +385,7 @@ begin
         v_payout.currency,
         jsonb_build_object('provider', 'paypal', 'kind', 'payout_fee')
       )
-      on conflict (payout_id, type) where payout_id is not null do nothing;
+      on conflict do nothing;
     end if;
 
     update public.payouts
@@ -413,7 +413,7 @@ begin
   else
     insert into public.ledger_entries (creator_id, payout_id, type, amount_minor, currency)
     values (v_payout.creator_id, v_payout.id, 'reserve_release', v_payout.amount_minor, v_payout.currency)
-    on conflict (payout_id, type) where payout_id is not null do nothing;
+    on conflict do nothing;
 
     update public.payouts
     set status = 'failed',

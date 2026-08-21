@@ -24,8 +24,15 @@ const creatorTotalsMigrationPath = fileURLToPath(
 const platformPayoutsMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608200001_paypal_platform_payouts.sql", import.meta.url),
 );
+const platformPayoutsMigration = readFileSync(platformPayoutsMigrationPath, "utf8");
 const operationCodeMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608200003_tip_operation_codes.sql", import.meta.url),
+);
+const payoutConflictFixPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608200004_fix_payout_ledger_conflicts.sql", import.meta.url),
+);
+const mercadoPagoMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202608200005_mercadopago_regional_accounts.sql", import.meta.url),
 );
 
 describe("database migration safety", () => {
@@ -95,7 +102,6 @@ describe("database migration safety", () => {
     expect(existsSync(platformPayoutsMigrationPath)).toBe(true);
     if (!existsSync(platformPayoutsMigrationPath)) return;
 
-    const platformPayoutsMigration = readFileSync(platformPayoutsMigrationPath, "utf8");
     expect(platformPayoutsMigration).toMatch(/create or replace function public\.set_my_paypal_payout_email/i);
     expect(platformPayoutsMigration).toMatch(/revoke (insert|update|delete)[^;]+payout_accounts[^;]+authenticated/i);
     expect(platformPayoutsMigration).toMatch(/grant execute on function public\.set_my_paypal_payout_email\(text\) to authenticated/i);
@@ -104,6 +110,17 @@ describe("database migration safety", () => {
     expect(platformPayoutsMigration).not.toMatch(/grant execute on function public\.request_platform_payout[^;]+to authenticated/i);
     expect(platformPayoutsMigration).toMatch(/v_account\.status not in \('pending', 'verified'\)/i);
     expect(platformPayoutsMigration).toMatch(/update public\.payout_accounts\s+set status = 'verified'/i);
+  });
+
+  it("avoids ambiguous payout_id conflict targets in payout ledger functions", () => {
+    expect(platformPayoutsMigration).not.toMatch(/on conflict \(payout_id, type\) where payout_id is not null/i);
+    expect(existsSync(payoutConflictFixPath)).toBe(true);
+    if (!existsSync(payoutConflictFixPath)) return;
+
+    const payoutConflictFix = readFileSync(payoutConflictFixPath, "utf8");
+    expect(payoutConflictFix).toMatch(/create or replace function public\.fail_platform_payout_submission/i);
+    expect(payoutConflictFix).toMatch(/create or replace function public\.transition_platform_payout_from_provider/i);
+    expect(payoutConflictFix).not.toMatch(/on conflict \(payout_id, type\) where payout_id is not null/i);
   });
 
   it("assigns non-sequential unique operation codes to every tip", () => {
@@ -116,5 +133,19 @@ describe("database migration safety", () => {
     expect(operationCodeMigration).toMatch(/unique[^;]+operation_code/is);
     expect(operationCodeMigration).toMatch(/gen_random_uuid\(\)/i);
     expect(operationCodeMigration).not.toMatch(/provider_payment_id\s*(?:\|\||::)/i);
+  });
+
+  it("keeps Mercado Pago OAuth credentials private and supports regional currencies", () => {
+    expect(existsSync(mercadoPagoMigrationPath)).toBe(true);
+    if (!existsSync(mercadoPagoMigrationPath)) return;
+
+    const mercadoPagoMigration = readFileSync(mercadoPagoMigrationPath, "utf8");
+    expect(mercadoPagoMigration).toMatch(/alter type public\.currency_code add value if not exists 'MXN'/i);
+    expect(mercadoPagoMigration).toMatch(/provider in \('paypal', 'mercadopago'\)/i);
+    expect(mercadoPagoMigration).toMatch(/create table public\.payment_account_credentials/i);
+    expect(mercadoPagoMigration).toMatch(/alter table public\.payment_account_credentials enable row level security/i);
+    expect(mercadoPagoMigration).toMatch(/revoke all on public\.payment_account_credentials from public, anon, authenticated/i);
+    expect(mercadoPagoMigration).not.toMatch(/grant select[^;]+payment_account_credentials[^;]+authenticated/i);
+    expect(mercadoPagoMigration).toMatch(/grant select, insert, update, delete on public\.payment_account_credentials to service_role/i);
   });
 });

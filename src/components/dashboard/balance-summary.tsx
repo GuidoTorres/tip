@@ -12,7 +12,7 @@ type BalanceSummaryProps = {
   monthMinor?: number;
   grossConfirmedMinor?: number;
   feesMinor?: number;
-  paymentProvider?: "mock" | "paypal";
+  paymentProvider?: "mock" | "paypal" | "mercadopago";
   sandboxSingleMerchant?: boolean;
   platformPayouts?: boolean;
   shareActions?: ReactNode;
@@ -33,8 +33,9 @@ export function BalanceSummary({
   refreshAction,
 }: BalanceSummaryProps) {
   const paypal = paymentProvider === "paypal";
+  const mercadoPago = paymentProvider === "mercadopago";
 
-  if (paypal && !platformPayouts) {
+  if ((paypal && !platformPayouts) || mercadoPago) {
     return (
       <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
@@ -71,7 +72,9 @@ export function BalanceSummary({
           </div>
         </dl>
         <p className="mt-4 text-xs leading-relaxed opacity-65">
-          {sandboxSingleMerchant
+          {mercadoPago
+            ? "Mercado Pago recibe y administra el dinero. TipMe muestra únicamente los pagos confirmados por webhook."
+            : sandboxSingleMerchant
             ? "Prueba: PayPal recibe el dinero en la cuenta Sandbox de TipMe; el saldo del creador es una simulación del ledger."
             : "PayPal recibe y administra el dinero. TipMe muestra aquí únicamente los pagos confirmados."}
         </p>
