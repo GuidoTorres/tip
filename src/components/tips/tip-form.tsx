@@ -220,8 +220,13 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       <button type="button" onClick={() => setShowCustom(true)} className={`pressable mt-2 min-h-12 w-full rounded-xl border font-semibold ${showCustom ? "border-accent text-accent" : "border-border"}`}>{t.tip.otherAmount}</button>
       {showCustom && <label className="mt-3 block text-sm font-semibold">{locale === "es" ? "Monto en" : "Amount in"} {currency}<input autoFocus inputMode="decimal" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder={digits ? "20.00" : "20000"} className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 text-lg outline-none focus:border-accent" /></label>}
       <div className="mt-6 space-y-4">
-        <label className="block text-sm font-semibold">{t.tip.name}<input name="payerName" maxLength={60} className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent" /></label>
-        <label className="block text-sm font-semibold">{t.tip.message}<textarea name="message" rows={2} maxLength={280} className="mt-2 min-h-16 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 outline-none focus:border-accent" placeholder={locale === "es" ? "Para ti ❤️" : "For you ❤️"} /></label>
+        <details className="rounded-xl border border-border bg-surface-soft px-4">
+          <summary className="pressable cursor-pointer py-3 text-sm font-semibold">{locale === "es" ? "Añadir nombre o mensaje (opcional)" : "Add name or message (optional)"}</summary>
+          <div className="space-y-3 pb-4">
+            <label className="block text-sm font-semibold">{t.tip.name}<input name="payerName" maxLength={60} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent" /></label>
+            <label className="block text-sm font-semibold">{t.tip.message}<textarea name="message" rows={2} maxLength={280} className="mt-2 min-h-14 w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 outline-none focus:border-accent" placeholder="Para ti ❤️" /></label>
+          </div>
+        </details>
         {allowProcessingSupport && <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3"><input type="checkbox" checked={coverProcessing} onChange={(event) => setCoverProcessing(event.target.checked)} className="size-5 shrink-0 accent-accent" /><span className="text-sm font-semibold">{locale === "es" ? "Ayudar con la comisión de pago" : "Help with the payment fee"}</span></label>}
         {coverProcessing && estimatedTotalMinor > 0 && <p className="text-right text-sm font-semibold">{locale === "es" ? "Total estimado" : "Estimated total"}: {money.format(estimatedTotalMinor / unit)}</p>}
       </div>
