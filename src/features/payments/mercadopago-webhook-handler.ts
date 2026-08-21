@@ -12,6 +12,13 @@ import type { Currency } from "./types";
 export async function handleMercadoPagoWebhook(input: { rawBody: string; headers: Headers; country: MercadoPagoCountry }, dependencies: { admin: SupabaseClient; env: ServerEnv; fetchImpl?: typeof fetch }) {
   const parsed = parseMercadoPagoWebhook(input.rawBody);
   const region = getMercadoPagoRegion(input.country, dependencies.env);
+  console.info(JSON.stringify({
+    event: "mercadopago_webhook_received",
+    country: input.country,
+    dataId: parsed.dataId,
+    signaturePresent: Boolean(input.headers.get("x-signature")),
+    requestIdPresent: Boolean(input.headers.get("x-request-id")),
+  }));
   if (!verifyMercadoPagoWebhook(input.headers, parsed.dataId, region.webhookSecret)) throw new Error("invalid_webhook");
 
   const { data: tip, error: tipError } = await dependencies.admin.from("tips")
