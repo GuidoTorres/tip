@@ -37,11 +37,12 @@ export function BalanceSummary({
 
   if ((paypal && !platformPayouts) || mercadoPago) {
     return (
-      <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
+      <section className="relative rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
+        {refreshAction && <div className="absolute right-5 top-5 sm:right-7 sm:top-7">{refreshAction}</div>}
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 pr-12">
                 <p className="text-sm opacity-70">
                   {sandboxSingleMerchant ? "Total confirmado · Sandbox" : "Total confirmado"}
                 </p>
@@ -49,7 +50,6 @@ export function BalanceSummary({
                   {currency}
                 </span>
               </div>
-              {refreshAction}
             </div>
             <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl">
               {formatMoney(grossConfirmedMinor, currency, "es")}
@@ -83,15 +83,15 @@ export function BalanceSummary({
   }
 
   return (
-    <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
+    <section className="relative rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
+      {refreshAction && <div className="absolute right-5 top-5 sm:right-7 sm:top-7">{refreshAction}</div>}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 sm:gap-7">
         <div className="min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 pr-12">
               <p className="text-sm opacity-70">Disponible</p>
               <span className="rounded-full border border-background/20 px-2.5 py-1 text-[0.7rem] font-semibold">{currency}</span>
             </div>
-            {refreshAction}
           </div>
           <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl">
             {formatMoney(availableMinor, currency, "es")}
