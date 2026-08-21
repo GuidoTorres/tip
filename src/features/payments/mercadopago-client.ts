@@ -29,7 +29,13 @@ export class MercadoPagoClient {
       }),
       cache: "no-store",
     });
-    if (!response.ok) throw new Error("mercadopago_oauth_exchange_failed");
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: unknown } | null;
+      const providerCode = typeof body?.error === "string" && /^[A-Za-z0-9_.-]{1,80}$/.test(body.error)
+        ? body.error
+        : "unknown";
+      throw new Error(`mercadopago_oauth_exchange_failed:${response.status}:${providerCode}`);
+    }
     const token = await response.json() as Partial<MercadoPagoOAuthToken>;
     if (!token.access_token || token.user_id === undefined) throw new Error("mercadopago_oauth_response_invalid");
     return token as MercadoPagoOAuthToken;

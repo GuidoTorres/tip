@@ -54,6 +54,16 @@ describe("Mercado Pago OAuth", () => {
     expect(body.get("test_token")).toBe("true");
   });
 
+  it("reports a safe provider error code when the token exchange fails", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "invalid_grant" }), { status: 400 }));
+    const client = new MercadoPagoClient(fetchImpl);
+
+    await expect(client.exchangeCode(getMercadoPagoRegion("PE", env), {
+      code: "auth-code", redirectUri: "https://tipme.pro/api/mercadopago/oauth/callback",
+      codeVerifier: "v".repeat(43), state: "state-value", testToken: false,
+    })).rejects.toThrow("mercadopago_oauth_exchange_failed:400:invalid_grant");
+  });
+
   it("accepts a Peruvian account only for the Peru regional connection", () => {
     expect(() => assertMercadoPagoUserRegion({ id: 42, country_id: "PE", site_id: "MPE" }, "PE")).not.toThrow();
     expect(() => assertMercadoPagoUserRegion({ id: 42, country_id: "PE", site_id: "MPE" }, "MX")).toThrow("mercadopago_country_mismatch");
