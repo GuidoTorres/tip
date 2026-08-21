@@ -20,18 +20,29 @@ export async function handleMercadoPagoWebhook(input: { rawBody: string; headers
     requestIdPresent: Boolean(input.headers.get("x-request-id")),
   }));
   if (!verifyMercadoPagoWebhook(input.headers, parsed.dataId, region.webhookSecret)) throw new Error("invalid_webhook");
+  console.info(JSON.stringify({ event: "mercadopago_webhook_signature_valid", country: input.country, dataId: parsed.dataId }));
 
   const { data: tip, error: tipError } = await dependencies.admin.from("tips")
     .select("id,creator_id,amount_minor,currency,platform_fee_minor,provider_payment_id")
     .eq("provider", "mercadopago").eq("provider_payment_id", parsed.dataId).maybeSingle();
   if (tipError || !tip) throw new Error("mercadopago_tip_lookup_failed");
+  console.info(JSON.stringify({ event: "mercadopago_tip_lookup", country: input.country, dataId: parsed.dataId, found: true, tipId: tip.id }));
   const { data: account, error: accountError } = await dependencies.admin.from("payment_accounts")
     .select("id,provider_merchant_id,provider_country,provider_currency")
     .eq("creator_id", tip.creator_id).eq("provider", "mercadopago").eq("status", "connected").maybeSingle();
   if (accountError || !account || account.provider_country !== input.country || account.provider_currency !== tip.currency) throw new Error("mercadopago_account_mismatch");
+  console.info(JSON.stringify({ event: "mercadopago_account_lookup", country: input.country, tipId: tip.id, found: true }));
   const credential = await new MercadoPagoCredentialManager(dependencies.admin, dependencies.env, dependencies.fetchImpl).findByAccountId(account.id as string, input.country);
   if (!credential) throw new Error("mercadopago_credentials_missing");
   const payment = await getMercadoPagoPayment(parsed.dataId, credential.accessToken, dependencies.fetchImpl);
+  console.info(JSON.stringify({
+    event: "mercadopago_payment_lookup",
+    country: input.country,
+    paymentId: parsed.dataId,
+    status: payment.status,
+    transactionAmount: payment.transaction_amount,
+    currency: payment.currency_id,
+  }));
   validateMercadoPagoPayment(payment, {
     paymentId: parsed.dataId,
     tipId: tip.id as string,

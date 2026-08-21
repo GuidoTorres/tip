@@ -24,7 +24,9 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       supabase.from("payment_accounts").select("status,provider_country,provider_currency,onboarding_completed").eq("creator_id", user.id).eq("provider", "mercadopago").maybeSingle(),
       supabase.rpc("creator_tip_totals", { requested_creator: user.id }),
     ]);
-    const currency: Currency = paymentAccount?.provider_currency === "MXN" || paymentAccount?.provider_currency === "COP" ? paymentAccount.provider_currency : "MXN";
+    const currency: Currency = paymentAccount?.provider_currency && supportedCurrencies.includes(paymentAccount.provider_currency as Currency)
+      ? paymentAccount.provider_currency as Currency
+      : APPLICATION_CURRENCY;
     const total = (totals as Array<{ currency: Currency; net_confirmed_minor: number }> | null)?.find((item) => item.currency === currency);
     const connected = paymentAccount?.status === "connected" && paymentAccount.onboarding_completed === true;
     return <div className="mx-auto max-w-2xl"><div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold tracking-[-0.04em]">Tu dinero</h1><p className="mt-2 text-muted">Mercado Pago administra el saldo y los retiros de tu cuenta.</p></div>{connected && <MercadoPagoConnectionBadge currency={currency} />}</div><section className="mt-7 rounded-2xl border border-border bg-surface p-6"><p className="text-sm text-muted">Total neto confirmado por TipMe</p><p className="mt-2 text-5xl font-semibold tracking-[-0.06em]">{formatMoney(Number(total?.net_confirmed_minor ?? 0), currency, "es")}</p><p className="mt-5 rounded-xl bg-surface-soft p-4 text-sm leading-relaxed text-muted">El fan paga directamente a tu cuenta. Consulta el saldo disponible, plazos y retiros desde Mercado Pago; TipMe no retiene ni transfiere estos fondos.</p>{!connected && <Link href="/onboarding?step=2" className="pressable mt-5 inline-flex min-h-12 items-center rounded-full bg-accent px-5 font-bold text-on-accent">Conectar Mercado Pago</Link>}</section></div>;

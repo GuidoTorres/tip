@@ -10,6 +10,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getPublicEnv } from "@/lib/env/public";
 import type { Currency } from "@/features/payments/types";
 import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
+import { supportedCurrencies } from "@/features/payments/types";
 import { getServerEnv } from "@/lib/env/server";
 import { creatorVisibleTipAmount } from "@/features/payments/creator-visible-amount";
 import { MercadoPagoConnectionBadge } from "@/components/dashboard/mercadopago-connection-badge";
@@ -23,7 +24,9 @@ export default async function DashboardPage() {
   const { data: mercadoPagoAccount } = paymentProvider === "mercadopago"
     ? await supabase.from("payment_accounts").select("status,provider_currency,provider_country,onboarding_completed,payments_receivable").eq("creator_id", user.id).eq("provider", "mercadopago").maybeSingle()
     : { data: null };
-  const currency: Currency = mercadoPagoAccount?.provider_currency === "MXN" || mercadoPagoAccount?.provider_currency === "COP" ? mercadoPagoAccount.provider_currency : APPLICATION_CURRENCY;
+  const currency: Currency = mercadoPagoAccount?.provider_currency && supportedCurrencies.includes(mercadoPagoAccount.provider_currency as Currency)
+    ? mercadoPagoAccount.provider_currency as Currency
+    : APPLICATION_CURRENCY;
   const platformPayouts = paymentProvider === "paypal" && serverEnv.PAYPAL_FLOW === "platform_payouts";
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
