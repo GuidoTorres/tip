@@ -48,7 +48,14 @@ export function verifyMercadoPagoWebhook(headers: Headers, dataId: string, secre
       toleranceSeconds: 300,
     });
     return true;
-  } catch { return false; }
+  } catch (error) {
+    console.warn(JSON.stringify({
+      event: "mercadopago_webhook_signature_invalid",
+      reason: error instanceof Error ? error.message.slice(0, 160) : "unknown",
+      dataId,
+    }));
+    return false;
+  }
 }
 
 export function validateMercadoPagoPayment(payment: MercadoPagoPaymentResource, expected: {
