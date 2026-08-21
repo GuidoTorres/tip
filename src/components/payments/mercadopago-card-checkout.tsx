@@ -50,7 +50,7 @@ export function MercadoPagoCardCheckout({ publicKey, country, amount, locale, on
     <div className="mb-2 flex items-center justify-between px-2"><div><h2 className="font-semibold">{locale === "es" ? "Pago seguro" : "Secure payment"}</h2><p className="text-xs text-muted">{locale === "es" ? "Procesado por Mercado Pago" : "Processed by Mercado Pago"}</p></div><span className="rounded-lg bg-[#009ee3] px-2.5 py-1 text-xs font-bold text-white">mercado pago</span></div>
     {ready && amount > 0 && <CardPayment
       initialization={{ amount }}
-      customization={{ paymentMethods: { types: { included: ["credit_card", "debit_card", "prepaid_card"] } }, visual: { hideFormTitle: true } }}
+      customization={{ paymentMethods: { types: { included: ["credit_card", "debit_card", "prepaid_card"] } }, visual: { hideFormTitle: false } }}
       locale={mercadoPagoLocale}
       onSubmit={submit}
       onError={() => setError(true)}
