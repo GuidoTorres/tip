@@ -87,7 +87,7 @@ Las public keys pueden llegar al navegador. Client secrets, secrets de webhook, 
 - Perfil con nombre visible, username, foto, descripción e idioma.
 - Username único, normalizado y con nombres del sistema reservados.
 - Foto almacenada en Supabase Storage, con reemplazo y eliminación.
-- Moneda según el proveedor: USD en los flujos PayPal existentes y la moneda local de la cuenta Mercado Pago conectada (ARS, BRL, CLP, COP, MXN, PEN o UYU).
+- El fan elige el tip en USD; Mercado Pago lo convierte y cobra en la moneda local de la cuenta conectada (ARS, BRL, CLP, COP, MXN, PEN o UYU).
 - Onboarding adaptado al proveedor activo:
   - cuenta y payout simulados en modo mock;
   - un solo correo de destino PayPal personal en `platform_payouts`;
@@ -98,7 +98,7 @@ Las public keys pueden llegar al navegador. Client secrets, secrets de webhook, 
 ### Experiencia del fan
 
 - Perfil público sin autenticación en `/[username]`.
-- Importes rápidos adaptados a la moneda regional, además de monto personalizado.
+- Importes universales de US$5, US$10, US$20 y US$50, además de monto personalizado en USD.
 - Nombre y mensaje opcionales; si el nombre queda vacío, el tip se guarda como anónimo.
 - Consentimiento obligatorio de Términos y Política de reembolsos antes de iniciar el pago.
 - Aporte voluntario para ayudar a cubrir el procesamiento, calculado nuevamente por el servidor.
@@ -325,6 +325,7 @@ Ejecuta las migraciones en este orden:
 10. `202608200004_fix_payout_ledger_conflicts.sql`: corrige transiciones idempotentes de payouts.
 11. `202608200005_mercadopago_regional_accounts.sql`: añade MXN, cuentas regionales y credenciales OAuth privadas.
 12. `202608210001_mercadopago_all_regions.sql`: habilita las siete regiones de Split Payments y añade UYU.
+13. `202608210002_usd_tip_quotes.sql`: conserva el importe elegido en USD y la cotización usada para el cobro local.
 
 Con Supabase CLI:
 
@@ -549,11 +550,12 @@ En `platform_payouts`, el fan paga a la cuenta Business de TipMe y TipMe envía 
 - Comisión de plataforma recomendada para Mercado Pago: 1 %, configurada con `PLATFORM_FEE_BPS=100`.
 - Fee de cobro PayPal: se registra desde `seller_receivable_breakdown.paypal_fee`; si el webhook no lo trae, el servidor consulta la captura antes de acreditar.
 - `base_amount_minor` guarda el tip elegido y `processing_support_minor` el aporte voluntario; ambos reconstruyen `amount_minor`.
+- En Mercado Pago, `display_amount_usd_minor` conserva la referencia elegida por el fan; los importes financieros y el ledger permanecen en moneda local.
 - Neto: tip bruto menos comisión de plataforma menos gateway fee.
 - `creator_balances` reconstruye siempre el saldo disponible desde `ledger_entries`.
 - `creator_tip_totals` calcula el resumen PayPal usando solo tips actualmente confirmados.
 
-No se realiza conversión de moneda: cada cuenta conectada recibe y muestra la moneda de su región.
+La conversión USD→moneda local se obtiene server-side desde Mercado Pago y se firma por 10 minutos. El navegador no decide la tasa ni el importe local.
 
 ## Payouts
 

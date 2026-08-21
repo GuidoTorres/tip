@@ -1,6 +1,7 @@
 import { WebhookSignatureValidator } from "mercadopago";
 import type { PaymentWebhookEvent } from "./provider";
-import type { Currency } from "./types";
+import { supportedCurrencies, type Currency } from "./types";
+import { currencyFractionDigits } from "./mercadopago-exchange-rate";
 
 export type MercadoPagoWebhookPayload = {
   id?: string | number;
@@ -23,9 +24,9 @@ export type MercadoPagoPaymentResource = {
   transaction_details?: { net_received_amount?: number };
 };
 
-function majorToMinor(value: unknown) {
+function majorToMinor(value: unknown, currency: Currency) {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  const minor = Math.round(value * 100);
+  const minor = Math.round(value * 10 ** currencyFractionDigits(currency));
   return Number.isSafeInteger(minor) ? minor : null;
 }
 
@@ -57,8 +58,8 @@ export function validateMercadoPagoPayment(payment: MercadoPagoPaymentResource, 
     && String(payment.collector_id ?? "") === expected.merchantId
     && payment.external_reference === expected.tipId
     && payment.currency_id === expected.currency
-    && majorToMinor(payment.transaction_amount) === expected.amountMinor
-    && majorToMinor(payment.application_fee ?? 0) === expected.platformFeeMinor;
+    && majorToMinor(payment.transaction_amount, expected.currency) === expected.amountMinor
+    && majorToMinor(payment.application_fee ?? 0, expected.currency) === expected.platformFeeMinor;
   if (!valid) throw new Error("mercadopago_payment_mismatch");
 }
 
@@ -68,8 +69,10 @@ export function mercadoPagoEventFromPayment(payment: MercadoPagoPaymentResource,
     rejected: "rejected", cancelled: "rejected", refunded: "refunded", charged_back: "chargeback",
   } as const)[payment.status as "approved"] ?? "ignored";
   const gatewayFees = payment.fee_details?.filter((fee) => fee.type !== "application_fee" && fee.type !== "marketplace_fee") ?? [];
+  const currency = supportedCurrencies.includes(payment.currency_id as Currency) ? payment.currency_id as Currency : null;
+  if (!currency) throw new Error("mercadopago_payment_invalid");
   const gatewayFeeMinor = gatewayFees.length
-    ? gatewayFees.reduce((sum, fee) => sum + (majorToMinor(fee.amount) ?? 0), 0)
+    ? gatewayFees.reduce((sum, fee) => sum + (majorToMinor(fee.amount, currency) ?? 0), 0)
     : null;
   const paymentId = String(payment.id ?? "");
   if (!paymentId) throw new Error("mercadopago_payment_invalid");

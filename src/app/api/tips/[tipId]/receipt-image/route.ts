@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tipI
   if (!verifyReceiptToken(tipId, token, getServerEnv().RECEIPT_SIGNING_SECRET)) return new Response("Not found", { status: 404 });
 
   const { data } = await createAdminSupabaseClient().from("tips")
-    .select("id,status,operation_code,base_amount_minor,amount_minor,currency,message,profiles!tips_creator_id_fkey(public_name,username)")
+    .select("id,status,operation_code,base_amount_minor,amount_minor,currency,message,display_amount_usd_minor,profiles!tips_creator_id_fkey(public_name,username)")
     .eq("id", tipId)
     .single();
   if (!data || data.status !== "confirmed") return new Response("Not found", { status: 404 });
@@ -20,7 +20,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ tipI
   const baseAmountMinor = Number(data.base_amount_minor ?? data.amount_minor);
   return createReceiptImage({
     creatorName,
-    amount: formatMoney(baseAmountMinor, String(data.currency), "es"),
+    amount: data.display_amount_usd_minor ? formatMoney(Number(data.display_amount_usd_minor), "USD", "es") : formatMoney(baseAmountMinor, String(data.currency), "es"),
+    localAmount: data.display_amount_usd_minor ? formatMoney(baseAmountMinor, String(data.currency), "es") : null,
     operationCode: String(data.operation_code),
     message: data.message,
   });

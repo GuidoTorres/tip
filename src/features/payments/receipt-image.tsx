@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 export type ReceiptImageData = {
   creatorName: string;
   amount: string;
+  localAmount?: string | null;
   operationCode: string;
   message: string | null;
 };
@@ -21,6 +22,7 @@ export function createReceiptImage(data: ReceiptImageData) {
           <div style={{ display: "flex", marginTop: 32, fontSize: 40, fontWeight: 750 }}>Tip enviado</div>
           <div style={{ display: "flex", marginTop: 12, fontSize: 27, color: "#666963" }}>Le enviaste a {data.creatorName}</div>
           <div style={{ display: "flex", marginTop: 46, fontSize: 86, fontWeight: 800, letterSpacing: "-3px" }}>{data.amount}</div>
+          {data.localAmount && <div style={{ display: "flex", marginTop: 12, fontSize: 21, color: "#666963" }}>Procesado como {data.localAmount}</div>}
           {message && <div style={{ display: "flex", maxWidth: 700, marginTop: 42, padding: "24px 32px", borderRadius: 16, backgroundColor: "#eeefeb", color: "#4f524d", fontSize: 25, lineHeight: 1.4, textAlign: "center" }}>“{message}”</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "auto", borderTop: "2px solid #dfe1dc", paddingTop: 40 }}>

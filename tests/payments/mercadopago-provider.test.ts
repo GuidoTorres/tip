@@ -81,4 +81,19 @@ describe("MercadoPagoPaymentProvider", () => {
     }));
     expect(result).toMatchObject({ providerPaymentId: "992", status: "pending" });
   });
+
+  it("sends Chilean peso minor units without dividing them as cents", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 993, status: "pending" }), { status: 201 }));
+    const provider = new MercadoPagoPaymentProvider({ appUrl: "https://tipme.pro", fetchImpl });
+
+    await provider.createPayment({
+      tipId: "tip-cl", amountMinor: 19_008, platformFeeMinor: 190, currency: "CLP",
+      providerAccountId: "seller-cl", providerAccessToken: "seller-token", providerCountry: "CL",
+      idempotencyKey: "key-cl",
+      paymentMethodData: { token: "card-token", paymentMethodId: "visa", installments: 1, payer: { email: "fan@example.com" } },
+    });
+
+    const [, options] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(options.body))).toMatchObject({ transaction_amount: 19_008, application_fee: 190 });
+  });
 });

@@ -36,6 +36,16 @@ type TipPayload = {
   legalAccepted: boolean;
   coverProcessing: boolean;
   legalTermsVersion: string;
+  quoteToken?: string;
+};
+
+type MercadoPagoQuote = {
+  amountUsdMinor: number;
+  localAmountMinor: number;
+  currency: Currency;
+  rate: number;
+  quotedAt: string;
+  quoteToken: string;
 };
 
 type CreatedTip = {
@@ -57,10 +67,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   const t = getDictionary(locale);
   const digits = currencyDigits(currency);
   const unit = 10 ** digits;
-  const presets = useMemo(() => {
-    const amounts = currency === "COP" ? [5_000, 10_000, 20_000, 50_000] : currency === "MXN" ? [50, 100, 200, 500] : [5, 10, 20, 50];
-    return amounts.map((amount) => amount * unit);
-  }, [currency, unit]);
+  const presets = useMemo(() => [5, 10, 20, 50].map((amount) => amount * unit), [unit]);
   const formRef = useRef<HTMLFormElement>(null);
   const embeddedPayload = useRef<TipPayload | null>(null);
   const [amountMinor, setAmountMinor] = useState(20 * unit);
@@ -74,6 +81,8 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   const [bootstrap, setBootstrap] = useState<CheckoutBootstrap | null>(null);
   const [bootstrapError, setBootstrapError] = useState(false);
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [quote, setQuote] = useState<MercadoPagoQuote | null>(null);
+  const [quoteError, setQuoteError] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,6 +107,30 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     : 0;
   const estimatedTotalMinor = (selectedAmount ?? 0) + supportMinor;
   const money = new Intl.NumberFormat(locale === "es" ? "es-PE" : "en-US", { style: "currency", currency });
+
+  useEffect(() => {
+    if (bootstrap?.kind !== "mercadopago" || !selectedAmount || selectedAmount < 100) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setQuote(null);
+      setQuoteError(false);
+      fetch("/api/payments/quote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username, amountUsdMinor: selectedAmount }),
+        cache: "no-store",
+        signal: controller.signal,
+      }).then(async (response) => {
+        const data = await response.json().catch(() => null) as MercadoPagoQuote | null;
+        if (!response.ok || !data?.quoteToken || data.amountUsdMinor !== selectedAmount) throw new Error("quote_unavailable");
+        setQuote(data);
+      }).catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === "AbortError") return;
+        setQuoteError(true);
+      });
+    }, 250);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [bootstrap, selectedAmount, username]);
 
   function buildPayload(): TipPayload {
     const form = formRef.current;
@@ -166,11 +199,11 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   }
 
   async function submitMercadoPago(paymentMethodData: MercadoPagoCardPaymentData) {
-    if (bootstrap?.kind !== "mercadopago") throw new Error("checkout_unavailable");
+    if (bootstrap?.kind !== "mercadopago" || !quote) throw new Error("checkout_unavailable");
     setSubmitting(true);
     setError(null);
     try {
-      const data = await createTipRequest({ ...buildPayload(), paymentMethodData } as TipPayload & { paymentMethodData: MercadoPagoCardPaymentData });
+      const data = await createTipRequest({ ...buildPayload(), quoteToken: quote.quoteToken, paymentMethodData } as TipPayload & { paymentMethodData: MercadoPagoCardPaymentData });
       return { tipId: data.tipId, receiptToken: data.receiptToken };
     } catch (reason) {
       setSubmitting(false);
@@ -182,7 +215,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   return <div className="mt-8"><form ref={formRef} onSubmit={submitRedirect}>
     <fieldset disabled={submitting || checkoutLocked}>
       <legend className="text-lg font-semibold">{t.tip.heading}</legend>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{currency === "USD" ? t.tip.currencyNotice : locale === "es" ? `Este tip se procesa en ${currency}.` : `This tip is processed in ${currency}.`}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{t.tip.currencyNotice}</p>
       <div className="mt-4 grid grid-cols-4 gap-2">{presets.map((amount) => <button key={amount} type="button" onClick={() => { setAmountMinor(amount); setShowCustom(false); }} className={`pressable min-h-12 rounded-xl border px-2 font-bold ${!showCustom && amountMinor === amount ? "border-accent bg-accent text-on-accent" : "border-border bg-background hover:border-accent"}`}>{amount / unit}</button>)}</div>
       <button type="button" onClick={() => setShowCustom(true)} className={`pressable mt-2 min-h-12 w-full rounded-xl border font-semibold ${showCustom ? "border-accent text-accent" : "border-border"}`}>{t.tip.otherAmount}</button>
       {showCustom && <label className="mt-3 block text-sm font-semibold">{locale === "es" ? "Monto en" : "Amount in"} {currency}<input autoFocus inputMode="decimal" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder={digits ? "20.00" : "20000"} className="mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 text-lg outline-none focus:border-accent" /></label>}
@@ -198,7 +231,9 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     {bootstrap?.kind === "redirect" && <button disabled={submitting} className="pressable mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-4 font-bold text-on-accent hover:bg-accent-strong disabled:opacity-60">{submitting ? <><SpinnerGap size={22} className="animate-spin" /> {locale === "es" ? "Preparando pago" : "Preparing payment"}</> : <><Heart size={21} weight="fill" /> {t.tip.send}</>}</button>}
     </form>
     {bootstrap?.kind === "embedded" && <PayPalCheckout checkout={bootstrap.checkout} locale={locale} createOrder={createEmbeddedOrder} />}
-    {bootstrap?.kind === "mercadopago" && <MercadoPagoCardCheckout publicKey={bootstrap.publicKey} country={bootstrap.country} amount={estimatedTotalMinor / unit} locale={locale} onPay={submitMercadoPago} />}
+    {bootstrap?.kind === "mercadopago" && quote && <><p className="mt-5 text-center text-xs leading-relaxed text-muted">{locale === "es" ? "Mercado Pago cobrará el equivalente en la moneda local de la cuenta receptora. Tu banco puede aplicar su propia conversión." : "Mercado Pago will charge the equivalent in the recipient account's local currency. Your bank may apply its own conversion."}</p><MercadoPagoCardCheckout key={quote.quoteToken} publicKey={bootstrap.publicKey} country={bootstrap.country} amount={quote.localAmountMinor / 10 ** currencyDigits(quote.currency)} locale={locale} onPay={submitMercadoPago} /></>}
+    {bootstrap?.kind === "mercadopago" && !quote && !quoteError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Calculando pago seguro" : "Calculating secure payment"}</p>}
+    {bootstrap?.kind === "mercadopago" && quoteError && <p role="alert" className="mt-6 rounded-xl bg-surface-soft p-4 text-center text-sm font-semibold text-accent-strong">{locale === "es" ? "No pudimos calcular la conversión. Cambia el monto para reintentar." : "We could not calculate the conversion. Change the amount to try again."}</p>}
     {!bootstrap && !bootstrapError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Preparando pago seguro" : "Preparing secure payment"}</p>}
     {bootstrapError && <div className="mt-6 rounded-xl bg-surface-soft p-4 text-center"><p className="text-sm font-semibold text-accent-strong">{locale === "es" ? "No pudimos cargar el pago seguro." : "We could not load secure payment."}</p><button type="button" onClick={() => { setBootstrap(null); setBootstrapError(false); setBootstrapAttempt((value) => value + 1); }} className="pressable mt-3 min-h-10 rounded-full border border-border px-5 text-sm font-semibold hover:border-accent">{locale === "es" ? "Reintentar" : "Try again"}</button></div>}
     {error && <p role="alert" className="mt-4 text-sm font-semibold text-accent-strong">{error}</p>}

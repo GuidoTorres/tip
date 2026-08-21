@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       paymentAccounts: new SupabasePaymentAccountRepository(admin),
       payoutDestinations: new SupabasePayoutDestinationRepository(admin),
       mercadoPagoCredentials: new MercadoPagoCredentialManager(admin, env),
+      quoteSigningSecret: env.RECEIPT_SIGNING_SECRET,
       provider: getPaymentProviderFromEnv(env),
       platformFeeBps: env.PLATFORM_FEE_BPS,
       paypalFlow: env.PAYPAL_FLOW,
@@ -33,7 +34,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown_error";
     const notFoundErrors = ["creator_not_found", "paypal_account_not_connected", "mercadopago_account_not_connected"];
-    const inputErrors = ["legal_acceptance_required", "mercadopago_payment_data_missing"];
+    const inputErrors = [
+      "legal_acceptance_required", "mercadopago_payment_data_missing", "payment_quote_required",
+      "payment_quote_invalid", "payment_quote_expired", "payment_quote_mismatch",
+    ];
     const publicCode = [...notFoundErrors, ...inputErrors].includes(code) ? code : code.startsWith("[") ? "invalid_tip" : code;
     return NextResponse.json({ error: publicCode }, { status: notFoundErrors.includes(code) ? 404 : inputErrors.includes(code) || code.includes("invalid") || code.startsWith("[") ? 400 : 500 });
   }

@@ -8,8 +8,8 @@ import type { Currency, TipStatus } from "@/features/payments/types";
 export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ tipId: string }>; searchParams: Promise<{ token?: string }> }) {
   const { tipId } = await params; const { token = "" } = await searchParams;
   if (!verifyReceiptToken(tipId, token, getServerEnv().RECEIPT_SIGNING_SECRET)) notFound();
-  const { data } = await createAdminSupabaseClient().from("tips").select("id,status,operation_code,base_amount_minor,processing_support_minor,amount_minor,currency,provider,message,profiles!tips_creator_id_fkey(public_name,username)").eq("id", tipId).single();
+  const { data } = await createAdminSupabaseClient().from("tips").select("id,status,operation_code,base_amount_minor,processing_support_minor,amount_minor,currency,provider,message,display_amount_usd_minor,exchange_rate,exchange_rate_quoted_at,profiles!tips_creator_id_fkey(public_name,username)").eq("id", tipId).single();
   if (!data) notFound();
-  const receipt = data as unknown as { id: string; status: TipStatus; operation_code: string; base_amount_minor: number | null; processing_support_minor: number; amount_minor: number; currency: Currency; provider: string; message: string | null; profiles: { public_name: string | null; username: string } | null };
+  const receipt = data as unknown as { id: string; status: TipStatus; operation_code: string; base_amount_minor: number | null; processing_support_minor: number; amount_minor: number; currency: Currency; provider: string; message: string | null; display_amount_usd_minor: number | null; exchange_rate: number | null; exchange_rate_quoted_at: string | null; profiles: { public_name: string | null; username: string } | null };
   return <main className="grid min-h-[100dvh] place-items-center px-4 py-10"><section className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)] sm:p-8"><ReceiptStatus initial={receipt} token={token} /></section></main>;
 }

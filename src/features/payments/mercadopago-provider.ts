@@ -2,6 +2,7 @@ import type {
   CapturePaymentResult, CreatePaymentInput,
   PaymentProvider, PaymentResult, PayoutResult, PayoutStatus, ProviderWebhookEvent,
 } from "./provider";
+import { currencyFractionDigits } from "./mercadopago-exchange-rate";
 
 type MercadoPagoErrorResponse = {
   error?: unknown;
@@ -28,9 +29,10 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     if (!input.paymentMethodData) throw new Error("mercadopago_payment_data_missing");
     if (!["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(input.currency)) throw new Error("unsupported_currency");
     const card = input.paymentMethodData;
+    const unit = 10 ** currencyFractionDigits(input.currency);
     const body = {
-      transaction_amount: input.amountMinor / 100,
-      application_fee: input.platformFeeMinor / 100,
+      transaction_amount: input.amountMinor / unit,
+      application_fee: input.platformFeeMinor / unit,
       token: card.token,
       installments: card.installments,
       payment_method_id: card.paymentMethodId,

@@ -26,6 +26,14 @@ describe("Mercado Pago authoritative webhook payment", () => {
     expect(mercadoPagoEventFromPayment(payment, "payment.updated")).toMatchObject({ status: "confirmed", providerPaymentId: "991", gatewayFeeMinor: 720 });
   });
 
+  it("validates and reports Chilean peso amounts using zero decimal places", () => {
+    const clpPayment = { ...payment, currency_id: "CLP", transaction_amount: 19_008, application_fee: 190, fee_details: [{ type: "mercadopago_fee", amount: 650 }] };
+    expect(() => validateMercadoPagoPayment(clpPayment, {
+      paymentId: "991", tipId: "tip-1", merchantId: "42", amountMinor: 19_008, platformFeeMinor: 190, currency: "CLP",
+    })).not.toThrow();
+    expect(mercadoPagoEventFromPayment(clpPayment, "payment.updated").gatewayFeeMinor).toBe(650);
+  });
+
   it.each([["pending", "pending"], ["rejected", "rejected"], ["refunded", "refunded"], ["charged_back", "chargeback"]] as const)("maps %s", (status, expected) => {
     expect(mercadoPagoEventFromPayment({ ...payment, status }, "payment.updated").status).toBe(expected);
   });

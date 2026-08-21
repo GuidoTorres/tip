@@ -12,7 +12,7 @@ export default async function TipDetailPage({ params }: { params: Promise<{ tipI
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data } = await supabase.from("tips").select("id,operation_code,payer_name,message,anonymous,base_amount_minor,amount_minor,currency,platform_fee_minor,gateway_fee_minor,net_amount_minor,status,created_at,confirmed_at").eq("id", tipId).eq("creator_id", user.id).single();
+  const { data } = await supabase.from("tips").select("id,operation_code,payer_name,message,anonymous,base_amount_minor,amount_minor,currency,platform_fee_minor,gateway_fee_minor,net_amount_minor,status,created_at,confirmed_at,display_amount_usd_minor").eq("id", tipId).eq("creator_id", user.id).single();
   if (!data) notFound();
 
   const currency = data.currency as Currency;
@@ -29,6 +29,7 @@ export default async function TipDetailPage({ params }: { params: Promise<{ tipI
     <section className="mt-4 rounded-2xl border border-border bg-surface p-6 sm:p-8">
       <div className={`flex items-center gap-2 text-sm font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent" : "text-warning"}`}><StatusIcon weight="fill" />{status.label}</div>
       <h1 className="mt-5 text-5xl font-semibold tracking-[-0.04em]">{formatMoney(baseAmountMinor, currency, "es")}</h1>
+      {data.display_amount_usd_minor && <p className="mt-2 text-sm text-muted">Referencia elegida por el fan: {formatMoney(Number(data.display_amount_usd_minor), "USD", "es")}</p>}
       <p className="mt-3 text-lg font-semibold">{data.anonymous ? "Anónimo" : data.payer_name || "Alguien"}</p>
       <div className="mt-5 border-y border-border py-4"><p className="text-xs font-semibold text-muted">Código de operación</p><p className="mt-1 break-all font-mono text-sm font-bold tracking-[0.04em]">{data.operation_code}</p></div>
       {data.message && <blockquote className="mt-5 rounded-2xl bg-surface-soft p-4 text-muted">“{data.message}”</blockquote>}

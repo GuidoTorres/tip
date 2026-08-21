@@ -18,6 +18,9 @@ type Receipt = {
   currency: Currency;
   provider: string;
   message: string | null;
+  display_amount_usd_minor?: number | null;
+  exchange_rate?: number | null;
+  exchange_rate_quoted_at?: string | null;
   profiles: { public_name: string | null; username: string } | null;
 };
 
@@ -39,6 +42,9 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
   const reversed = tip.status === "refunded" || tip.status === "chargeback";
   const status = getTipStatusPresentation(tip.status);
   const baseAmountMinor = creatorVisibleTipAmount(tip);
+  const displayAmount = tip.display_amount_usd_minor
+    ? formatMoney(tip.display_amount_usd_minor, "USD", "es")
+    : formatMoney(baseAmountMinor, tip.currency, "es");
   const processingSupportMinor = Number(tip.processing_support_minor ?? 0);
   const repeatLabel = confirmed ? "Enviar otro tip" : rejected ? "Intentar nuevamente" : null;
   const repeatHref = repeatLabel && tip.profiles?.username ? `/${encodeURIComponent(tip.profiles.username)}` : null;
@@ -49,7 +55,8 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
     {confirmed ? <CheckCircle size={52} weight="fill" className="mx-auto text-success" /> : rejected || reversed ? <XCircle size={52} weight="fill" className="mx-auto text-accent" /> : <Clock size={52} weight="fill" className="mx-auto text-warning" />}
     <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em]">{heading}</h1>
     <p className="mt-2 text-muted">{description}</p>
-    <p className="mt-7 text-5xl font-semibold tracking-[-0.04em]">{formatMoney(baseAmountMinor, tip.currency, "es")}</p>
+    <p className="mt-7 text-5xl font-semibold tracking-[-0.04em]">{displayAmount}</p>
+    {tip.display_amount_usd_minor && <p className="mt-2 text-xs text-muted">Procesado como {formatMoney(baseAmountMinor, tip.currency, "es")} según la conversión aplicada al pago.</p>}
     {processingSupportMinor > 0 && <dl className="mt-5 space-y-2 rounded-xl bg-surface-soft p-4 text-sm">
       <div className="flex justify-between gap-4 text-muted"><dt>Aporte al procesamiento</dt><dd>{formatMoney(processingSupportMinor, tip.currency, "es")}</dd></div>
       <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold"><dt>Total pagado</dt><dd>{formatMoney(tip.amount_minor, tip.currency, "es")}</dd></div>
