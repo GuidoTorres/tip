@@ -32,7 +32,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     if (!["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(input.currency)) throw new Error("unsupported_currency");
     const card = input.paymentMethodData;
     const unit = 10 ** currencyFractionDigits(input.currency);
-    const notificationUrl = `${this.appUrl}/api/webhooks/mercadopago/${input.providerCountry}`;
     const body = {
       transaction_amount: input.amountMinor / unit,
       ...(input.platformFeeMinor > 0 ? { application_fee: input.platformFeeMinor / unit } : {}),
@@ -46,7 +45,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       },
       description: "Tip mediante TipMe",
       external_reference: input.tipId,
-      notification_url: notificationUrl,
       metadata: { tip_id: input.tipId, tipme_creator_id: input.providerAccountId },
     };
     console.info(JSON.stringify({
@@ -54,7 +52,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       appUrl: this.appUrl,
       providerCountry: input.providerCountry,
       platformFeeMinor: input.platformFeeMinor,
-      notificationUrl,
+      webhookMode: "dashboard_configured",
     }));
     const response = await this.fetchImpl("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -76,7 +74,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         ...(safeProviderText(result?.message) ? { message: safeProviderText(result?.message) } : {}),
         ...(cause?.code !== undefined ? { causeCode: String(cause.code).slice(0, 80) } : {}),
         ...(safeProviderText(cause?.description) ? { causeDescription: safeProviderText(cause?.description) } : {}),
-        notificationUrl,
+        webhookMode: "dashboard_configured",
       }));
       throw new Error("mercadopago_payment_create_failed");
     }
