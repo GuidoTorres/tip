@@ -55,7 +55,7 @@ export function BalanceSummary({
               {formatMoney(grossConfirmedMinor, currency, "es")}
             </p>
           </div>
-          {shareActions && <div className="min-w-0 pt-8 sm:max-w-[48%] sm:pt-1">{shareActions}</div>}
+          {shareActions && <div className="min-w-0 pt-14 sm:max-w-[48%] sm:pt-1">{shareActions}</div>}
         </div>
         <dl aria-label="Resumen de tips confirmados" className="mt-7 grid grid-cols-3 divide-x divide-background/15 border-t border-background/15 pt-5">
           <div className="pr-3 sm:pr-6">
