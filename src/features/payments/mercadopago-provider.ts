@@ -35,7 +35,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     const notificationUrl = `${this.appUrl}/api/webhooks/mercadopago/${input.providerCountry}`;
     const body = {
       transaction_amount: input.amountMinor / unit,
-      application_fee: input.platformFeeMinor / unit,
+      ...(input.platformFeeMinor > 0 ? { application_fee: input.platformFeeMinor / unit } : {}),
       token: card.token,
       installments: card.installments,
       payment_method_id: card.paymentMethodId,
@@ -53,6 +53,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       event: "mercadopago_payment_request",
       appUrl: this.appUrl,
       providerCountry: input.providerCountry,
+      platformFeeMinor: input.platformFeeMinor,
       notificationUrl,
     }));
     const response = await this.fetchImpl("https://api.mercadopago.com/v1/payments", {
