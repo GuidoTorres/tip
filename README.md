@@ -15,6 +15,29 @@ Fan envía tip
 
 Dominio previsto: `https://tipme.pro`
 
+## Estado actual del MVP (2026-08-22)
+
+El flujo activo para producción es Mercado Pago regional con cobro directo a la cuenta conectada de la creadora:
+
+```text
+Fan elige tip entero en USD
+  -> TipMe cotiza USD a la moneda de la cuenta Mercado Pago
+  -> Checkout API/Card Payment Brick
+  -> Mercado Pago cobra y liquida en la cuenta de la creadora
+  -> Webhook global de producción
+  -> TipMe valida firma, pago e importe
+  -> Tip confirmado, ledger, saldo, notificación y push
+```
+
+- `PLATFORM_FEE_BPS=0` por defecto para el piloto. No se envía `application_fee` cuando es cero.
+- La moneda del dashboard es la moneda real de la cuenta conectada (`PEN`, `MXN`, `COP`, etc.).
+- El fan no crea una cuenta y selecciona importes enteros: `5`, `10`, `20`, `50` u otro monto entero.
+- Nombre y mensaje son opcionales y están agrupados para mantener corto el formulario.
+- La creadora retira directamente desde Mercado Pago; el menú principal de TipMe no muestra Retiros para este proveedor.
+- El webhook de producción de Perú es `https://tipme.pro/api/webhooks/mercadopago/PE` y acepta los formatos `data.id` y `resource`.
+- Durante el envío se muestra un estado de procesamiento para evitar reenvíos y parpadeos antes del recibo.
+- Apple Pay y Google Pay no están integrados actualmente en el checkout de Mercado Pago Perú.
+
 Estado actual: **MVP con Mock, PayPal y Mercado Pago regional**. El modo `mercadopago` implementa Split Payments 1:1 para Argentina, Brasil, Chile, Colombia, México, Perú y Uruguay, con checkout de tarjeta embebido, comisión TipMe configurable y confirmación exclusiva por webhook. Cada región requiere credenciales reales propias; el código no equivale a aprobación comercial de Mercado Pago.
 
 ## Mercado Pago regional
@@ -25,7 +48,7 @@ Con `PAYMENT_PROVIDER=mercadopago`, cada creador conecta su propia cuenta median
 Argentina -> ARS    Brasil -> BRL       Chile -> CLP
 Colombia  -> COP    México -> MXN       Perú  -> PEN
 Uruguay   -> UYU
-TipMe recibe PLATFORM_FEE_BPS=100 (1 %) mediante application_fee
+TipMe usa `PLATFORM_FEE_BPS=0` (0 %) en el piloto. `application_fee` solo se envía si Split Payments está habilitado.
 ```
 
 Configura una aplicación Marketplace y credenciales por cada región que vayas a habilitar. Todas usan esta Redirect URI OAuth:
@@ -50,7 +73,7 @@ Variables:
 
 ```dotenv
 PAYMENT_PROVIDER=mercadopago
-PLATFORM_FEE_BPS=100
+PLATFORM_FEE_BPS=0
 MERCADOPAGO_ENVIRONMENT=sandbox
 PAYMENT_TOKEN_ENCRYPTION_KEY=BASE64_DE_32_BYTES
 MERCADOPAGO_PE_CLIENT_ID=REEMPLAZAR
@@ -140,7 +163,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 - Interfaz `PaymentProvider` independiente del gateway.
 - `MockPaymentProvider` para probar el recorrido sin dinero real.
 - `PayPalPaymentProvider` para Checkout centralizado, Payouts y el modo Multiparty conservado.
-- `MercadoPagoPaymentProvider` para cobro directo regional con `application_fee` y Card Payment Brick.
+- `MercadoPagoPaymentProvider` para cobro directo regional con Card Payment Brick; `application_fee` es opcional y está desactivado en el piloto.
 - Creación, consulta y captura separadas de la confirmación financiera.
 - Webhook único en `/api/webhooks/payments`.
 - Verificación de firma HMAC para mock y verificación oficial de webhook para PayPal.
@@ -268,7 +291,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_PUBLISHABLE_O_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=TU_SECRET_O_SERVICE_ROLE_KEY
 
-PLATFORM_FEE_BPS=100
+PLATFORM_FEE_BPS=0
 PAYMENT_PROVIDER=mercadopago
 MOCK_WEBHOOK_SECRET=GENERA_UN_SECRETO_LARGO
 RECEIPT_SIGNING_SECRET=GENERA_OTRO_SECRETO_LARGO
@@ -300,7 +323,7 @@ Reglas importantes:
 
 - Una variable `NEXT_PUBLIC_*` queda incluida en el bundle del navegador. Solo coloca allí datos públicos como URL, publishable key, client ID o clave VAPID pública.
 - Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, `PAYPAL_CLIENT_SECRET`, `VAPID_PRIVATE_KEY`, `MOCK_WEBHOOK_SECRET` ni `RECEIPT_SIGNING_SECRET`.
-- `PLATFORM_FEE_BPS=100` aplica 1 % en Mercado Pago Split Payments. Sigue siendo configurable.
+- `PLATFORM_FEE_BPS=0` no aplica comisión TipMe durante el piloto. Puede cambiarse si Mercado Pago habilita Split Payments.
 - `PAYPAL_CHECKOUT_*` solo estima el aporte voluntario del fan; el ledger espera el fee real de PayPal.
 - `PAYPAL_PAYOUT_FEE_*` reserva conservadoramente la comisión de envío; el webhook concilia la cifra real.
 - `PAYPAL_SANDBOX_PAYOUT_RECIPIENT_ID` es un Account ID falso/de prueba para Sandbox. En Live se usa el correo guardado por la persona.
@@ -547,7 +570,7 @@ En `platform_payouts`, el fan paga a la cuenta Business de TipMe y TipMe envía 
 
 - Monedas activas: USD en PayPal; ARS, BRL, CLP, COP, MXN, PEN y UYU en Mercado Pago regional.
 - `20.00` se guarda como `2000` en las monedas con dos decimales.
-- Comisión de plataforma recomendada para Mercado Pago: 1 %, configurada con `PLATFORM_FEE_BPS=100`.
+- Comisión de plataforma del piloto: 0 %, configurada con `PLATFORM_FEE_BPS=0`.
 - Fee de cobro PayPal: se registra desde `seller_receivable_breakdown.paypal_fee`; si el webhook no lo trae, el servidor consulta la captura antes de acreditar.
 - `base_amount_minor` guarda el tip elegido y `processing_support_minor` el aporte voluntario; ambos reconstruyen `amount_minor`.
 - En Mercado Pago, `display_amount_usd_minor` conserva la referencia elegida por el fan; los importes financieros y el ledger permanecen en moneda local.
