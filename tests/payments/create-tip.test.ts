@@ -6,7 +6,7 @@ import { CURRENT_LEGAL_TERMS_VERSION } from "@/features/legal/terms";
 
 const legalAcceptance = { legalAccepted: true, legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION } as const;
 
-function dependencies(providerName: "mock" | "mercadopago" | "dlocalgo" | "whop" = "mock", connectedMerchant: string | null = null) {
+function dependencies(providerName: "mock" | "paypal" | "mercadopago" | "dlocalgo" | "whop" = "mock", connectedMerchant: string | null = null) {
   const repository: TipRepository = {
     findCreatorByUsername: vi.fn().mockResolvedValue({ id: "creator-1", currency: "USD" }),
     insertTip: vi.fn().mockResolvedValue({ id: "tip-1" }),
@@ -23,8 +23,9 @@ function dependencies(providerName: "mock" | "mercadopago" | "dlocalgo" | "whop"
     id: "account-1", providerMerchantId: connectedMerchant, cardPaymentsEnabled: true,
     country: providerName === "mercadopago" ? "PE" : null, currency: providerName === "mercadopago" ? "PEN" : null,
   } : null) };
+  const payoutDestinations = { findConfigured: vi.fn().mockResolvedValue(connectedMerchant ? { id: "payout-1", status: "verified" as const } : null) };
   const mercadoPagoCredentials = { findByAccountId: vi.fn().mockResolvedValue({ accessToken: "seller-token" }) };
-  return { repository, provider, paymentAccounts, mercadoPagoCredentials };
+  return { repository, provider, paymentAccounts, payoutDestinations, mercadoPagoCredentials };
 }
 
 describe("createTip", () => {
@@ -209,6 +210,22 @@ describe("createTip", () => {
       { ...deps, platformFeeBps: 0 })).rejects.toThrow("whop_account_not_connected");
 
     expect(deps.repository.insertTip).not.toHaveBeenCalled();
+  });
+
+  it("uses the saved PayPal payout destination in platform payout mode", async () => {
+    const deps = dependencies("paypal", "creator-paypal@example.com");
+    vi.mocked(deps.provider.createPayment).mockResolvedValue({
+      providerPaymentId: "PP-1", status: "pending",
+      checkout: { kind: "redirect", url: "https://paypal.example/checkout" }, gatewayFeeMinor: null,
+    });
+
+    await createTip(
+      { username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
+      { ...deps, platformFeeBps: 300, paypalFlow: "platform_payouts", payoutDestinations: deps.payoutDestinations },
+    );
+
+    expect(deps.payoutDestinations.findConfigured).toHaveBeenCalledWith("creator-1");
+    expect(deps.repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ provider: "paypal" }));
   });
 
   it("rechaza una creadora inexistente", async () => {

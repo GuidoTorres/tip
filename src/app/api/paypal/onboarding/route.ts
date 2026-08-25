@@ -5,7 +5,6 @@ import { getPublicEnv } from "@/lib/env/public";
 import { createOAuthState } from "@/lib/security/oauth-state";
 import { PayPalClient, payPalConfigFromEnv } from "@/features/payments/paypal-client";
 import { startPayPalOnboarding } from "@/features/payments/paypal-onboarding";
-import { addPayPalMiniBrowserDisplayMode } from "@/features/payments/paypal-onboarding-popup";
 
 export async function POST() {
   const appUrl = getPublicEnv().NEXT_PUBLIC_APP_URL;
@@ -19,7 +18,7 @@ export async function POST() {
   callback.searchParams.set("state", state);
   try {
     const url = await startPayPalOnboarding({ creatorId: user.id, returnUrl: callback.toString() }, new PayPalClient(payPalConfigFromEnv(env)));
-    const response = NextResponse.json({ actionUrl: addPayPalMiniBrowserDisplayMode(url) });
+    const response = NextResponse.json({ actionUrl: url });
     response.cookies.set("tipme_paypal_state", state, {
       httpOnly: true,
       secure: appUrl.startsWith("https://"),

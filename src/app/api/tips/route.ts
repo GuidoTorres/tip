@@ -3,6 +3,7 @@ import { createTip } from "@/features/payments/create-tip";
 import { getPaymentProviderFromEnv } from "@/features/payments/provider-factory";
 import { SupabaseTipRepository } from "@/features/payments/supabase-tip-repository";
 import { SupabasePaymentAccountRepository } from "@/features/payments/payment-account-repository";
+import { SupabasePayoutDestinationRepository } from "@/features/payouts/destination-repository";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -20,10 +21,12 @@ export async function POST(request: Request) {
     const result = await createTip(input, {
       repository: new SupabaseTipRepository(admin),
       paymentAccounts: new SupabasePaymentAccountRepository(admin),
+      payoutDestinations: new SupabasePayoutDestinationRepository(admin),
       mercadoPagoCredentials: new MercadoPagoCredentialManager(admin, env),
       quoteSigningSecret: env.RECEIPT_SIGNING_SECRET,
       provider: getPaymentProviderFromEnv(env),
       platformFeeBps: env.PLATFORM_FEE_BPS,
+      paypalFlow: env.PAYPAL_FLOW,
       paymentReturnUrl: (tipId) => {
         const token = createReceiptToken(tipId, env.RECEIPT_SIGNING_SECRET);
         return `${getPublicEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/tips/${tipId}/receipt?token=${encodeURIComponent(token)}`;
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, receiptToken: createReceiptToken(result.tipId, env.RECEIPT_SIGNING_SECRET) }, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown_error";
-    const notFoundErrors = ["creator_not_found", "mercadopago_account_not_connected", "dlocalgo_account_not_connected", "whop_account_not_connected"];
+    const notFoundErrors = ["creator_not_found", "mercadopago_account_not_connected", "dlocalgo_account_not_connected", "whop_account_not_connected", "paypal_account_not_connected"];
     const inputErrors = [
       "legal_acceptance_required", "mercadopago_payment_data_missing", "payment_quote_required",
       "payment_quote_invalid", "payment_quote_expired", "payment_quote_mismatch",

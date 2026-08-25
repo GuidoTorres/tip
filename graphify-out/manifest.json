@@ -1,0 +1,1452 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1787427015.071761,
+    "ast_hash": "a6ae932ebe909f8b76e632b65210239e",
+    "semantic_hash": "a6ae932ebe909f8b76e632b65210239e"
+  },
+  "eslint.config.mjs": {
+    "mtime": 1786561916.0759277,
+    "ast_hash": "dd067ce48b87c02e749c87ab2bca0e2a",
+    "semantic_hash": "dd067ce48b87c02e749c87ab2bca0e2a"
+  },
+  "next-env.d.ts": {
+    "mtime": 1787343939.9813018,
+    "ast_hash": "8195d2c60ce847a459ae9d308d6a5724",
+    "semantic_hash": "8195d2c60ce847a459ae9d308d6a5724"
+  },
+  "next.config.ts": {
+    "mtime": 1786561911.11337,
+    "ast_hash": "c02084b53ea02c92c4a02777d3cb9fb6",
+    "semantic_hash": "c02084b53ea02c92c4a02777d3cb9fb6"
+  },
+  "package.json": {
+    "mtime": 1787279409.5021713,
+    "ast_hash": "8203c932fddd56b4cc876e82753dd989",
+    "semantic_hash": "8203c932fddd56b4cc876e82753dd989"
+  },
+  "postcss.config.mjs": {
+    "mtime": 1786561913.6125064,
+    "ast_hash": "0f8aa602547b154dc06be77b007c51d2",
+    "semantic_hash": "0f8aa602547b154dc06be77b007c51d2"
+  },
+  "proxy.ts": {
+    "mtime": 1786564544.3758917,
+    "ast_hash": "ac514e9add11f21221cc93ae4245d6c5",
+    "semantic_hash": "ac514e9add11f21221cc93ae4245d6c5"
+  },
+  "public/sw.js": {
+    "mtime": 1786576720.0867703,
+    "ast_hash": "6b5f7cf4afd7aff18ab84e66c50e34fa",
+    "semantic_hash": "6b5f7cf4afd7aff18ab84e66c50e34fa"
+  },
+  "src/app/(auth)/login/page.tsx": {
+    "mtime": 1786904379.1223218,
+    "ast_hash": "e52f060f6ad4ce66c9f3a5ad80b8ab4c",
+    "semantic_hash": "e52f060f6ad4ce66c9f3a5ad80b8ab4c"
+  },
+  "src/app/(auth)/signup/page.tsx": {
+    "mtime": 1786584802.0742471,
+    "ast_hash": "c198b64e5420ee71ac042cba33ab5d80",
+    "semantic_hash": "c198b64e5420ee71ac042cba33ab5d80"
+  },
+  "src/app/(legal)/layout.tsx": {
+    "mtime": 1787099399.279708,
+    "ast_hash": "f7338f27cf007b13464e26e49e94cf4a",
+    "semantic_hash": "f7338f27cf007b13464e26e49e94cf4a"
+  },
+  "src/app/(legal)/privacy/page.tsx": {
+    "mtime": 1787099417.0083942,
+    "ast_hash": "83aa7e1dd955231555e3107cc2777e42",
+    "semantic_hash": "83aa7e1dd955231555e3107cc2777e42"
+  },
+  "src/app/(legal)/refund-policy/page.tsx": {
+    "mtime": 1787099410.647213,
+    "ast_hash": "419f4f9d1951c062518241ae33abeca7",
+    "semantic_hash": "419f4f9d1951c062518241ae33abeca7"
+  },
+  "src/app/(legal)/terms/page.tsx": {
+    "mtime": 1787099404.752769,
+    "ast_hash": "63b4614232b70599c2cbbabee2e3fba1",
+    "semantic_hash": "63b4614232b70599c2cbbabee2e3fba1"
+  },
+  "src/app/[username]/loading.tsx": {
+    "mtime": 1786564837.4215407,
+    "ast_hash": "9ae8503166a650f2027cee9d01277290",
+    "semantic_hash": "9ae8503166a650f2027cee9d01277290"
+  },
+  "src/app/[username]/page.tsx": {
+    "mtime": 1787342617.806243,
+    "ast_hash": "51ab8a028550b4d5b708acea32146d22",
+    "semantic_hash": "51ab8a028550b4d5b708acea32146d22"
+  },
+  "src/app/admin/creators/page.tsx": {
+    "mtime": 1786904384.338948,
+    "ast_hash": "ef8846b4a6793891a41fe8a2a6c165f2",
+    "semantic_hash": "ef8846b4a6793891a41fe8a2a6c165f2"
+  },
+  "src/app/admin/layout.tsx": {
+    "mtime": 1786904381.7589726,
+    "ast_hash": "dc23d9c03b419d52444bb763f2e838e6",
+    "semantic_hash": "dc23d9c03b419d52444bb763f2e838e6"
+  },
+  "src/app/admin/page.tsx": {
+    "mtime": 1786904386.8940234,
+    "ast_hash": "91b77bb53a266fa52d932c861a126789",
+    "semantic_hash": "91b77bb53a266fa52d932c861a126789"
+  },
+  "src/app/admin/payouts/page.tsx": {
+    "mtime": 1786577339.0232737,
+    "ast_hash": "8db7d1630ca01aa5b285f5d718ff33e7",
+    "semantic_hash": "8db7d1630ca01aa5b285f5d718ff33e7"
+  },
+  "src/app/admin/tips/page.tsx": {
+    "mtime": 1786577332.8522813,
+    "ast_hash": "78d417f1a9d6ce36e23d288d61677b7c",
+    "semantic_hash": "78d417f1a9d6ce36e23d288d61677b7c"
+  },
+  "src/app/admin/webhooks/page.tsx": {
+    "mtime": 1786577346.7153447,
+    "ast_hash": "858d148c8aca2759dca7c4e2810227e7",
+    "semantic_hash": "858d148c8aca2759dca7c4e2810227e7"
+  },
+  "src/app/api/mercadopago/oauth/callback/route.ts": {
+    "mtime": 1787338163.391895,
+    "ast_hash": "752669cac244c72e7424b50dc63dd336",
+    "semantic_hash": "752669cac244c72e7424b50dc63dd336"
+  },
+  "src/app/api/mercadopago/oauth/start/route.ts": {
+    "mtime": 1787327660.3363082,
+    "ast_hash": "fcc9226d0c1e6200ac46c5b08c95f807",
+    "semantic_hash": "fcc9226d0c1e6200ac46c5b08c95f807"
+  },
+  "src/app/api/mock/payments/[paymentId]/simulate/route.ts": {
+    "mtime": 1786928669.1097932,
+    "ast_hash": "ca202cfb7966a2e27a06356ef324b886",
+    "semantic_hash": "ca202cfb7966a2e27a06356ef324b886"
+  },
+  "src/app/api/mock/payouts/[payoutId]/simulate/route.ts": {
+    "mtime": 1787244366.7927587,
+    "ast_hash": "fd93bb017561324743726467adf9dcd1",
+    "semantic_hash": "fd93bb017561324743726467adf9dcd1"
+  },
+  "src/app/api/payments/checkout-config/route.ts": {
+    "mtime": 1787280223.6946273,
+    "ast_hash": "ae72bf7b077c28bf9eed9dc72eae948f",
+    "semantic_hash": "ae72bf7b077c28bf9eed9dc72eae948f"
+  },
+  "src/app/api/payments/quote/route.ts": {
+    "mtime": 1787342524.7997963,
+    "ast_hash": "e59284c58b9c32c4802390566463d06b",
+    "semantic_hash": "e59284c58b9c32c4802390566463d06b"
+  },
+  "src/app/api/paypal/onboarding/callback/route.ts": {
+    "mtime": 1787068371.1601875,
+    "ast_hash": "a48421c44f9c46d02ba1ebc3b7e970c9",
+    "semantic_hash": "a48421c44f9c46d02ba1ebc3b7e970c9"
+  },
+  "src/app/api/paypal/onboarding/route.ts": {
+    "mtime": 1787069711.2434864,
+    "ast_hash": "30b6fc1e7fadbcc454e918911f0e9671",
+    "semantic_hash": "30b6fc1e7fadbcc454e918911f0e9671"
+  },
+  "src/app/api/paypal/onboarding/status/route.ts": {
+    "mtime": 1787071855.709173,
+    "ast_hash": "4e21a861cff88274b2c64f12c6b4e2e5",
+    "semantic_hash": "4e21a861cff88274b2c64f12c6b4e2e5"
+  },
+  "src/app/api/paypal/tips/[tipId]/capture/route.ts": {
+    "mtime": 1787243146.2495067,
+    "ast_hash": "e616a22eaf87cc159ecb1ededa66d65d",
+    "semantic_hash": "e616a22eaf87cc159ecb1ededa66d65d"
+  },
+  "src/app/api/push/subscriptions/route.ts": {
+    "mtime": 1786564735.1393602,
+    "ast_hash": "ee7186167957b91c4fad8c7624e95b32",
+    "semantic_hash": "ee7186167957b91c4fad8c7624e95b32"
+  },
+  "src/app/api/tips/[tipId]/receipt-image/route.ts": {
+    "mtime": 1787342891.5195863,
+    "ast_hash": "bf18ba562158268f3793af7d8810e268",
+    "semantic_hash": "bf18ba562158268f3793af7d8810e268"
+  },
+  "src/app/api/tips/[tipId]/status/route.ts": {
+    "mtime": 1787342884.2276213,
+    "ast_hash": "62c1e4c505bfe163f0aadfe70995afb3",
+    "semantic_hash": "62c1e4c505bfe163f0aadfe70995afb3"
+  },
+  "src/app/api/tips/route.ts": {
+    "mtime": 1787343182.048109,
+    "ast_hash": "ad2f2ac62be8d002874b49252a1071e8",
+    "semantic_hash": "ad2f2ac62be8d002874b49252a1071e8"
+  },
+  "src/app/api/webhooks/mercadopago/[country]/route.ts": {
+    "mtime": 1787350088.2700982,
+    "ast_hash": "6faa31f632fd5eee0bb604a32f7f7b5b",
+    "semantic_hash": "6faa31f632fd5eee0bb604a32f7f7b5b"
+  },
+  "src/app/api/webhooks/payments/route.ts": {
+    "mtime": 1786928666.5968423,
+    "ast_hash": "894e4abd94e11a9ef42b9c45d23868a0",
+    "semantic_hash": "894e4abd94e11a9ef42b9c45d23868a0"
+  },
+  "src/app/auth/callback/route.ts": {
+    "mtime": 1786584771.8555598,
+    "ast_hash": "4d42b60e8c42e26955be1ebb5d09174f",
+    "semantic_hash": "4d42b60e8c42e26955be1ebb5d09174f"
+  },
+  "src/app/dashboard/layout.tsx": {
+    "mtime": 1787353288.699862,
+    "ast_hash": "c03513b282f1e180059e2b3830a09d50",
+    "semantic_hash": "c03513b282f1e180059e2b3830a09d50"
+  },
+  "src/app/dashboard/loading.tsx": {
+    "mtime": 1786576839.881817,
+    "ast_hash": "2d1aa82d0f68525f35d7c00b1e48bda5",
+    "semantic_hash": "2d1aa82d0f68525f35d7c00b1e48bda5"
+  },
+  "src/app/dashboard/notifications/page.tsx": {
+    "mtime": 1786576854.4507544,
+    "ast_hash": "c6f9579b17abfe16abee386574095cc4",
+    "semantic_hash": "c6f9579b17abfe16abee386574095cc4"
+  },
+  "src/app/dashboard/page.tsx": {
+    "mtime": 1787352799.4555275,
+    "ast_hash": "ddcc59a414ef781b446e51dd396fca46",
+    "semantic_hash": "ddcc59a414ef781b446e51dd396fca46"
+  },
+  "src/app/dashboard/payouts/page.tsx": {
+    "mtime": 1787352803.368191,
+    "ast_hash": "704c807eb6f6b099a88f1cbdf635d135",
+    "semantic_hash": "704c807eb6f6b099a88f1cbdf635d135"
+  },
+  "src/app/dashboard/settings/notifications/page.tsx": {
+    "mtime": 1787094239.85506,
+    "ast_hash": "54d07d07fdacb392f2a1f14cd19511b9",
+    "semantic_hash": "54d07d07fdacb392f2a1f14cd19511b9"
+  },
+  "src/app/dashboard/settings/page.tsx": {
+    "mtime": 1787249995.5910318,
+    "ast_hash": "3e122d05a0b3ee37990935b1afbca904",
+    "semantic_hash": "3e122d05a0b3ee37990935b1afbca904"
+  },
+  "src/app/dashboard/tips/[tipId]/page.tsx": {
+    "mtime": 1787342888.7832632,
+    "ast_hash": "bbbd074dc866166f069068e98c098aff",
+    "semantic_hash": "bbbd074dc866166f069068e98c098aff"
+  },
+  "src/app/dashboard/tips/page.tsx": {
+    "mtime": 1787255558.3023026,
+    "ast_hash": "8ef04a984845f08cde6e33a54a4423a1",
+    "semantic_hash": "8ef04a984845f08cde6e33a54a4423a1"
+  },
+  "src/app/error.tsx": {
+    "mtime": 1786562587.8627944,
+    "ast_hash": "e0c4cc9e7071fecf087ead2b67d3eb6a",
+    "semantic_hash": "e0c4cc9e7071fecf087ead2b67d3eb6a"
+  },
+  "src/app/layout.tsx": {
+    "mtime": 1787246286.1487365,
+    "ast_hash": "12832853aad0bf79829abb2e739e518d",
+    "semantic_hash": "12832853aad0bf79829abb2e739e518d"
+  },
+  "src/app/manifest.ts": {
+    "mtime": 1786576714.7296135,
+    "ast_hash": "59f2153ea80af4b9c210cf55bb10414e",
+    "semantic_hash": "59f2153ea80af4b9c210cf55bb10414e"
+  },
+  "src/app/not-found.tsx": {
+    "mtime": 1786562576.8668497,
+    "ast_hash": "08b8e4a49b4c078b6265b4c39ced6a16",
+    "semantic_hash": "08b8e4a49b4c078b6265b4c39ced6a16"
+  },
+  "src/app/offline/page.tsx": {
+    "mtime": 1786576728.2212536,
+    "ast_hash": "b052981c94aa564084126e5fd3037364",
+    "semantic_hash": "b052981c94aa564084126e5fd3037364"
+  },
+  "src/app/onboarding/page.tsx": {
+    "mtime": 1787338167.4793725,
+    "ast_hash": "816d7c28d1b91f5d0b18ff1c6112fc95",
+    "semantic_hash": "816d7c28d1b91f5d0b18ff1c6112fc95"
+  },
+  "src/app/page.tsx": {
+    "mtime": 1787336160.9966173,
+    "ast_hash": "b7afb9b0d9c087b7796604a1edd54584",
+    "semantic_hash": "b7afb9b0d9c087b7796604a1edd54584"
+  },
+  "src/app/pay/mock/[paymentId]/page.tsx": {
+    "mtime": 1786580069.8649013,
+    "ast_hash": "6d47f67a40cfde5c0a9295b36c6527cd",
+    "semantic_hash": "6d47f67a40cfde5c0a9295b36c6527cd"
+  },
+  "src/app/tips/[tipId]/receipt/page.tsx": {
+    "mtime": 1787342881.28671,
+    "ast_hash": "99df88b9c9f3d9871891da559a829546",
+    "semantic_hash": "99df88b9c9f3d9871891da559a829546"
+  },
+  "src/components/auth/auth-shell.tsx": {
+    "mtime": 1786564613.552526,
+    "ast_hash": "53c081399a49a58094392e0454205348",
+    "semantic_hash": "53c081399a49a58094392e0454205348"
+  },
+  "src/components/auth/google-auth-button.tsx": {
+    "mtime": 1786584778.338311,
+    "ast_hash": "8b22c225a92b2ad76be432371488db0b",
+    "semantic_hash": "8b22c225a92b2ad76be432371488db0b"
+  },
+  "src/components/dashboard/balance-refresh-button.tsx": {
+    "mtime": 1787253666.1496713,
+    "ast_hash": "11478a5d79181d3decd5c1117dc05253",
+    "semantic_hash": "11478a5d79181d3decd5c1117dc05253"
+  },
+  "src/components/dashboard/balance-summary.tsx": {
+    "mtime": 1787353560.9971468,
+    "ast_hash": "f8fdfad3963bdf3124a0dff74d0706fb",
+    "semantic_hash": "f8fdfad3963bdf3124a0dff74d0706fb"
+  },
+  "src/components/dashboard/creator-qr.tsx": {
+    "mtime": 1787088902.5654132,
+    "ast_hash": "475b905f366636905d61727649317aef",
+    "semantic_hash": "475b905f366636905d61727649317aef"
+  },
+  "src/components/dashboard/creator-share-card.tsx": {
+    "mtime": 1787076987.4884405,
+    "ast_hash": "250f2f93e4d5eac65bc2904f6cc9cb46",
+    "semantic_hash": "250f2f93e4d5eac65bc2904f6cc9cb46"
+  },
+  "src/components/dashboard/dashboard-profile-header.tsx": {
+    "mtime": 1787100737.9918256,
+    "ast_hash": "c273d5643a363954f638ed691a0d8931",
+    "semantic_hash": "c273d5643a363954f638ed691a0d8931"
+  },
+  "src/components/dashboard/header-actions.tsx": {
+    "mtime": 1787250001.1527703,
+    "ast_hash": "5899a3ce3f6143e76314cea34a4cf48a",
+    "semantic_hash": "5899a3ce3f6143e76314cea34a4cf48a"
+  },
+  "src/components/dashboard/mercadopago-connection-badge.tsx": {
+    "mtime": 1787280928.3028002,
+    "ast_hash": "2a4108ada1517da3404c77c76b6df697",
+    "semantic_hash": "2a4108ada1517da3404c77c76b6df697"
+  },
+  "src/components/dashboard/mobile-nav.tsx": {
+    "mtime": 1787354188.825994,
+    "ast_hash": "27b311162cf0eba674eb75489dac5255",
+    "semantic_hash": "27b311162cf0eba674eb75489dac5255"
+  },
+  "src/components/dashboard/navigation-state.ts": {
+    "mtime": 1787076287.2171888,
+    "ast_hash": "3cb4a4a1ee91791f911fc79ee9208672",
+    "semantic_hash": "3cb4a4a1ee91791f911fc79ee9208672"
+  },
+  "src/components/dashboard/paypal-connection-badge.tsx": {
+    "mtime": 1787244568.1785946,
+    "ast_hash": "1db35052857326f36f5fb6058c9d1f7c",
+    "semantic_hash": "1db35052857326f36f5fb6058c9d1f7c"
+  },
+  "src/components/dashboard/realtime-refresh.tsx": {
+    "mtime": 1786576741.4310606,
+    "ast_hash": "48392293c732f38351777d9860cdfc9a",
+    "semantic_hash": "48392293c732f38351777d9860cdfc9a"
+  },
+  "src/components/dashboard/recent-tips.tsx": {
+    "mtime": 1787255468.5765815,
+    "ast_hash": "f4a8154722fc8460370902920856dad2",
+    "semantic_hash": "f4a8154722fc8460370902920856dad2"
+  },
+  "src/components/dashboard/share-qr-button.tsx": {
+    "mtime": 1786900016.1940272,
+    "ast_hash": "467c0119956ff4b33c5bb157b4be4a69",
+    "semantic_hash": "467c0119956ff4b33c5bb157b4be4a69"
+  },
+  "src/components/legal/legal-document-page.tsx": {
+    "mtime": 1787099393.2458515,
+    "ast_hash": "b66b64481ad802b519d30e397980bdbf",
+    "semantic_hash": "b66b64481ad802b519d30e397980bdbf"
+  },
+  "src/components/payments/mercadopago-card-checkout.tsx": {
+    "mtime": 1787354658.9524057,
+    "ast_hash": "f52716684b39089e475a7ac42074edcb",
+    "semantic_hash": "f52716684b39089e475a7ac42074edcb"
+  },
+  "src/components/payments/mercadopago-connect.tsx": {
+    "mtime": 1787338165.4463892,
+    "ast_hash": "9d24c677aa2f45e2a6454e75563a0962",
+    "semantic_hash": "9d24c677aa2f45e2a6454e75563a0962"
+  },
+  "src/components/payments/mock-gateway.tsx": {
+    "mtime": 1786565382.0608695,
+    "ast_hash": "35799e12a234159ee9badf8a5d5ad22e",
+    "semantic_hash": "35799e12a234159ee9badf8a5d5ad22e"
+  },
+  "src/components/payments/paypal-checkout.tsx": {
+    "mtime": 1787260723.8014615,
+    "ast_hash": "87c82f7cccd9d53eff7b28bc688a2b2b",
+    "semantic_hash": "87c82f7cccd9d53eff7b28bc688a2b2b"
+  },
+  "src/components/payments/paypal-connect-form.tsx": {
+    "mtime": 1787071989.8546593,
+    "ast_hash": "485561ad233dd1a4fe47588ae977ab1f",
+    "semantic_hash": "485561ad233dd1a4fe47588ae977ab1f"
+  },
+  "src/components/payments/paypal-connect.tsx": {
+    "mtime": 1787068919.058982,
+    "ast_hash": "e6b2db82af362fc89ec0ed8fe75188b8",
+    "semantic_hash": "e6b2db82af362fc89ec0ed8fe75188b8"
+  },
+  "src/components/payments/paypal-onboarding-popup.tsx": {
+    "mtime": 1787069772.4591346,
+    "ast_hash": "7a09b269ff769d05b061aed405570850",
+    "semantic_hash": "7a09b269ff769d05b061aed405570850"
+  },
+  "src/components/payments/paypal-sandbox-account.tsx": {
+    "mtime": 1786976928.6400359,
+    "ast_hash": "3234df6f99b181e714c2383a86a0916b",
+    "semantic_hash": "3234df6f99b181e714c2383a86a0916b"
+  },
+  "src/components/payments/paypal-sdk.ts": {
+    "mtime": 1787248863.9006717,
+    "ast_hash": "725dc06e5a2fac76eee1ad2c7041da3d",
+    "semantic_hash": "725dc06e5a2fac76eee1ad2c7041da3d"
+  },
+  "src/components/payouts/mock-payout-actions.tsx": {
+    "mtime": 1786577184.5102227,
+    "ast_hash": "870dcc0777be29a4a95114fe03ee6d3a",
+    "semantic_hash": "870dcc0777be29a4a95114fe03ee6d3a"
+  },
+  "src/components/payouts/payout-form.tsx": {
+    "mtime": 1787244917.9730194,
+    "ast_hash": "3fdf3cf595704afb5911fc4fe3f9777f",
+    "semantic_hash": "3fdf3cf595704afb5911fc4fe3f9777f"
+  },
+  "src/components/payouts/paypal-funds-panel.tsx": {
+    "mtime": 1786977150.1705472,
+    "ast_hash": "8c15193290336a6b761eb0c5db7535d5",
+    "semantic_hash": "8c15193290336a6b761eb0c5db7535d5"
+  },
+  "src/components/payouts/paypal-payout-email-form.tsx": {
+    "mtime": 1787244670.2142682,
+    "ast_hash": "44a486b2c4b8e20eebced8c2d37ffcc3",
+    "semantic_hash": "44a486b2c4b8e20eebced8c2d37ffcc3"
+  },
+  "src/components/push/push-setup.tsx": {
+    "mtime": 1787249991.554733,
+    "ast_hash": "8bd8ba3f2368fcde51249cebf02f03e3",
+    "semantic_hash": "8bd8ba3f2368fcde51249cebf02f03e3"
+  },
+  "src/components/pwa/service-worker-register.tsx": {
+    "mtime": 1786564724.6982896,
+    "ast_hash": "fb17709fa5953d07b734fad724105f80",
+    "semantic_hash": "fb17709fa5953d07b734fad724105f80"
+  },
+  "src/components/shared/application-currency-field.tsx": {
+    "mtime": 1787065039.4289198,
+    "ast_hash": "18cc95fa82bee9578ca2fc101069871b",
+    "semantic_hash": "18cc95fa82bee9578ca2fc101069871b"
+  },
+  "src/components/shared/copy-link.tsx": {
+    "mtime": 1787076981.0228155,
+    "ast_hash": "528f96092fbbea2bd3fe5ada88cf48d7",
+    "semantic_hash": "528f96092fbbea2bd3fe5ada88cf48d7"
+  },
+  "src/components/shared/language-switcher.tsx": {
+    "mtime": 1786580300.5007515,
+    "ast_hash": "447b605585ec7a577cac319bc6966e2c",
+    "semantic_hash": "447b605585ec7a577cac319bc6966e2c"
+  },
+  "src/components/tips/receipt-actions.tsx": {
+    "mtime": 1787257330.6369057,
+    "ast_hash": "804ade16cc861f7433bba780dd1fa713",
+    "semantic_hash": "804ade16cc861f7433bba780dd1fa713"
+  },
+  "src/components/tips/receipt-status.tsx": {
+    "mtime": 1787342886.5443394,
+    "ast_hash": "890ee75f248ba01989921eb07896bc64",
+    "semantic_hash": "890ee75f248ba01989921eb07896bc64"
+  },
+  "src/components/tips/tip-form.tsx": {
+    "mtime": 1787355066.2412102,
+    "ast_hash": "ff48f227745251da1a4ed37de1d53421",
+    "semantic_hash": "ff48f227745251da1a4ed37de1d53421"
+  },
+  "src/features/admin/guard.ts": {
+    "mtime": 1786577276.183614,
+    "ast_hash": "94882be836bd98b894ea02ebcdf54d27",
+    "semantic_hash": "94882be836bd98b894ea02ebcdf54d27"
+  },
+  "src/features/auth/actions.ts": {
+    "mtime": 1787335915.2914364,
+    "ast_hash": "ef8e118f23fa7679d03b50966602cabe",
+    "semantic_hash": "ef8e118f23fa7679d03b50966602cabe"
+  },
+  "src/features/auth/oauth.ts": {
+    "mtime": 1787336158.648204,
+    "ast_hash": "1fa51fe60987202a95c92cdf9b8a9a24",
+    "semantic_hash": "1fa51fe60987202a95c92cdf9b8a9a24"
+  },
+  "src/features/ledger/money.ts": {
+    "mtime": 1787242373.4671493,
+    "ast_hash": "1b3c21d4a022666ee9f419e550bfa684",
+    "semantic_hash": "1b3c21d4a022666ee9f419e550bfa684"
+  },
+  "src/features/legal/content.ts": {
+    "mtime": 1787281071.3078969,
+    "ast_hash": "4ee594b06e66485e9667af3e69424216",
+    "semantic_hash": "4ee594b06e66485e9667af3e69424216"
+  },
+  "src/features/legal/terms.ts": {
+    "mtime": 1787245063.9279983,
+    "ast_hash": "c37909cac78a1994064b77a71e8ce4dc",
+    "semantic_hash": "c37909cac78a1994064b77a71e8ce4dc"
+  },
+  "src/features/notifications/actions.ts": {
+    "mtime": 1786576848.5470066,
+    "ast_hash": "e5026119f085924f5a8608b3807b034b",
+    "semantic_hash": "e5026119f085924f5a8608b3807b034b"
+  },
+  "src/features/notifications/push-subscription-client.ts": {
+    "mtime": 1787094234.176297,
+    "ast_hash": "b95874ebd4b6bd67ac5af37a926e73b4",
+    "semantic_hash": "b95874ebd4b6bd67ac5af37a926e73b4"
+  },
+  "src/features/notifications/push.ts": {
+    "mtime": 1786565174.8986456,
+    "ast_hash": "362b16d02dcebef026063b5b964e0dac",
+    "semantic_hash": "362b16d02dcebef026063b5b964e0dac"
+  },
+  "src/features/notifications/web-push.ts": {
+    "mtime": 1786577100.991388,
+    "ast_hash": "1d331d962d2916f971ef32b40721a35f",
+    "semantic_hash": "1d331d962d2916f971ef32b40721a35f"
+  },
+  "src/features/payments/application-currency.ts": {
+    "mtime": 1786903727.7217784,
+    "ast_hash": "7dfc19ada61ac2909e9468c7aa66e2ca",
+    "semantic_hash": "7dfc19ada61ac2909e9468c7aa66e2ca"
+  },
+  "src/features/payments/capture-tip.ts": {
+    "mtime": 1787243136.6419704,
+    "ast_hash": "3cd42ef227ff50edfe5d7119bc0573a3",
+    "semantic_hash": "3cd42ef227ff50edfe5d7119bc0573a3"
+  },
+  "src/features/payments/checkout-attempt.ts": {
+    "mtime": 1787259243.8698788,
+    "ast_hash": "ada08215adc853f4e0da13dea2156372",
+    "semantic_hash": "ada08215adc853f4e0da13dea2156372"
+  },
+  "src/features/payments/create-mercadopago-quote.ts": {
+    "mtime": 1787342486.6803043,
+    "ast_hash": "321cb0e2e10180afce7fcc8c1e53cb41",
+    "semantic_hash": "321cb0e2e10180afce7fcc8c1e53cb41"
+  },
+  "src/features/payments/create-tip.ts": {
+    "mtime": 1787342726.0048602,
+    "ast_hash": "370d8284b7d398b706765299744a11c5",
+    "semantic_hash": "370d8284b7d398b706765299744a11c5"
+  },
+  "src/features/payments/creator-visible-amount.ts": {
+    "mtime": 1787251721.6023514,
+    "ast_hash": "ef8d2556ea7e747259a84d46445e197b",
+    "semantic_hash": "ef8d2556ea7e747259a84d46445e197b"
+  },
+  "src/features/payments/mercadopago-client.ts": {
+    "mtime": 1787338161.0772293,
+    "ast_hash": "67e668772f19098b0297041ec221cf98",
+    "semantic_hash": "67e668772f19098b0297041ec221cf98"
+  },
+  "src/features/payments/mercadopago-credential-manager.ts": {
+    "mtime": 1787327838.1660483,
+    "ast_hash": "f6c206118ca9b1b9a2e0562f56c32a71",
+    "semantic_hash": "f6c206118ca9b1b9a2e0562f56c32a71"
+  },
+  "src/features/payments/mercadopago-credential-repository.ts": {
+    "mtime": 1787279710.506375,
+    "ast_hash": "02c11d5b8e0af373bcb80db14e6258d9",
+    "semantic_hash": "02c11d5b8e0af373bcb80db14e6258d9"
+  },
+  "src/features/payments/mercadopago-exchange-rate.ts": {
+    "mtime": 1787342414.2866862,
+    "ast_hash": "e163e57bd9df8adf381f8053c7024d32",
+    "semantic_hash": "e163e57bd9df8adf381f8053c7024d32"
+  },
+  "src/features/payments/mercadopago-oauth.ts": {
+    "mtime": 1787319359.6462524,
+    "ast_hash": "d4fe8d19af75ed3c2f7a994e1906be92",
+    "semantic_hash": "d4fe8d19af75ed3c2f7a994e1906be92"
+  },
+  "src/features/payments/mercadopago-provider.ts": {
+    "mtime": 1787349806.1879337,
+    "ast_hash": "7cd6c45dbccb5c49e73f57ff6c34bc13",
+    "semantic_hash": "7cd6c45dbccb5c49e73f57ff6c34bc13"
+  },
+  "src/features/payments/mercadopago-regions.ts": {
+    "mtime": 1787338158.8492851,
+    "ast_hash": "d9be66090004594833a7d75a771ff1b6",
+    "semantic_hash": "d9be66090004594833a7d75a771ff1b6"
+  },
+  "src/features/payments/mercadopago-webhook-handler.ts": {
+    "mtime": 1787352190.3127582,
+    "ast_hash": "53ca51e3e68b24ac5a652e8afdb5edd9",
+    "semantic_hash": "53ca51e3e68b24ac5a652e8afdb5edd9"
+  },
+  "src/features/payments/mercadopago-webhook.ts": {
+    "mtime": 1787350691.548012,
+    "ast_hash": "4907e16c57d42d6882cb380c3c70407d",
+    "semantic_hash": "4907e16c57d42d6882cb380c3c70407d"
+  },
+  "src/features/payments/mock-provider.ts": {
+    "mtime": 1787243975.7884042,
+    "ast_hash": "eab95869d9485d1adae0aa5a2a4a7e01",
+    "semantic_hash": "eab95869d9485d1adae0aa5a2a4a7e01"
+  },
+  "src/features/payments/operation-code.ts": {
+    "mtime": 1787255297.6441858,
+    "ast_hash": "449b14f658eace566b16a78fc9c987ce",
+    "semantic_hash": "449b14f658eace566b16a78fc9c987ce"
+  },
+  "src/features/payments/payment-account-repository.ts": {
+    "mtime": 1787327566.2040565,
+    "ast_hash": "6180743626b47cf2d2b28d5bc5a37c96",
+    "semantic_hash": "6180743626b47cf2d2b28d5bc5a37c96"
+  },
+  "src/features/payments/paypal-client.ts": {
+    "mtime": 1787243580.2353892,
+    "ast_hash": "466f1d63d024a2f2c52d823e896a238c",
+    "semantic_hash": "466f1d63d024a2f2c52d823e896a238c"
+  },
+  "src/features/payments/paypal-onboarding-popup.ts": {
+    "mtime": 1787071850.7304263,
+    "ast_hash": "f1d863497e14d394364878be55e74938",
+    "semantic_hash": "f1d863497e14d394364878be55e74938"
+  },
+  "src/features/payments/paypal-onboarding.ts": {
+    "mtime": 1787070832.120094,
+    "ast_hash": "55c37cfe52cf749e02285500c1029d54",
+    "semantic_hash": "55c37cfe52cf749e02285500c1029d54"
+  },
+  "src/features/payments/paypal-provider.ts": {
+    "mtime": 1787259070.6660817,
+    "ast_hash": "3606d1e747158a444bb700cd8cd5f891",
+    "semantic_hash": "3606d1e747158a444bb700cd8cd5f891"
+  },
+  "src/features/payments/prepare-checkout.ts": {
+    "mtime": 1787327564.1794627,
+    "ast_hash": "5f8b8b7b017cfde4f2d32ed73d2a019e",
+    "semantic_hash": "5f8b8b7b017cfde4f2d32ed73d2a019e"
+  },
+  "src/features/payments/process-webhook.ts": {
+    "mtime": 1787243986.9846032,
+    "ast_hash": "653431279717e2665a5efe4b7b964390",
+    "semantic_hash": "653431279717e2665a5efe4b7b964390"
+  },
+  "src/features/payments/provider-factory.ts": {
+    "mtime": 1787280113.338891,
+    "ast_hash": "2ec82a13d982b9056379d4bc5f4d6129",
+    "semantic_hash": "2ec82a13d982b9056379d4bc5f4d6129"
+  },
+  "src/features/payments/provider.ts": {
+    "mtime": 1787327562.4592495,
+    "ast_hash": "6d4b61a2e759b00f183761bdb457fd52",
+    "semantic_hash": "6d4b61a2e759b00f183761bdb457fd52"
+  },
+  "src/features/payments/receipt-image.tsx": {
+    "mtime": 1787342894.2343688,
+    "ast_hash": "9cbb73faa74e4c72da41bf2aaf1dbb38",
+    "semantic_hash": "9cbb73faa74e4c72da41bf2aaf1dbb38"
+  },
+  "src/features/payments/status.ts": {
+    "mtime": 1786563367.7159998,
+    "ast_hash": "dbc6f158f2d8cb7ca073163f3e5fb2c5",
+    "semantic_hash": "dbc6f158f2d8cb7ca073163f3e5fb2c5"
+  },
+  "src/features/payments/supabase-tip-repository.ts": {
+    "mtime": 1787342730.538009,
+    "ast_hash": "f230b31ef4c237e95d55a72479e02ee0",
+    "semantic_hash": "f230b31ef4c237e95d55a72479e02ee0"
+  },
+  "src/features/payments/supabase-webhook-repository.ts": {
+    "mtime": 1787251866.2059639,
+    "ast_hash": "9fa671d605469a640b783df42ad402af",
+    "semantic_hash": "9fa671d605469a640b783df42ad402af"
+  },
+  "src/features/payments/tip-status-presentation.ts": {
+    "mtime": 1787255301.0777779,
+    "ast_hash": "a6e00ae2c1ba6ed11e688059da8c7e40",
+    "semantic_hash": "a6e00ae2c1ba6ed11e688059da8c7e40"
+  },
+  "src/features/payments/types.ts": {
+    "mtime": 1787327559.6643116,
+    "ast_hash": "2b5c33074fb241ee34b331ac10331056",
+    "semantic_hash": "2b5c33074fb241ee34b331ac10331056"
+  },
+  "src/features/payments/webhook-handler.ts": {
+    "mtime": 1787244032.564022,
+    "ast_hash": "08ba8a8eeb9e5ac1e8b1835a86aeac4f",
+    "semantic_hash": "08ba8a8eeb9e5ac1e8b1835a86aeac4f"
+  },
+  "src/features/payouts/actions.ts": {
+    "mtime": 1787264148.157022,
+    "ast_hash": "c8f2d3f0ad94cfe5733951440e9fe61e",
+    "semantic_hash": "c8f2d3f0ad94cfe5733951440e9fe61e"
+  },
+  "src/features/payouts/destination-repository.ts": {
+    "mtime": 1787243121.6036863,
+    "ast_hash": "d632add5950393546e876c5040f658d1",
+    "semantic_hash": "d632add5950393546e876c5040f658d1"
+  },
+  "src/features/payouts/service.ts": {
+    "mtime": 1787264140.8341522,
+    "ast_hash": "0ad98b7bcdc012fb6a34039b4bc77aad",
+    "semantic_hash": "0ad98b7bcdc012fb6a34039b4bc77aad"
+  },
+  "src/features/payouts/supabase-repository.ts": {
+    "mtime": 1787244372.2846694,
+    "ast_hash": "4ae3b99ed8daff0a18946a06e0d8b18a",
+    "semantic_hash": "4ae3b99ed8daff0a18946a06e0d8b18a"
+  },
+  "src/features/profiles/actions.ts": {
+    "mtime": 1787280009.3891377,
+    "ast_hash": "e452eb45b645dc00295f9514a6863bfa",
+    "semantic_hash": "e452eb45b645dc00295f9514a6863bfa"
+  },
+  "src/features/profiles/locale-action.ts": {
+    "mtime": 1786580272.3996675,
+    "ast_hash": "5ad91a1d275503d71eb7fbd56f67464b",
+    "semantic_hash": "5ad91a1d275503d71eb7fbd56f67464b"
+  },
+  "src/features/profiles/profile-input.ts": {
+    "mtime": 1787064965.276847,
+    "ast_hash": "01c00e9d42f6197e50b1dbae9fda844d",
+    "semantic_hash": "01c00e9d42f6197e50b1dbae9fda844d"
+  },
+  "src/features/profiles/public-url.ts": {
+    "mtime": 1786899873.9522836,
+    "ast_hash": "16e7a53cd7b0dc43cb79f3d544e579af",
+    "semantic_hash": "16e7a53cd7b0dc43cb79f3d544e579af"
+  },
+  "src/features/profiles/qr-code.ts": {
+    "mtime": 1786899877.0511663,
+    "ast_hash": "85463929ea144eff49fd611992a5697d",
+    "semantic_hash": "85463929ea144eff49fd611992a5697d"
+  },
+  "src/features/profiles/username.ts": {
+    "mtime": 1786563364.2316544,
+    "ast_hash": "a6d5d85888c18e5c457a6aa686dd2678",
+    "semantic_hash": "a6d5d85888c18e5c457a6aa686dd2678"
+  },
+  "src/lib/i18n/config.ts": {
+    "mtime": 1786562543.9198737,
+    "ast_hash": "8e22565f5e93205398f0574c699ef8d4",
+    "semantic_hash": "8e22565f5e93205398f0574c699ef8d4"
+  },
+  "src/lib/i18n/en.ts": {
+    "mtime": 1787100280.549193,
+    "ast_hash": "1465ed84f6e0d8681850e2cf4ed4fb60",
+    "semantic_hash": "1465ed84f6e0d8681850e2cf4ed4fb60"
+  },
+  "src/lib/i18n/es.ts": {
+    "mtime": 1787100275.0094824,
+    "ast_hash": "bea73cf9d2b1801cee4a7413a4f02fa2",
+    "semantic_hash": "bea73cf9d2b1801cee4a7413a4f02fa2"
+  },
+  "src/lib/i18n/index.ts": {
+    "mtime": 1786565063.195485,
+    "ast_hash": "b7ee1b048cd331b6e56721f1252a4726",
+    "semantic_hash": "b7ee1b048cd331b6e56721f1252a4726"
+  },
+  "src/lib/i18n/server.ts": {
+    "mtime": 1786580269.4051464,
+    "ast_hash": "8699b319633945d35cd77d33ff6fd473",
+    "semantic_hash": "8699b319633945d35cd77d33ff6fd473"
+  },
+  "src/lib/logging/supabase-error.ts": {
+    "mtime": 1786646134.081307,
+    "ast_hash": "0ccec5e6be314ded9ed7061c20449f50",
+    "semantic_hash": "0ccec5e6be314ded9ed7061c20449f50"
+  },
+  "src/lib/security/hmac.ts": {
+    "mtime": 1786563478.4846373,
+    "ast_hash": "02d104e83505efaca5af6b7d735c19b4",
+    "semantic_hash": "02d104e83505efaca5af6b7d735c19b4"
+  },
+  "src/lib/security/oauth-state.ts": {
+    "mtime": 1786929640.5369534,
+    "ast_hash": "fb06ad9b827b347a2640e485f2fdc6fd",
+    "semantic_hash": "fb06ad9b827b347a2640e485f2fdc6fd"
+  },
+  "src/lib/security/payment-quote.ts": {
+    "mtime": 1787342417.7326655,
+    "ast_hash": "d225945c8919d62fbde2d517d6a1070b",
+    "semantic_hash": "d225945c8919d62fbde2d517d6a1070b"
+  },
+  "src/lib/security/rate-limit.ts": {
+    "mtime": 1786563487.9418602,
+    "ast_hash": "ffb12e70708ee43b50cd8e0db943449a",
+    "semantic_hash": "ffb12e70708ee43b50cd8e0db943449a"
+  },
+  "src/lib/security/receipt.ts": {
+    "mtime": 1786565304.2994585,
+    "ast_hash": "24cf1daf213204cefb8b377a5a1506a9",
+    "semantic_hash": "24cf1daf213204cefb8b377a5a1506a9"
+  },
+  "src/lib/supabase/admin.ts": {
+    "mtime": 1786564539.4935205,
+    "ast_hash": "d022be046dd8df152f365eb7157bf7d0",
+    "semantic_hash": "d022be046dd8df152f365eb7157bf7d0"
+  },
+  "src/lib/supabase/browser.ts": {
+    "mtime": 1786564534.0668185,
+    "ast_hash": "248bfa8949cbceb516d7f0162b4e868d",
+    "semantic_hash": "248bfa8949cbceb516d7f0162b4e868d"
+  },
+  "src/lib/supabase/proxy.ts": {
+    "mtime": 1786564542.0699546,
+    "ast_hash": "9543f4fd120c41c18d9bb6d6d2d5da65",
+    "semantic_hash": "9543f4fd120c41c18d9bb6d6d2d5da65"
+  },
+  "src/lib/supabase/server.ts": {
+    "mtime": 1786564536.429579,
+    "ast_hash": "d655644e38470150d42716bc35fd2e96",
+    "semantic_hash": "d655644e38470150d42716bc35fd2e96"
+  },
+  "src/lib/time.ts": {
+    "mtime": 1786576764.2320604,
+    "ast_hash": "41371b537b9629608b8de2686ed92933",
+    "semantic_hash": "41371b537b9629608b8de2686ed92933"
+  },
+  "supabase/migrations/202608120001_tipme_core.sql": {
+    "mtime": 1786647630.7830741,
+    "ast_hash": "6edddf6a881f201ad9a79d6e35d77088",
+    "semantic_hash": "6edddf6a881f201ad9a79d6e35d77088"
+  },
+  "supabase/migrations/202608130001_fix_username_double_underscore.sql": {
+    "mtime": 1786647634.1331656,
+    "ast_hash": "41856b21c6e41fdf926d73cc4f2bfbd4",
+    "semantic_hash": "41856b21c6e41fdf926d73cc4f2bfbd4"
+  },
+  "supabase/migrations/202608160001_set_application_currency_usd.sql": {
+    "mtime": 1786904109.3572285,
+    "ast_hash": "f42624e79e02f8a870f1b1fcd6723102",
+    "semantic_hash": "f42624e79e02f8a870f1b1fcd6723102"
+  },
+  "supabase/migrations/202608160002_paypal_payment_accounts.sql": {
+    "mtime": 1786927703.3846009,
+    "ast_hash": "bd1d923d92005be35226b9e0be521178",
+    "semantic_hash": "bd1d923d92005be35226b9e0be521178"
+  },
+  "supabase/migrations/202608180003_tip_legal_acceptance.sql": {
+    "mtime": 1787099216.1424205,
+    "ast_hash": "68d3d1b6363454768a59c3e36bc0c5c6",
+    "semantic_hash": "68d3d1b6363454768a59c3e36bc0c5c6"
+  },
+  "supabase/migrations/202608180004_creator_tip_totals.sql": {
+    "mtime": 1787102528.162532,
+    "ast_hash": "4375dd4c16eb8eff347aadafbee436b2",
+    "semantic_hash": "4375dd4c16eb8eff347aadafbee436b2"
+  },
+  "supabase/migrations/202608200001_paypal_platform_payouts.sql": {
+    "mtime": 1787264811.287419,
+    "ast_hash": "2ca781bcdd65523f29ba327c068cfd3f",
+    "semantic_hash": "2ca781bcdd65523f29ba327c068cfd3f"
+  },
+  "supabase/migrations/202608200002_creator_base_tip_amounts.sql": {
+    "mtime": 1787252023.2294033,
+    "ast_hash": "23d44aeb88c156ede3263731f931a952",
+    "semantic_hash": "23d44aeb88c156ede3263731f931a952"
+  },
+  "supabase/migrations/202608200003_tip_operation_codes.sql": {
+    "mtime": 1787255303.7930903,
+    "ast_hash": "00e4038fefca71cfc8450f7dd57d1438",
+    "semantic_hash": "00e4038fefca71cfc8450f7dd57d1438"
+  },
+  "supabase/migrations/202608200004_fix_payout_ledger_conflicts.sql": {
+    "mtime": 1787264861.3252997,
+    "ast_hash": "d3b6730bbcd6b06a85da7762b2f95eb0",
+    "semantic_hash": "d3b6730bbcd6b06a85da7762b2f95eb0"
+  },
+  "supabase/migrations/202608200005_mercadopago_regional_accounts.sql": {
+    "mtime": 1787281132.773795,
+    "ast_hash": "c35dd02de4e4a4a25ee0d022c3b57177",
+    "semantic_hash": "c35dd02de4e4a4a25ee0d022c3b57177"
+  },
+  "supabase/migrations/202608210001_mercadopago_all_regions.sql": {
+    "mtime": 1787327754.125101,
+    "ast_hash": "9957b78b2a9306d77416dcfb6a2a4e80",
+    "semantic_hash": "9957b78b2a9306d77416dcfb6a2a4e80"
+  },
+  "supabase/migrations/202608210002_usd_tip_quotes.sql": {
+    "mtime": 1787342736.7281551,
+    "ast_hash": "9326d966a74d8fb75827178f2aff4986",
+    "semantic_hash": "9326d966a74d8fb75827178f2aff4986"
+  },
+  "supabase/seed.sql": {
+    "mtime": 1787242736.7727158,
+    "ast_hash": "052408dccb5cc3aa48487dcef7b5aeb4",
+    "semantic_hash": "052408dccb5cc3aa48487dcef7b5aeb4"
+  },
+  "tests/auth/oauth.test.ts": {
+    "mtime": 1787336136.3204033,
+    "ast_hash": "bcf81cd72dd41e57f0083c6be6acb002",
+    "semantic_hash": "bcf81cd72dd41e57f0083c6be6acb002"
+  },
+  "tests/database/migration-safety.test.ts": {
+    "mtime": 1787327734.4591968,
+    "ast_hash": "eff5bbc26636dd1b9313878e92621e66",
+    "semantic_hash": "eff5bbc26636dd1b9313878e92621e66"
+  },
+  "tests/domain/money.test.ts": {
+    "mtime": 1787242293.133953,
+    "ast_hash": "df0adb6d820ac505ab6b98a1eefe3058",
+    "semantic_hash": "df0adb6d820ac505ab6b98a1eefe3058"
+  },
+  "tests/domain/operation-code.test.ts": {
+    "mtime": 1787255215.6103263,
+    "ast_hash": "ad298a621c7aa822dcc09d4edb7bbebf",
+    "semantic_hash": "ad298a621c7aa822dcc09d4edb7bbebf"
+  },
+  "tests/domain/public-profile-qr.test.ts": {
+    "mtime": 1786899710.4924235,
+    "ast_hash": "3519bdca6a71feb339f1f7dde59d6407",
+    "semantic_hash": "3519bdca6a71feb339f1f7dde59d6407"
+  },
+  "tests/domain/runtime.test.ts": {
+    "mtime": 1787242289.7180948,
+    "ast_hash": "abf39de84e0242166614b8e884a2c756",
+    "semantic_hash": "abf39de84e0242166614b8e884a2c756"
+  },
+  "tests/domain/tip-status-presentation.test.ts": {
+    "mtime": 1787255218.7685077,
+    "ast_hash": "466f9e2dce4caa884d4654ee79d04037",
+    "semantic_hash": "466f9e2dce4caa884d4654ee79d04037"
+  },
+  "tests/domain/tip-status.test.ts": {
+    "mtime": 1786563261.8255386,
+    "ast_hash": "b1ddb5a52a7df7da5fc81b805b7c2146",
+    "semantic_hash": "b1ddb5a52a7df7da5fc81b805b7c2146"
+  },
+  "tests/domain/usernames.test.ts": {
+    "mtime": 1786563258.8379183,
+    "ast_hash": "a4ce528b8079cd4734d728f24dbb81e8",
+    "semantic_hash": "a4ce528b8079cd4734d728f24dbb81e8"
+  },
+  "tests/logging/supabase-error.test.ts": {
+    "mtime": 1786646037.0344992,
+    "ast_hash": "24872de0f224e14e16e945d6cccf603e",
+    "semantic_hash": "24872de0f224e14e16e945d6cccf603e"
+  },
+  "tests/notifications/push-subscription-client.test.ts": {
+    "mtime": 1787094319.4682808,
+    "ast_hash": "cf543974c517e34cfb1f9206b34cb138",
+    "semantic_hash": "cf543974c517e34cfb1f9206b34cb138"
+  },
+  "tests/notifications/push.test.ts": {
+    "mtime": 1786565112.8177493,
+    "ast_hash": "81a40a9e49e86b55001f6cab70c559a6",
+    "semantic_hash": "81a40a9e49e86b55001f6cab70c559a6"
+  },
+  "tests/payments/capture-tip.test.ts": {
+    "mtime": 1786976775.6166332,
+    "ast_hash": "8c2cbc43ec39b9613b224937a1fe0176",
+    "semantic_hash": "8c2cbc43ec39b9613b224937a1fe0176"
+  },
+  "tests/payments/checkout-attempt.test.ts": {
+    "mtime": 1787259225.6843607,
+    "ast_hash": "758045d7dacf5039c788a96be90a942d",
+    "semantic_hash": "758045d7dacf5039c788a96be90a942d"
+  },
+  "tests/payments/checkout-config-route.test.ts": {
+    "mtime": 1787259115.9059892,
+    "ast_hash": "a5581512f135a9191d6bb3993630e985",
+    "semantic_hash": "a5581512f135a9191d6bb3993630e985"
+  },
+  "tests/payments/create-mercadopago-quote.test.ts": {
+    "mtime": 1787342459.8090532,
+    "ast_hash": "81318efc90acfd4b92ff08cb647d27bb",
+    "semantic_hash": "81318efc90acfd4b92ff08cb647d27bb"
+  },
+  "tests/payments/create-tip.test.ts": {
+    "mtime": 1787342677.5168462,
+    "ast_hash": "5b6a96da26f6cfec7b60a013842ab066",
+    "semantic_hash": "5b6a96da26f6cfec7b60a013842ab066"
+  },
+  "tests/payments/mercadopago-credential-repository.test.ts": {
+    "mtime": 1787279624.341213,
+    "ast_hash": "af7c17617f653d119b36dab66451f602",
+    "semantic_hash": "af7c17617f653d119b36dab66451f602"
+  },
+  "tests/payments/mercadopago-exchange-rate.test.ts": {
+    "mtime": 1787342353.311185,
+    "ast_hash": "f978e207152508d491c3acb3b079cfcf",
+    "semantic_hash": "f978e207152508d491c3acb3b079cfcf"
+  },
+  "tests/payments/mercadopago-oauth.test.ts": {
+    "mtime": 1787338118.1228316,
+    "ast_hash": "5b995a0ff94a989989e9f404ab57b222",
+    "semantic_hash": "5b995a0ff94a989989e9f404ab57b222"
+  },
+  "tests/payments/mercadopago-provider.test.ts": {
+    "mtime": 1787342778.025331,
+    "ast_hash": "54328d14a8de263edf7082e63be9b815",
+    "semantic_hash": "54328d14a8de263edf7082e63be9b815"
+  },
+  "tests/payments/mercadopago-regions.test.ts": {
+    "mtime": 1787338116.3446496,
+    "ast_hash": "d1ae6da2b1f8bf29f0791a1348045ee0",
+    "semantic_hash": "d1ae6da2b1f8bf29f0791a1348045ee0"
+  },
+  "tests/payments/mercadopago-webhook.test.ts": {
+    "mtime": 1787342781.2101784,
+    "ast_hash": "56029f556605509c1ac896476f3c055c",
+    "semantic_hash": "56029f556605509c1ac896476f3c055c"
+  },
+  "tests/payments/mock-provider.test.ts": {
+    "mtime": 1787243743.6205573,
+    "ast_hash": "a74f1196ebaa50be05f4726bfc43734b",
+    "semantic_hash": "a74f1196ebaa50be05f4726bfc43734b"
+  },
+  "tests/payments/paypal-checkout.test.tsx": {
+    "mtime": 1787260631.9360096,
+    "ast_hash": "c2be5ba1a250c56df2b9af7c4b6d41fe",
+    "semantic_hash": "c2be5ba1a250c56df2b9af7c4b6d41fe"
+  },
+  "tests/payments/paypal-onboarding-callback.test.ts": {
+    "mtime": 1787068349.8306382,
+    "ast_hash": "35bd7fd3faba14e046a40010b3777a82",
+    "semantic_hash": "35bd7fd3faba14e046a40010b3777a82"
+  },
+  "tests/payments/paypal-onboarding-route.test.ts": {
+    "mtime": 1787069586.0295527,
+    "ast_hash": "0b1140ba8978e806ebaf995a26c66ee8",
+    "semantic_hash": "0b1140ba8978e806ebaf995a26c66ee8"
+  },
+  "tests/payments/paypal-onboarding-status-route.test.ts": {
+    "mtime": 1787071755.950994,
+    "ast_hash": "85afcfc652ac342e4e427953875698af",
+    "semantic_hash": "85afcfc652ac342e4e427953875698af"
+  },
+  "tests/payments/paypal-onboarding.test.ts": {
+    "mtime": 1787070814.8722973,
+    "ast_hash": "058af0101036db6e0e14671dbc388b63",
+    "semantic_hash": "058af0101036db6e0e14671dbc388b63"
+  },
+  "tests/payments/paypal-provider.test.ts": {
+    "mtime": 1787259196.9565065,
+    "ast_hash": "577068381500119eeba46cee6a906ebe",
+    "semantic_hash": "577068381500119eeba46cee6a906ebe"
+  },
+  "tests/payments/paypal-webhook.test.ts": {
+    "mtime": 1787251448.7534885,
+    "ast_hash": "fef828c06e29acb85b423cff26f0425f",
+    "semantic_hash": "fef828c06e29acb85b423cff26f0425f"
+  },
+  "tests/payments/prepare-checkout.test.ts": {
+    "mtime": 1787259034.81454,
+    "ast_hash": "05474a0ffdb850807d22ccd9bb23bdde",
+    "semantic_hash": "05474a0ffdb850807d22ccd9bb23bdde"
+  },
+  "tests/payments/process-webhook.test.ts": {
+    "mtime": 1787243907.1082387,
+    "ast_hash": "d8cb09b438ae5cd66a14741c86ad3d6d",
+    "semantic_hash": "d8cb09b438ae5cd66a14741c86ad3d6d"
+  },
+  "tests/payments/receipt-image-route.test.tsx": {
+    "mtime": 1787257277.8815076,
+    "ast_hash": "a30f96eef096844fd5e9b39d9d920838",
+    "semantic_hash": "a30f96eef096844fd5e9b39d9d920838"
+  },
+  "tests/payments/receipt-status.test.tsx": {
+    "mtime": 1787257125.582243,
+    "ast_hash": "b419c128a714e474494fb00f37889dea",
+    "semantic_hash": "b419c128a714e474494fb00f37889dea"
+  },
+  "tests/payments/webhook-signature.test.ts": {
+    "mtime": 1786563418.2391586,
+    "ast_hash": "dee71eb289b6fb05c38342c436d173e9",
+    "semantic_hash": "dee71eb289b6fb05c38342c436d173e9"
+  },
+  "tests/payouts/payouts.test.ts": {
+    "mtime": 1787264061.1614232,
+    "ast_hash": "bd3bb6879b9c3ed7d3e5b5750a27c9b8",
+    "semantic_hash": "bd3bb6879b9c3ed7d3e5b5750a27c9b8"
+  },
+  "tests/security/oauth-state.test.ts": {
+    "mtime": 1786929607.3151255,
+    "ast_hash": "11e0095e8f25d06d0655bae3b36051b5",
+    "semantic_hash": "11e0095e8f25d06d0655bae3b36051b5"
+  },
+  "tests/security/payment-quote.test.ts": {
+    "mtime": 1787342358.0799713,
+    "ast_hash": "274ab386c515feb75d000fe24bc645af",
+    "semantic_hash": "274ab386c515feb75d000fe24bc645af"
+  },
+  "tests/ui/balance-refresh-button.test.tsx": {
+    "mtime": 1787253307.6900256,
+    "ast_hash": "b26f954dfed0bca2a846e3a458b1166c",
+    "semantic_hash": "b26f954dfed0bca2a846e3a458b1166c"
+  },
+  "tests/ui/creator-share-card.test.tsx": {
+    "mtime": 1787088899.1081114,
+    "ast_hash": "989ef80bb8251bb7e9c5cda946d5e7a2",
+    "semantic_hash": "989ef80bb8251bb7e9c5cda946d5e7a2"
+  },
+  "tests/ui/creator-visible-tip-amount.test.tsx": {
+    "mtime": 1787255224.5899234,
+    "ast_hash": "b0daf91b795154c1357ff94b67b42de7",
+    "semantic_hash": "b0daf91b795154c1357ff94b67b42de7"
+  },
+  "tests/ui/dashboard-header-actions.test.tsx": {
+    "mtime": 1787249839.6962016,
+    "ast_hash": "87263361b0829ff1a87d23747ace40d5",
+    "semantic_hash": "87263361b0829ff1a87d23747ace40d5"
+  },
+  "tests/ui/dashboard-navigation.test.ts": {
+    "mtime": 1787092885.101826,
+    "ast_hash": "0cd9adaf8a9e7075d341be6ac99325a0",
+    "semantic_hash": "0cd9adaf8a9e7075d341be6ac99325a0"
+  },
+  "tests/ui/dashboard-paypal-status.test.tsx": {
+    "mtime": 1787253304.591011,
+    "ast_hash": "b1c0fec4c9e1729512c3670a99e99167",
+    "semantic_hash": "b1c0fec4c9e1729512c3670a99e99167"
+  },
+  "tests/ui/dashboard-profile-header.test.tsx": {
+    "mtime": 1787100702.820522,
+    "ast_hash": "5c00ebe68b6c35af67b511c56117cc91",
+    "semantic_hash": "5c00ebe68b6c35af67b511c56117cc91"
+  },
+  "tests/ui/fan-legal-consent.test.tsx": {
+    "mtime": 1787260634.9105155,
+    "ast_hash": "166be7e46774e507ac3487a1c94b6aaf",
+    "semantic_hash": "166be7e46774e507ac3487a1c94b6aaf"
+  },
+  "tests/ui/fan-single-screen-checkout.test.tsx": {
+    "mtime": 1787260638.1338358,
+    "ast_hash": "ae91c2f3d65d0b4a4724b4c770380186",
+    "semantic_hash": "ae91c2f3d65d0b4a4724b4c770380186"
+  },
+  "tests/ui/fan-tip-amounts.test.tsx": {
+    "mtime": 1787100213.7928667,
+    "ast_hash": "3f19df553e3186833688fa6c2cb3855c",
+    "semantic_hash": "3f19df553e3186833688fa6c2cb3855c"
+  },
+  "tests/ui/notification-settings-status.test.tsx": {
+    "mtime": 1787094180.2253983,
+    "ast_hash": "9394a2ef9e98d57f8cf9e23aff7f746a",
+    "semantic_hash": "9394a2ef9e98d57f8cf9e23aff7f746a"
+  },
+  "tests/ui/onboarding-flow.test.tsx": {
+    "mtime": 1787249027.5547197,
+    "ast_hash": "1193864108f98bd9fdd9a16962dddb86",
+    "semantic_hash": "1193864108f98bd9fdd9a16962dddb86"
+  },
+  "tests/ui/paypal-connect.test.tsx": {
+    "mtime": 1787071759.007273,
+    "ast_hash": "8d6c7930cce575a91ad7cc1c4c66d70e",
+    "semantic_hash": "8d6c7930cce575a91ad7cc1c4c66d70e"
+  },
+  "tests/ui/paypal-mode-interface.test.tsx": {
+    "mtime": 1787253465.3750606,
+    "ast_hash": "d4c48858529a06a9cb9133ea11acaca1",
+    "semantic_hash": "d4c48858529a06a9cb9133ea11acaca1"
+  },
+  "tests/ui/paypal-standard-sandbox.test.tsx": {
+    "mtime": 1787248657.7867594,
+    "ast_hash": "dd9cdcb67003223e81601dc47b7517fe",
+    "semantic_hash": "dd9cdcb67003223e81601dc47b7517fe"
+  },
+  "tests/ui/push-setup-compact.test.tsx": {
+    "mtime": 1787249832.5041637,
+    "ast_hash": "bba5388d956adb76867b73158d1d1436",
+    "semantic_hash": "bba5388d956adb76867b73158d1d1436"
+  },
+  "tests/ui/receipt-actions.test.tsx": {
+    "mtime": 1787257120.9826212,
+    "ast_hash": "7d8a58956ed395f5492f84ace845167e",
+    "semantic_hash": "7d8a58956ed395f5492f84ace845167e"
+  },
+  "tests/ui/settings-layout.test.tsx": {
+    "mtime": 1787249836.0820756,
+    "ast_hash": "cc5740c76fdda05376da2ee63e513c58",
+    "semantic_hash": "cc5740c76fdda05376da2ee63e513c58"
+  },
+  "tests/ui/usd-only-interface.test.tsx": {
+    "mtime": 1787064987.057041,
+    "ast_hash": "e0273dd0ba8f417ff730772a511f9328",
+    "semantic_hash": "e0273dd0ba8f417ff730772a511f9328"
+  },
+  "tsconfig.json": {
+    "mtime": 1786579884.950967,
+    "ast_hash": "4dd89f329f911dbc8d3965fe1fbfb157",
+    "semantic_hash": "4dd89f329f911dbc8d3965fe1fbfb157"
+  },
+  "vitest.config.ts": {
+    "mtime": 1786577689.0745232,
+    "ast_hash": "043c684be4aeebac4b2d3ca08c7756cc",
+    "semantic_hash": "043c684be4aeebac4b2d3ca08c7756cc"
+  },
+  "AGENTS.md": {
+    "mtime": 1787013997.9840026,
+    "ast_hash": "01e8142356e15c3404e0d84c48187cd0",
+    "semantic_hash": "01e8142356e15c3404e0d84c48187cd0"
+  },
+  "CLAUDE.md": {
+    "mtime": 1787013997.9840026,
+    "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
+    "semantic_hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "PRODUCT.md": {
+    "mtime": 1786729942.146429,
+    "ast_hash": "f1c782a688e426fe28de1d026de912e3",
+    "semantic_hash": "f1c782a688e426fe28de1d026de912e3"
+  },
+  "README.md": {
+    "mtime": 1787410861.6211607,
+    "ast_hash": "e8c9c1a5c814e572f2d7245767a13af8",
+    "semantic_hash": "e8c9c1a5c814e572f2d7245767a13af8"
+  },
+  "docs/manual/database-verification.md": {
+    "mtime": 1787242719.1104703,
+    "ast_hash": "98f19c7665f07070b677619bc80e3872",
+    "semantic_hash": "98f19c7665f07070b677619bc80e3872"
+  },
+  "docs/manual/paypal-platform-payouts-checklist.md": {
+    "mtime": 1787245362.361931,
+    "ast_hash": "74b5a6331dbf3a79eec33bbc864d4eb7",
+    "semantic_hash": "74b5a6331dbf3a79eec33bbc864d4eb7"
+  },
+  "docs/manual/pilot-checklist.md": {
+    "mtime": 1786977229.244982,
+    "ast_hash": "aaa556308b95f639c56b5a92d3aa03f6",
+    "semantic_hash": "aaa556308b95f639c56b5a92d3aa03f6"
+  },
+  "docs/manual/push-device-checklist.md": {
+    "mtime": 1786579998.5390074,
+    "ast_hash": "3d7339ea68bd99eafcbb53f6bc469af0",
+    "semantic_hash": "3d7339ea68bd99eafcbb53f6bc469af0"
+  },
+  "docs/superpowers/plans/2026-08-12-google-auth.md": {
+    "mtime": 1786584510.2146335,
+    "ast_hash": "797a09390bb84d3f47e255f32cf690a0",
+    "semantic_hash": "797a09390bb84d3f47e255f32cf690a0"
+  },
+  "docs/superpowers/plans/2026-08-12-tipme-mvp.md": {
+    "mtime": 1786561498.035124,
+    "ast_hash": "096688c2b9380db843cb0db8dd833b45",
+    "semantic_hash": "096688c2b9380db843cb0db8dd833b45"
+  },
+  "docs/superpowers/plans/2026-08-13-fix-username-constraint.md": {
+    "mtime": 1786647582.609839,
+    "ast_hash": "bfb29fba054cc78c87ccff9f6be13cd6",
+    "semantic_hash": "bfb29fba054cc78c87ccff9f6be13cd6"
+  },
+  "docs/superpowers/plans/2026-08-13-repeat-tip-action.md": {
+    "mtime": 1786663435.9556272,
+    "ast_hash": "d3dd8e8f5f8120a51de8f3cac49aaa01",
+    "semantic_hash": "d3dd8e8f5f8120a51de8f3cac49aaa01"
+  },
+  "docs/superpowers/plans/2026-08-13-safe-supabase-error-logging.md": {
+    "mtime": 1786646032.4827228,
+    "ast_hash": "cebd1195185dc09b112e9989441f6e65",
+    "semantic_hash": "cebd1195185dc09b112e9989441f6e65"
+  },
+  "docs/superpowers/plans/2026-08-14-active-dashboard-navigation.md": {
+    "mtime": 1786744362.6660142,
+    "ast_hash": "0dd64469e8e7ee9f1cf8a200c2bd5e19",
+    "semantic_hash": "0dd64469e8e7ee9f1cf8a200c2bd5e19"
+  },
+  "docs/superpowers/plans/2026-08-14-interactive-cursors.md": {
+    "mtime": 1786731306.2619102,
+    "ast_hash": "5a152500af8be89521272db59b561a11",
+    "semantic_hash": "5a152500af8be89521272db59b561a11"
+  },
+  "docs/superpowers/plans/2026-08-14-withdrawn-total.md": {
+    "mtime": 1786725057.0637443,
+    "ast_hash": "95e24d746667492b7c388abd7166bbfd",
+    "semantic_hash": "95e24d746667492b7c388abd7166bbfd"
+  },
+  "docs/superpowers/plans/2026-08-16-dashboard-qr.md": {
+    "mtime": 1786900557.6876233,
+    "ast_hash": "926ed18dc53eeff0ea326aa7d3e53e72",
+    "semantic_hash": "926ed18dc53eeff0ea326aa7d3e53e72"
+  },
+  "docs/superpowers/plans/2026-08-16-paypal-multiparty.md": {
+    "mtime": 1786927574.4196332,
+    "ast_hash": "c1429f6b4bc7f6f55bb3b8a8f2ad1e75",
+    "semantic_hash": "c1429f6b4bc7f6f55bb3b8a8f2ad1e75"
+  },
+  "docs/superpowers/plans/2026-08-16-tm-app-icons.md": {
+    "mtime": 1786901051.5109253,
+    "ast_hash": "1780b836f0f7f5d84b054e83caeb6078",
+    "semantic_hash": "1780b836f0f7f5d84b054e83caeb6078"
+  },
+  "docs/superpowers/plans/2026-08-16-usd-neutral-language.md": {
+    "mtime": 1786903607.7832558,
+    "ast_hash": "8073672912351dcf56dc84d64f81c63e",
+    "semantic_hash": "8073672912351dcf56dc84d64f81c63e"
+  },
+  "docs/superpowers/plans/2026-08-17-paypal-card-first-fallback.md": {
+    "mtime": 1787013209.2862504,
+    "ast_hash": "33d437b8eed958d7a76c6cebdbd006f5",
+    "semantic_hash": "33d437b8eed958d7a76c6cebdbd006f5"
+  },
+  "docs/superpowers/plans/2026-08-17-paypal-standard-sandbox.md": {
+    "mtime": 1786976598.2231932,
+    "ast_hash": "dcc84c615eda7b231c684a8e2fede806",
+    "semantic_hash": "dcc84c615eda7b231c684a8e2fede806"
+  },
+  "docs/superpowers/plans/2026-08-20-mercadopago-regional-split.md": {
+    "mtime": 1787279292.2887096,
+    "ast_hash": "ab28ed3d43cbc722084e3b09dc791b01",
+    "semantic_hash": "ab28ed3d43cbc722084e3b09dc791b01"
+  },
+  "docs/superpowers/plans/2026-08-20-paypal-platform-payouts.md": {
+    "mtime": 1787242269.9240425,
+    "ast_hash": "c4a0292e53618787d210af2a11ae088d",
+    "semantic_hash": "c4a0292e53618787d210af2a11ae088d"
+  },
+  "docs/superpowers/plans/2026-08-20-single-screen-paypal-checkout.md": {
+    "mtime": 1787258791.602955,
+    "ast_hash": "e79241df6255be52013ade91da57aa29",
+    "semantic_hash": "e79241df6255be52013ade91da57aa29"
+  },
+  "docs/superpowers/plans/2026-08-20-whop-platform-payments.md": {
+    "mtime": 1787278285.002123,
+    "ast_hash": "6012166590a0acf113d14fdf16ea961a",
+    "semantic_hash": "6012166590a0acf113d14fdf16ea961a"
+  },
+  "docs/superpowers/plans/2026-08-21-usd-local-currency-quotes.md": {
+    "mtime": 1787342309.259049,
+    "ast_hash": "6919ec27c478d69e5749be51be947342",
+    "semantic_hash": "6919ec27c478d69e5749be51be947342"
+  },
+  "docs/superpowers/specs/2026-08-12-google-auth-design.md": {
+    "mtime": 1786584505.6448576,
+    "ast_hash": "bb18f3c86c0ca8682aff86bb9d6c5c4b",
+    "semantic_hash": "bb18f3c86c0ca8682aff86bb9d6c5c4b"
+  },
+  "docs/superpowers/specs/2026-08-12-tipme-mvp-design.md": {
+    "mtime": 1786560473.923691,
+    "ast_hash": "5406bc8fb311eac53a4ce4ced3467033",
+    "semantic_hash": "5406bc8fb311eac53a4ce4ced3467033"
+  },
+  "docs/superpowers/specs/2026-08-13-repeat-tip-action-design.md": {
+    "mtime": 1786663360.8769214,
+    "ast_hash": "e9d8715fe49ea9766c3d0771cb45ded8",
+    "semantic_hash": "e9d8715fe49ea9766c3d0771cb45ded8"
+  },
+  "docs/superpowers/specs/2026-08-13-safe-supabase-error-logging-design.md": {
+    "mtime": 1786646028.6959794,
+    "ast_hash": "8242253a123cb5bc7b4c7f68f559f463",
+    "semantic_hash": "8242253a123cb5bc7b4c7f68f559f463"
+  },
+  "docs/superpowers/specs/2026-08-14-active-dashboard-navigation-design.md": {
+    "mtime": 1786744139.8353019,
+    "ast_hash": "2e46fb59670130fd81b1b91071f498d9",
+    "semantic_hash": "2e46fb59670130fd81b1b91071f498d9"
+  },
+  "docs/superpowers/specs/2026-08-14-interactive-cursors-design.md": {
+    "mtime": 1786731302.9859822,
+    "ast_hash": "b5a697e693377b0890cf42aab5fe0a63",
+    "semantic_hash": "b5a697e693377b0890cf42aab5fe0a63"
+  },
+  "docs/superpowers/specs/2026-08-14-withdrawn-total-design.md": {
+    "mtime": 1786724968.8474855,
+    "ast_hash": "8bc8677224272ff3809a11a276e52eed",
+    "semantic_hash": "8bc8677224272ff3809a11a276e52eed"
+  },
+  "docs/superpowers/specs/2026-08-16-dashboard-qr-design.md": {
+    "mtime": 1786900553.7286117,
+    "ast_hash": "7b28eb5a2d32767e5749f24c9e203146",
+    "semantic_hash": "7b28eb5a2d32767e5749f24c9e203146"
+  },
+  "docs/superpowers/specs/2026-08-16-paypal-multiparty-design.md": {
+    "mtime": 1786927385.5939825,
+    "ast_hash": "7b5551ee2e49e4617c7a42ffbf37b72c",
+    "semantic_hash": "7b5551ee2e49e4617c7a42ffbf37b72c"
+  },
+  "docs/superpowers/specs/2026-08-16-tm-app-icons-design.md": {
+    "mtime": 1786901046.7853177,
+    "ast_hash": "0a78b3122e6cbd56850e4ebb929492f3",
+    "semantic_hash": "0a78b3122e6cbd56850e4ebb929492f3"
+  },
+  "docs/superpowers/specs/2026-08-16-usd-neutral-language-design.md": {
+    "mtime": 1786903415.8551755,
+    "ast_hash": "2c37a559ec8c4471646bf052dd8461da",
+    "semantic_hash": "2c37a559ec8c4471646bf052dd8461da"
+  },
+  "docs/superpowers/specs/2026-08-17-paypal-card-first-fallback-design.md": {
+    "mtime": 1787013114.5685444,
+    "ast_hash": "e8dd815e5248b8f7ba5a826e9a64efb6",
+    "semantic_hash": "e8dd815e5248b8f7ba5a826e9a64efb6"
+  },
+  "docs/superpowers/specs/2026-08-17-paypal-direct-creator-final-design.md": {
+    "mtime": 1787015046.778235,
+    "ast_hash": "e5ecb75fc6671b3a10bcdb3264a7bb94",
+    "semantic_hash": "e5ecb75fc6671b3a10bcdb3264a7bb94"
+  },
+  "docs/superpowers/specs/2026-08-17-paypal-standard-sandbox-design.md": {
+    "mtime": 1786976525.0526412,
+    "ast_hash": "64a74dbc70316ca56c0c2c4f3e45006e",
+    "semantic_hash": "64a74dbc70316ca56c0c2c4f3e45006e"
+  },
+  "docs/superpowers/specs/2026-08-20-mercadopago-regional-split-design.md": {
+    "mtime": 1787279288.5534372,
+    "ast_hash": "46e6ae13589ec1ca61a17d4ccc1d56b1",
+    "semantic_hash": "46e6ae13589ec1ca61a17d4ccc1d56b1"
+  },
+  "docs/superpowers/specs/2026-08-20-paypal-platform-payouts-design.md": {
+    "mtime": 1787241767.7529843,
+    "ast_hash": "694983b36acc3fbc32f87ceb8d506356",
+    "semantic_hash": "694983b36acc3fbc32f87ceb8d506356"
+  },
+  "docs/superpowers/specs/2026-08-20-single-screen-paypal-checkout-design.md": {
+    "mtime": 1787258497.2979064,
+    "ast_hash": "ff0547eb5649afcde32215adc6b175c0",
+    "semantic_hash": "ff0547eb5649afcde32215adc6b175c0"
+  },
+  "docs/superpowers/specs/2026-08-20-whop-platform-payments-design.md": {
+    "mtime": 1787277799.2544518,
+    "ast_hash": "4bb8295914247cc860dc90c3c675d3d9",
+    "semantic_hash": "4bb8295914247cc860dc90c3c675d3d9"
+  },
+  "docs/superpowers/specs/2026-08-21-usd-local-currency-quotes-design.md": {
+    "mtime": 1787342245.5719662,
+    "ast_hash": "71a7bd0f69b430fbd4dc70df1da9e72a",
+    "semantic_hash": "71a7bd0f69b430fbd4dc70df1da9e72a"
+  },
+  "public/brand/tipme-google-logo-512.png": {
+    "mtime": 1786901066.602,
+    "ast_hash": "8c0043b05fc3c2a04301da37fbabf318",
+    "semantic_hash": "8c0043b05fc3c2a04301da37fbabf318"
+  },
+  "public/icons/badge-96.png": {
+    "mtime": 1786901066.593,
+    "ast_hash": "4fcef443c76ee18f703ca15ef161d4a0",
+    "semantic_hash": "4fcef443c76ee18f703ca15ef161d4a0"
+  },
+  "public/icons/icon-192.png": {
+    "mtime": 1786901066.601,
+    "ast_hash": "73e45580ac19d76d2568e03f1678f3a8",
+    "semantic_hash": "73e45580ac19d76d2568e03f1678f3a8"
+  },
+  "public/icons/icon-512.png": {
+    "mtime": 1786901066.589,
+    "ast_hash": "8c0043b05fc3c2a04301da37fbabf318",
+    "semantic_hash": "8c0043b05fc3c2a04301da37fbabf318"
+  },
+  "public/icons/icon-source.svg": {
+    "mtime": 1786901054.47334,
+    "ast_hash": "e64fef119b4cb00917c10d907c1d41ed",
+    "semantic_hash": "e64fef119b4cb00917c10d907c1d41ed"
+  },
+  "public/icons/maskable-512.png": {
+    "mtime": 1786901066.608,
+    "ast_hash": "eb3811d118c478a2ba04348453f1f91e",
+    "semantic_hash": "eb3811d118c478a2ba04348453f1f91e"
+  },
+  "src/app/icon.svg": {
+    "mtime": 1786901057.4068263,
+    "ast_hash": "e64fef119b4cb00917c10d907c1d41ed",
+    "semantic_hash": "e64fef119b4cb00917c10d907c1d41ed"
+  }
+}

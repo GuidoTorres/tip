@@ -79,5 +79,11 @@ const schema = z.object({
 export type ServerEnv = z.infer<typeof schema>;
 
 export function getServerEnv(): ServerEnv {
-  return schema.parse(process.env);
+  // En un .env, `FOO=` significa "sin configurar", pero llega como "" y no como
+  // undefined: los .default() del esquema no se aplican y los .min() fallan.
+  // Se descartan los valores vacíos para que blanco y ausente sean lo mismo.
+  const configured = Object.fromEntries(
+    Object.entries(process.env).filter(([, value]) => value !== undefined && value.trim() !== ""),
+  );
+  return schema.parse(configured);
 }

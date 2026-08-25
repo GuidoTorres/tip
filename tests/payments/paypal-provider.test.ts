@@ -47,7 +47,7 @@ describe("PayPal partner primitives", () => {
       void init;
       const url = String(input);
       if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
-      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-1", status: "CREATED" }, 201);
+      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-1", status: "CREATED", links: [{ rel: "approve", href: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-1" }] }, 201);
       if (url.endsWith("/v1/identity/generate-token")) return jsonResponse({ client_token: "client-token" });
       return jsonResponse({ name: "NOT_FOUND" }, 404);
     });
@@ -65,7 +65,7 @@ describe("PayPal partner primitives", () => {
     });
 
     expect(result.providerPaymentId).toBe("ORDER-1");
-    expect(result.checkout).toBeUndefined();
+    expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-1" });
     expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", merchantId: "CREATOR-MERCHANT", clientToken: "client-token", partnerAttributionId: "TIPME_SP_PPCP" });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
     const headers = new Headers(orderCall?.[1]?.headers);
@@ -90,7 +90,7 @@ describe("PayPal partner primitives", () => {
     const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
-      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-STANDARD", status: "CREATED" }, 201);
+      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-STANDARD", status: "CREATED", links: [{ rel: "approve", href: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-STANDARD" }] }, 201);
       if (url.endsWith("/v1/identity/generate-token")) return jsonResponse({ client_token: "client-token" });
       if (url.endsWith("/v2/checkout/orders/ORDER-STANDARD/capture")) return jsonResponse({ purchase_units: [{ payments: { captures: [{ id: "CAPTURE-1", status: "COMPLETED" }] } }] });
       return jsonResponse({ request: init }, 404);
@@ -104,7 +104,7 @@ describe("PayPal partner primitives", () => {
     });
     await provider.capturePayment({ providerPaymentId: "ORDER-STANDARD", providerAccountId: "PARTNER-MERCHANT", idempotencyKey: "capture:tip-1" });
 
-    expect(result.checkout).toBeUndefined();
+    expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-STANDARD" });
     expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", clientToken: "client-token" });
     const paypalCalls = fetchImpl.mock.calls.filter(([url]) => !String(url).endsWith("/v1/oauth2/token") && !String(url).endsWith("/v1/identity/generate-token"));
     for (const [, init] of paypalCalls) {
@@ -131,7 +131,7 @@ describe("PayPal partner primitives", () => {
       void init;
       const url = String(input);
       if (url.endsWith("/v1/oauth2/token")) return jsonResponse({ access_token: "access", expires_in: 3600 });
-      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-PLATFORM", status: "CREATED" }, 201);
+      if (url.endsWith("/v2/checkout/orders")) return jsonResponse({ id: "ORDER-PLATFORM", status: "CREATED", links: [{ rel: "approve", href: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-PLATFORM" }] }, 201);
       if (url.endsWith("/v1/identity/generate-token")) return jsonResponse({ client_token: "client-token" });
       return jsonResponse({}, 404);
     });
@@ -143,7 +143,7 @@ describe("PayPal partner primitives", () => {
       providerAccountId: null, idempotencyKey: "create:tip-1",
     });
 
-    expect(result.checkout).toBeUndefined();
+    expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-PLATFORM" });
     expect(checkout).toEqual({
       kind: "embedded", clientId: "platform-client-id", clientToken: "client-token",
     });

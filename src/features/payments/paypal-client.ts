@@ -127,7 +127,7 @@ export class PayPalClient {
       amount: { currency_code: "USD" as const, value: usd(input.amountMinor) },
     };
     if (this.config.flow === "platform_payouts" || this.config.singleMerchantSandbox) {
-      return this.request<{ id: string; status: string }>("/v2/checkout/orders", {
+      return this.request<{ id: string; status: string; links?: Array<{ rel?: string; href?: string }> }>("/v2/checkout/orders", {
         method: "POST", idempotencyKey: input.idempotencyKey,
         body: { intent: "CAPTURE", application_context: applicationContext, purchase_units: [purchaseUnit] },
       });
@@ -135,7 +135,7 @@ export class PayPalClient {
     if (!input.merchantId) throw new Error("paypal_account_not_connected");
     const paymentInstruction: { disbursement_mode: "INSTANT"; platform_fees?: Array<{ amount: { currency_code: "USD"; value: string } }> } = { disbursement_mode: "INSTANT" };
     if (input.platformFeeMinor > 0) paymentInstruction.platform_fees = [{ amount: { currency_code: "USD", value: usd(input.platformFeeMinor) } }];
-    return this.request<{ id: string; status: string }>("/v2/checkout/orders", {
+    return this.request<{ id: string; status: string; links?: Array<{ rel?: string; href?: string }> }>("/v2/checkout/orders", {
       method: "POST",
       merchantId: input.merchantId,
       idempotencyKey: input.idempotencyKey,

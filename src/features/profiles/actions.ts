@@ -149,8 +149,8 @@ export async function completeOnboarding() {
     if (!account) redirect("/onboarding?step=2&error=mercadopago_required");
   }
   if (env.PAYMENT_PROVIDER === "paypal" && env.PAYPAL_FLOW === "platform_payouts") {
-    const { data: destination } = await supabase.from("payout_accounts").select("id").eq("creator_id", user.id).eq("provider", "paypal").in("status", ["pending", "verified"]).limit(1).maybeSingle();
-    if (!destination) redirect("/onboarding?step=2&error=paypal_required");
+    const { data: account } = await supabase.from("payout_accounts").select("id").eq("creator_id", user.id).eq("provider", "paypal").in("status", ["pending", "verified"]).limit(1).maybeSingle();
+    if (!account) redirect("/onboarding?step=2&error=paypal_required");
   }
   if (env.PAYMENT_PROVIDER === "dlocalgo") {
     const { data: account } = await supabase.from("payment_accounts").select("id").eq("creator_id", user.id).eq("provider", "dlocalgo").eq("status", "connected").limit(1).maybeSingle();

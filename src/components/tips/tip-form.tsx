@@ -52,6 +52,23 @@ type CreatedTip = {
   error?: string;
 };
 
+function tipStartErrorMessage(code: string | undefined, locale: Locale) {
+  if (locale === "es") {
+    if (code === "paypal_account_not_connected") return "Esta creadora todavía no tiene configurado su correo PayPal de retiro.";
+    if (code === "mercadopago_account_not_connected") return "Esta creadora todavía no tiene configurada su cuenta de Mercado Pago.";
+    if (code === "dlocalgo_account_not_connected") return "Esta creadora todavía no tiene configurada su cuenta de dLocal Go.";
+    if (code === "whop_account_not_connected") return "Esta creadora todavía no tiene activado su método de cobro.";
+    if (code === "creator_not_found") return "No encontramos esa página pública.";
+    return "No pudimos iniciar el tip. Comprueba tu conexión.";
+  }
+  if (code === "paypal_account_not_connected") return "This creator has not configured a PayPal withdrawal email yet.";
+  if (code === "mercadopago_account_not_connected") return "This creator has not configured a Mercado Pago account yet.";
+  if (code === "dlocalgo_account_not_connected") return "This creator has not configured a dLocal Go account yet.";
+  if (code === "whop_account_not_connected") return "This creator has not enabled their payment method yet.";
+  if (code === "creator_not_found") return "We could not find that public page.";
+  return "We could not start the tip. Check your connection.";
+}
+
 export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checkoutFixedFeeMinor = 0, allowProcessingSupport = true }: {
   username: string;
   currency: Currency;
@@ -72,7 +89,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bootstrap, setBootstrap] = useState<CheckoutBootstrap | null>(null);
-  const [bootstrapError, setBootstrapError] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [quote, setQuote] = useState<MercadoPagoQuote | null>(null);
   const [quoteError, setQuoteError] = useState(false);
@@ -84,11 +101,11 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       signal: controller.signal,
     }).then(async (response) => {
       const data = await response.json().catch(() => null) as CheckoutBootstrap | null;
-      if (!response.ok || !data || !["redirect", "mercadopago"].includes(data.kind)) throw new Error("checkout_unavailable");
+      if (!response.ok || !data || !["redirect", "mercadopago"].includes(data.kind)) throw new Error((data as { error?: string } | null)?.error || "checkout_unavailable");
       setBootstrap(data);
     }).catch((reason: unknown) => {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
-      setBootstrapError(true);
+      setBootstrapError(reason instanceof Error ? reason.message : "checkout_unavailable");
     });
     return () => controller.abort();
   }, [bootstrapAttempt, username]);
@@ -165,8 +182,8 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       const data = await createTipRequest(buildPayload());
       if (data.checkout?.kind !== "redirect") throw new Error("redirect_unavailable");
       window.location.assign(data.checkout.url);
-    } catch {
-      setError(locale === "es" ? "No pudimos iniciar el tip. Comprueba tu conexión." : "We could not start the tip. Check your connection.");
+    } catch (reason) {
+      setError(tipStartErrorMessage(reason instanceof Error ? reason.message : undefined, locale));
       setSubmitting(false);
     }
   }
@@ -180,7 +197,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       return { tipId: data.tipId, receiptToken: data.receiptToken };
     } catch (reason) {
       setSubmitting(false);
-      setError(locale === "es" ? "No pudimos iniciar el tip. Revisa los datos del pago." : "We could not start the tip. Check the payment details.");
+      setError(tipStartErrorMessage((reason as Error | null)?.message, locale));
       throw reason;
     }
   }
@@ -213,7 +230,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     {bootstrap?.kind === "mercadopago" && !quote && !quoteError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Calculando pago seguro" : "Calculating secure payment"}</p>}
     {bootstrap?.kind === "mercadopago" && quoteError && <p role="alert" className="mt-6 rounded-xl bg-surface-soft p-4 text-center text-sm font-semibold text-accent-strong">{locale === "es" ? "No pudimos calcular la conversión. Cambia el monto para reintentar." : "We could not calculate the conversion. Change the amount to try again."}</p>}
     {!bootstrap && !bootstrapError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Preparando pago seguro" : "Preparing secure payment"}</p>}
-    {bootstrapError && <div className="mt-6 rounded-xl bg-surface-soft p-4 text-center"><p className="text-sm font-semibold text-accent-strong">{locale === "es" ? "No pudimos cargar el pago seguro." : "We could not load secure payment."}</p><button type="button" onClick={() => { setBootstrap(null); setBootstrapError(false); setBootstrapAttempt((value) => value + 1); }} className="pressable mt-3 min-h-10 rounded-full border border-border px-5 text-sm font-semibold hover:border-accent">{locale === "es" ? "Reintentar" : "Try again"}</button></div>}
+    {bootstrapError && <div className="mt-6 rounded-xl bg-surface-soft p-4 text-center"><p className="text-sm font-semibold text-accent-strong">{tipStartErrorMessage(bootstrapError, locale)}</p><button type="button" onClick={() => { setBootstrap(null); setBootstrapError(null); setBootstrapAttempt((value) => value + 1); }} className="pressable mt-3 min-h-10 rounded-full border border-border px-5 text-sm font-semibold hover:border-accent">{locale === "es" ? "Reintentar" : "Try again"}</button></div>}
     {error && <p role="alert" className="mt-4 text-sm font-semibold text-accent-strong">{error}</p>}
   </div>;
 }

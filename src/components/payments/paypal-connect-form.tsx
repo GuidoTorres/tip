@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { PaypalLogo } from "@phosphor-icons/react";
 import {
   getPayPalConnectControlState,
-  PAYPAL_ONBOARDING_WINDOW,
   pollPayPalOnboardingStatus,
   type PayPalOnboardingStatusResult,
 } from "@/features/payments/paypal-onboarding-popup";
@@ -19,7 +18,6 @@ function waitForNextCheck() {
 
 export function PayPalConnectForm() {
   const router = useRouter();
-  const popupRef = useRef<Window | null>(null);
   const pollGeneration = useRef(0);
   const [opening, setOpening] = useState(false);
   const [onboardingStarted, setOnboardingStarted] = useState(false);
@@ -42,8 +40,6 @@ export function PayPalConnectForm() {
   const acceptVerifiedStatus = useCallback((result: PayPalOnboardingStatusResult) => {
     if (result.status !== "connected") return false;
     pollGeneration.current += 1;
-    popupRef.current?.close();
-    popupRef.current = null;
     window.sessionStorage.removeItem("tipme_paypal_onboarding_pending");
     setOnboardingStarted(false);
     router.replace("/onboarding?step=2&paypal=connected");
@@ -92,8 +88,6 @@ export function PayPalConnectForm() {
     if (opening || onboardingStarted) return;
     setOpening(true);
     setMessage(null);
-    const popup = window.open("", PAYPAL_ONBOARDING_WINDOW, "popup=yes,width=520,height=720,resizable=yes,scrollbars=yes");
-    popupRef.current = popup;
     try {
       const response = await fetch("/api/paypal/onboarding", {
         method: "POST",
@@ -104,17 +98,8 @@ export function PayPalConnectForm() {
 
       window.sessionStorage.setItem("tipme_paypal_onboarding_pending", "true");
       setOnboardingStarted(true);
-      if (popup) {
-        popup.location.assign(result.actionUrl);
-        popup.focus();
-        setOpening(false);
-        void monitorPayPal();
-        return;
-      }
       window.location.assign(result.actionUrl);
     } catch {
-      popup?.close();
-      popupRef.current = null;
       window.sessionStorage.removeItem("tipme_paypal_onboarding_pending");
       setOnboardingStarted(false);
       setMessage("No pudimos abrir PayPal. Inténtalo nuevamente.");

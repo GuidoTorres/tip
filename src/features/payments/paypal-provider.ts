@@ -38,6 +38,19 @@ function captureFromOrder(value: Record<string, unknown>): { id: string | null; 
   return { id: capture?.id ?? null, status: capture?.status ?? String(value.status ?? "PENDING") };
 }
 
+function approvalUrl(links?: Array<{ rel?: string; href?: string }>) {
+  const candidate = links?.find((link) => ["approve", "payer-action"].includes(String(link.rel ?? "").toLowerCase()));
+  if (!candidate?.href) return null;
+  try {
+    const url = new URL(candidate.href);
+    if (url.protocol !== "https:") return null;
+    if (!/(^|\.)paypal\.com$/i.test(url.hostname)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export class PayPalPaymentProvider implements PaymentProvider {
   readonly name = "paypal";
 
@@ -69,9 +82,12 @@ export class PayPalPaymentProvider implements PaymentProvider {
       tipId: input.tipId, amountMinor: input.amountMinor, platformFeeMinor: input.platformFeeMinor,
       merchantId, idempotencyKey: input.idempotencyKey,
     });
+    const url = approvalUrl(order.links);
+    if (!url) throw new Error("paypal_checkout_missing");
     return {
       providerPaymentId: order.id,
       status: "pending",
+      checkout: { kind: "redirect", url },
       gatewayFeeMinor: null,
     };
   }
