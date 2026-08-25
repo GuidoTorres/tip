@@ -5,9 +5,9 @@ import { getPublicEnv } from "@/lib/env/public";
 import { getServerEnv } from "@/lib/env/server";
 import { completeOnboarding, saveDLocalGoSplitCode, saveOnboardingProfile } from "@/features/profiles/actions";
 import { CopyLink } from "@/components/shared/copy-link";
-import { ApplicationCurrencyField } from "@/components/shared/application-currency-field";
 import { MercadoPagoConnect } from "@/components/payments/mercadopago-connect";
 import { PayPalPayoutEmailForm } from "@/components/payouts/paypal-payout-email-form";
+import { OnboardingProfileForm } from "@/components/onboarding/onboarding-profile-form";
 
 const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent";
 
@@ -132,37 +132,15 @@ export default async function OnboardingPage({
               <UserCircle size={32} className="text-accent-strong" weight="fill" />
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">Tu pagina publica</h1>
               <p className="mt-2 text-muted">Asi te veran las personas que quieran apoyarte.</p>
-              <form action={saveOnboardingProfile} className="mt-7 space-y-5">
-                <label className="block text-sm font-semibold">
-                  Nombre visible
-                  <input className={inputClass} name="publicName" required maxLength={80} defaultValue={profile?.public_name ?? ""} />
-                </label>
-                <label className="block text-sm font-semibold">
-                  Username
-                  <div className="mt-2 flex min-h-12 items-center rounded-xl border border-border bg-background px-4">
-                    <span className="text-muted">tipme.pro/</span>
-                    <input
-                      name="username"
-                      required
-                      minLength={3}
-                      maxLength={30}
-                      defaultValue={profile?.username ?? ""}
-                      className="min-w-0 flex-1 bg-transparent outline-none"
-                    />
-                  </div>
-                </label>
-                <label className="block text-sm font-semibold">
-                  Foto
-                  <input className="mt-2 block w-full text-sm text-muted" type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/avif" />
-                </label>
-                <label className="block text-sm font-semibold">
-                  Descripcion
-                  <textarea className={`${inputClass} min-h-24 py-3`} name="bio" maxLength={180} defaultValue={profile?.bio ?? ""} />
-                </label>
-                {provider !== "mercadopago" && <ApplicationCurrencyField />}
-                <input type="hidden" name="locale" value={profile?.locale ?? "es"} />
-                <SubmitButton label={whopOnboarding ? "Crear mi pagina" : "Continuar"} />
-              </form>
+              <OnboardingProfileForm
+                action={saveOnboardingProfile}
+                publicName={profile?.public_name ?? ""}
+                username={profile?.username ?? ""}
+                bio={profile?.bio ?? ""}
+                locale={profile?.locale === "en" ? "en" : "es"}
+                showCurrency={provider !== "mercadopago"}
+                submitLabel={whopOnboarding ? "Crear mi pagina" : "Continuar"}
+              />
             </>
           )}
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
-import type { PaymentAccountLookup, TipRepository } from "./create-tip";
-import type { PaymentProvider } from "./provider";
+import type { PaymentAccountLookup, PayoutDestinationLookup, TipRepository } from "./create-tip";
+import type { PayPalFlow } from "./paypal-client";
+import type { EmbeddedCheckout, PaymentProvider } from "./provider";
 import type { MercadoPagoCountry, MercadoPagoCurrency, MercadoPagoRegionEnv } from "./mercadopago-regions";
 import { getMercadoPagoRegion } from "./mercadopago-regions";
 
@@ -10,12 +11,16 @@ const inputSchema = z.object({
 
 export type CheckoutBootstrap =
   | { kind: "redirect" }
+  | { kind: "embedded"; checkout: EmbeddedCheckout }
   | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
 
 type Dependencies = {
   provider: PaymentProvider;
   creators: Pick<TipRepository, "findCreatorByUsername">;
   paymentAccounts?: PaymentAccountLookup;
+  payoutDestinations?: PayoutDestinationLookup;
+  providerAccountOverride?: string;
+  paypalFlow?: PayPalFlow;
   mercadoPagoEnv?: MercadoPagoRegionEnv;
 };
 
@@ -23,6 +28,22 @@ export async function prepareCheckout(input: { username: string }, dependencies:
   const value = inputSchema.parse(input);
   const creator = await dependencies.creators.findCreatorByUsername(value.username);
   if (!creator) throw new Error("creator_not_found");
+  if (dependencies.provider.name === "paypal" && dependencies.provider.prepareCheckout) {
+    const paypalFlow = dependencies.paypalFlow ?? "multiparty";
+    let providerAccountId: string | null = null;
+    if (paypalFlow === "platform_payouts") {
+      const destination = await dependencies.payoutDestinations?.findConfigured(creator.id) ?? null;
+      if (!destination) throw new Error("paypal_account_not_connected");
+    } else {
+      const account = dependencies.providerAccountOverride
+        ? null
+        : await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null;
+      providerAccountId = dependencies.providerAccountOverride ?? account?.providerMerchantId ?? null;
+      if (!providerAccountId) throw new Error("paypal_account_not_connected");
+    }
+    const checkout = await dependencies.provider.prepareCheckout({ providerAccountId });
+    return checkout ? { kind: "embedded", checkout } : { kind: "redirect" };
+  }
   if (dependencies.provider.name === "mercadopago") {
     const account = await dependencies.paymentAccounts?.findConnected(creator.id, "mercadopago") ?? null;
     if (!account?.country || !account.currency || !dependencies.mercadoPagoEnv) throw new Error("mercadopago_account_not_connected");

@@ -12,6 +12,45 @@ function nonPaymentMethods(): Pick<PaymentProvider, "getPaymentStatus" | "captur
 }
 
 describe("prepareCheckout", () => {
+  it("prepares the embedded PayPal gateway for a creator with a payout destination", async () => {
+    const checkout = {
+      kind: "embedded" as const,
+      clientId: "paypal-client-id",
+      clientToken: "paypal-client-token",
+    };
+    const provider: PaymentProvider = {
+      name: "paypal",
+      prepareCheckout: vi.fn().mockResolvedValue(checkout),
+      createPayment: vi.fn(),
+      ...nonPaymentMethods(),
+    };
+
+    const result = await prepareCheckout({ username: "camila" }, {
+      provider,
+      creators: { findCreatorByUsername: vi.fn().mockResolvedValue({ id: "creator-1", currency: "USD" }) },
+      payoutDestinations: { findConfigured: vi.fn().mockResolvedValue({ id: "destination-1", status: "pending" }) },
+      paypalFlow: "platform_payouts",
+    });
+
+    expect(result).toEqual({ kind: "embedded", checkout });
+  });
+
+  it("does not expose PayPal checkout without a payout destination", async () => {
+    const provider: PaymentProvider = {
+      name: "paypal",
+      prepareCheckout: vi.fn(),
+      createPayment: vi.fn(),
+      ...nonPaymentMethods(),
+    };
+
+    await expect(prepareCheckout({ username: "camila" }, {
+      provider,
+      creators: { findCreatorByUsername: vi.fn().mockResolvedValue({ id: "creator-1", currency: "USD" }) },
+      payoutDestinations: { findConfigured: vi.fn().mockResolvedValue(null) },
+      paypalFlow: "platform_payouts",
+    })).rejects.toThrow("paypal_account_not_connected");
+  });
+
   it("keeps providers without embedded preparation in redirect mode", async () => {
     const provider: PaymentProvider = {
       name: "mock",

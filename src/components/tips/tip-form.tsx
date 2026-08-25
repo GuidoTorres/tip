@@ -8,6 +8,8 @@ import type { CheckoutBootstrap } from "@/features/payments/prepare-checkout";
 import type { CheckoutPresentation } from "@/features/payments/provider";
 import type { MercadoPagoCardPaymentData } from "@/features/payments/provider";
 import { MercadoPagoCardCheckout } from "@/components/payments/mercadopago-card-checkout";
+import { PayPalCheckout } from "@/components/payments/paypal-checkout";
+import type { CreatedCheckoutAttempt } from "@/features/payments/checkout-attempt";
 import type { Currency } from "@/features/payments/types";
 import { formatMoney, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/config";
@@ -82,11 +84,13 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   const unit = 10 ** digits;
   const presets = useMemo(() => [5, 10, 20, 50].map((amount) => amount * unit), [unit]);
   const formRef = useRef<HTMLFormElement>(null);
+  const embeddedPayload = useRef<TipPayload | null>(null);
   const [amountMinor, setAmountMinor] = useState(20 * unit);
   const [custom, setCustom] = useState("");
   const [showCustom, setShowCustom] = useState(false);
   const [coverProcessing, setCoverProcessing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutLocked, setCheckoutLocked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bootstrap, setBootstrap] = useState<CheckoutBootstrap | null>(null);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
@@ -101,7 +105,8 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
       signal: controller.signal,
     }).then(async (response) => {
       const data = await response.json().catch(() => null) as CheckoutBootstrap | null;
-      if (!response.ok || !data || !["redirect", "mercadopago"].includes(data.kind)) throw new Error((data as { error?: string } | null)?.error || "checkout_unavailable");
+      if (!response.ok || !data || !["redirect", "embedded", "mercadopago"].includes(data.kind)) throw new Error((data as { error?: string } | null)?.error || "checkout_unavailable");
+      if (data.kind === "embedded" && data.checkout.kind !== "embedded") throw new Error("checkout_unavailable");
       setBootstrap(data);
     }).catch((reason: unknown) => {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
@@ -188,6 +193,24 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
     }
   }
 
+  async function createEmbeddedOrder(): Promise<CreatedCheckoutAttempt> {
+    setError(null);
+    try {
+      const payload = embeddedPayload.current ?? buildPayload();
+      embeddedPayload.current = payload;
+      setCheckoutLocked(true);
+      const data = await createTipRequest(payload);
+      return { tipId: data.tipId, orderId: data.providerPaymentId, receiptToken: data.receiptToken };
+    } catch (reason) {
+      embeddedPayload.current = null;
+      setCheckoutLocked(false);
+      if (reason instanceof Error && !reason.message.startsWith("invalid_tip_")) {
+        setError(tipStartErrorMessage(reason.message, locale));
+      }
+      throw reason;
+    }
+  }
+
   async function submitMercadoPago(paymentMethodData: MercadoPagoCardPaymentData) {
     if (bootstrap?.kind !== "mercadopago" || !quote) throw new Error("checkout_unavailable");
     setSubmitting(true);
@@ -205,7 +228,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
   const legalNotice = <p className="mt-3 text-center text-xs leading-relaxed text-muted">{locale === "es" ? <>Los tips <a href="/refund-policy" target="_blank" rel="noreferrer" className="inline-block py-1 font-semibold text-foreground underline">no son reembolsables</a>. Revisa los <a href="/terms" target="_blank" rel="noreferrer" className="inline-block py-1 font-semibold text-foreground underline">términos</a> antes de pagar.</> : <>Tips are <a href="/refund-policy" target="_blank" rel="noreferrer" className="inline-block py-1 font-semibold text-foreground underline">not refundable</a>. Review the <a href="/terms" target="_blank" rel="noreferrer" className="inline-block py-1 font-semibold text-foreground underline">terms</a> before paying.</>}</p>;
 
   return <div className="mt-8"><form ref={formRef} onSubmit={submitRedirect}>
-    <fieldset disabled={submitting}>
+    <fieldset disabled={submitting || checkoutLocked}>
       <legend className="text-lg font-semibold">{t.tip.heading}</legend>
       <p className="mt-1 text-xs text-muted">{t.tip.currencyNotice}</p>
       <div className="mt-3 grid grid-cols-5 gap-1.5">{presets.map((amount) => <button key={amount} type="button" onClick={() => { setAmountMinor(amount); setShowCustom(false); }} className={`pressable min-h-11 rounded-lg border px-2 text-sm font-bold ${!showCustom && amountMinor === amount ? "border-accent bg-accent-strong text-on-accent" : "border-border bg-background hover:border-accent"}`}>{amount / unit}</button>)}{showCustom ? <input autoFocus inputMode="numeric" pattern="[0-9]+" value={custom} onChange={(event) => setCustom(event.target.value.replace(/\D/g, ""))} aria-label={locale === "es" ? "Otro monto" : "Other amount"} placeholder={locale === "es" ? "Otro" : "Other"} className="min-h-11 w-full rounded-lg border border-accent bg-background px-1 text-center text-sm font-bold outline-none focus:ring-2 focus:ring-accent-strong/40" /> : <button type="button" onClick={() => setShowCustom(true)} className="pressable min-h-11 rounded-lg border border-border px-1 text-sm font-semibold hover:border-accent">{locale === "es" ? "Otro" : "Other"}</button>}</div>
@@ -225,6 +248,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
 
     {bootstrap?.kind === "redirect" && <button disabled={submitting} className="pressable mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent-strong px-6 py-4 font-bold text-on-accent hover:bg-accent-pressed disabled:opacity-60">{submitting ? <><SpinnerGap size={22} className="animate-spin" /> {locale === "es" ? "Preparando pago" : "Preparing payment"}</> : <><Heart size={21} weight="fill" /> {t.tip.send}</>}</button>}
     </form>
+    {bootstrap?.kind === "embedded" && <PayPalCheckout checkout={bootstrap.checkout} locale={locale} createOrder={createEmbeddedOrder} />}
     {bootstrap?.kind === "mercadopago" && quote && <><MercadoPagoCardCheckout publicKey={bootstrap.publicKey} country={bootstrap.country} amount={quote.localAmountMinor / 10 ** currencyDigits(quote.currency)} locale={locale} onPay={submitMercadoPago}>{legalNotice}</MercadoPagoCardCheckout></>}
     {!(bootstrap?.kind === "mercadopago" && quote) && legalNotice}
     {bootstrap?.kind === "mercadopago" && !quote && !quoteError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Calculando pago seguro" : "Calculating secure payment"}</p>}
