@@ -24,7 +24,11 @@ export type MercadoPagoCardPaymentData = {
 
 export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
+  | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string }
   | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
+
+export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
+export type PrepareCheckoutInput = { providerAccountId: string | null };
 
 export type PaymentResult = {
   providerPaymentId: string;
@@ -43,7 +47,34 @@ export type PaymentWebhookEvent = {
   occurredAt: string;
 };
 
-export type ProviderWebhookEvent = PaymentWebhookEvent;
+export type CreatePayoutInput = {
+  payoutId: string;
+  amountMinor: number;
+  recipientAmountMinor: number;
+  estimatedFeeMinor: number;
+  currency: Currency;
+  providerAccountId: string;
+  recipientType: "EMAIL" | "PAYPAL_ID";
+  idempotencyKey: string;
+};
+
+export type PayoutStatus = "requested" | "processing" | "completed" | "failed";
+
+export type PayoutResult = { providerBatchId: string; status: "processing" };
+
+export type PayoutWebhookEvent = {
+  kind: "payout";
+  eventId: string;
+  payoutId: string;
+  providerPayoutItemId: string;
+  status: "processing" | "completed" | "failed" | "unclaimed";
+  actualFeeMinor: number;
+  providerStatus: string;
+  failureCode: string | null;
+  occurredAt: string;
+};
+
+export type ProviderWebhookEvent = PaymentWebhookEvent | PayoutWebhookEvent;
 
 export type WebhookVerificationInput = { rawBody: string; headers: Headers };
 
@@ -60,9 +91,14 @@ export type CapturePaymentResult = {
 
 export interface PaymentProvider {
   readonly name: string;
+  prepareCheckout?(input: PrepareCheckoutInput): Promise<EmbeddedCheckout | null>;
   createPayment(input: CreatePaymentInput): Promise<PaymentResult>;
   getPaymentStatus(providerPaymentId: string): Promise<PaymentResult["status"]>;
   capturePayment(input: CapturePaymentInput): Promise<CapturePaymentResult>;
   verifyWebhook(input: WebhookVerificationInput): Promise<boolean>;
   parseWebhook(rawBody: string): Promise<ProviderWebhookEvent>;
+  // Solo los proveedores con custodia pagan al creador desde un saldo de TipMe.
+  // Con split (Mercado Pago, dLocal Go, Whop) el dinero ya llegó a su destino.
+  createPayout?(input: CreatePayoutInput): Promise<PayoutResult>;
+  getPayoutStatus?(providerPayoutId: string): Promise<PayoutStatus>;
 }

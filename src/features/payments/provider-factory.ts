@@ -1,4 +1,6 @@
 import { MockPaymentProvider } from "./mock-provider";
+import { PayPalClient, payPalConfigFromEnv, type PayPalConfig } from "./paypal-client";
+import { PayPalPaymentProvider } from "./paypal-provider";
 import type { PaymentProvider } from "./provider";
 import type { ServerEnv } from "@/lib/env/server";
 import { MercadoPagoPaymentProvider } from "./mercadopago-provider";
@@ -6,8 +8,9 @@ import { DLocalGoPaymentProvider } from "./dlocalgo-provider";
 import { WhopPaymentProvider } from "./whop-provider";
 
 type ProviderConfig = {
-  provider: "mock" | "mercadopago" | "dlocalgo" | "whop";
+  provider: "mock" | "paypal" | "mercadopago" | "dlocalgo" | "whop";
   mockWebhookSecret: string;
+  paypal?: PayPalConfig;
   fetchImpl?: typeof fetch;
   appUrl?: string;
   dlocalgo?: { apiKey: string; secretKey: string; environment: "sandbox" | "live" };
@@ -16,6 +19,10 @@ type ProviderConfig = {
 
 export function getPaymentProvider(config: ProviderConfig): PaymentProvider {
   if (config.provider === "mock") return new MockPaymentProvider(config.mockWebhookSecret);
+  if (config.provider === "paypal") {
+    if (!config.paypal) throw new Error("paypal_config_missing");
+    return new PayPalPaymentProvider(new PayPalClient(config.paypal, config.fetchImpl), config.paypal);
+  }
   if (config.provider === "mercadopago") {
     if (!config.appUrl) throw new Error("mercadopago_config_missing");
     return new MercadoPagoPaymentProvider({ appUrl: config.appUrl, fetchImpl: config.fetchImpl });
@@ -41,6 +48,7 @@ export function getPaymentProviderFromEnv(env: ServerEnv): PaymentProvider {
   return getPaymentProvider({
     provider: env.PAYMENT_PROVIDER,
     mockWebhookSecret: env.MOCK_WEBHOOK_SECRET,
+    ...(env.PAYMENT_PROVIDER === "paypal" ? { paypal: payPalConfigFromEnv(env) } : {}),
     ...(env.PAYMENT_PROVIDER === "mercadopago" ? { appUrl } : {}),
     ...(env.PAYMENT_PROVIDER === "dlocalgo" ? {
       appUrl,

@@ -12,14 +12,16 @@ import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 import { supportedCurrencies } from "@/features/payments/types";
 import { getServerEnv } from "@/lib/env/server";
 import { MercadoPagoConnectionBadge } from "@/components/dashboard/mercadopago-connection-badge";
+import { PayPalConnectionBadge } from "@/components/dashboard/paypal-connection-badge";
 import { WhopActivationCard } from "@/components/dashboard/whop-activation-card";
+import { creatorVisibleTipAmount } from "@/features/payments/creator-visible-amount";
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const serverEnv = getServerEnv();
-  const paymentProvider: "mock" | "mercadopago" = serverEnv.PAYMENT_PROVIDER === "mercadopago" ? "mercadopago" : "mock";
+  const paymentProvider: "mock" | "paypal" | "mercadopago" = serverEnv.PAYMENT_PROVIDER === "paypal" ? "paypal" : serverEnv.PAYMENT_PROVIDER === "mercadopago" ? "mercadopago" : "mock";
   const { data: whopAccount } = serverEnv.PAYMENT_PROVIDER === "whop"
     ? await supabase.from("payment_accounts").select("status,onboarding_completed,payments_receivable").eq("creator_id", user.id).eq("provider", "whop").maybeSingle()
     : { data: null };
@@ -32,15 +34,20 @@ export default async function DashboardPage() {
     : APPLICATION_CURRENCY;
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
-  const paymentAccountRequest = Promise.resolve({ data: mercadoPagoAccount });
-  const tipTotalsRequest = paymentProvider === "mercadopago"
+  const platformPayouts = paymentProvider === "paypal" && serverEnv.PAYPAL_FLOW === "platform_payouts";
+  const paymentAccountRequest = platformPayouts
+    ? supabase.from("payout_accounts").select("status").eq("creator_id", user.id).eq("provider", "paypal").order("created_at", { ascending: true }).limit(1).maybeSingle()
+    : paymentProvider === "paypal"
+    ? supabase.from("payment_accounts").select("status,payments_receivable,email_confirmed,onboarding_completed").eq("creator_id", user.id).eq("provider", "paypal").maybeSingle()
+    : Promise.resolve({ data: mercadoPagoAccount });
+  const tipTotalsRequest = paymentProvider === "paypal" || paymentProvider === "mercadopago"
     ? supabase.rpc("creator_tip_totals", { requested_creator: user.id })
     : Promise.resolve({ data: null });
   const latestTipsBase = supabase.from("tips").select("id,payer_name,message,anonymous,base_amount_minor,amount_minor,net_amount_minor,currency,status,created_at").eq("creator_id", user.id).order("created_at", { ascending: false });
-  const latestTipsRequest = paymentProvider === "mercadopago"
+  const latestTipsRequest = paymentProvider === "paypal" || paymentProvider === "mercadopago"
     ? latestTipsBase.eq("status", "confirmed").limit(6)
     : latestTipsBase.limit(6);
-  const [{ data: profile }, { data: balances }, { data: tips }, { data: todayTips }, , { data: tipTotals }] = await Promise.all([
+  const [{ data: profile }, { data: balances }, { data: tips }, { data: todayTips }, { data: paymentAccount }, { data: tipTotals }] = await Promise.all([
     supabase.from("profiles").select("public_name,username,avatar_url").eq("id", user.id).single(),
     supabase.rpc("creator_balances", { requested_creator: user.id }),
     latestTipsRequest,
@@ -54,10 +61,22 @@ export default async function DashboardPage() {
   const confirmedToday = confirmedMonth.filter((tip) => new Date(tip.confirmed_at ?? tip.created_at) >= todayStart);
   const todayNetMinor = confirmedToday.reduce((sum, tip) => sum + Number(tip.net_amount_minor ?? tip.amount_minor), 0);
   const monthNetMinor = confirmedMonth.reduce((sum, tip) => sum + Number(tip.net_amount_minor ?? tip.amount_minor), 0);
+  const todayGrossMinor = confirmedToday.reduce((sum, tip) => sum + creatorVisibleTipAmount(tip), 0);
+  const monthGrossMinor = confirmedMonth.reduce((sum, tip) => sum + creatorVisibleTipAmount(tip), 0);
   const publicUrl = profile?.username ? buildPublicProfileUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, profile.username) : null;
   const mercadoPagoConnected = paymentProvider === "mercadopago" && mercadoPagoAccount?.status === "connected" && mercadoPagoAccount.onboarding_completed === true && mercadoPagoAccount.payments_receivable === true;
-  const availableMinor = paymentProvider === "mercadopago" ? Number(totals?.net_confirmed_minor ?? 0) : Number(balance?.available_minor ?? 0);
+  const paypalAccountState = paymentAccount as {
+    status?: string;
+    payments_receivable?: boolean;
+    email_confirmed?: boolean;
+    onboarding_completed?: boolean;
+  } | null;
+  const paypalConnected = platformPayouts
+    ? paypalAccountState?.status === "pending" || paypalAccountState?.status === "verified"
+    : paymentProvider === "paypal" && paypalAccountState?.status === "connected" && paypalAccountState.payments_receivable === true && paypalAccountState.email_confirmed === true && paypalAccountState.onboarding_completed === true;
+  const paypalVerified = platformPayouts && paypalAccountState?.status === "verified";
+  const availableMinor = (paymentProvider === "paypal" && !platformPayouts) || paymentProvider === "mercadopago" ? Number(totals?.net_confirmed_minor ?? 0) : Number(balance?.available_minor ?? 0);
   const feesMinor = Number(totals?.platform_fees_minor ?? 0) + Number(totals?.gateway_fees_minor ?? 0);
 
-  return <><div className="mb-6 flex flex-wrap items-end justify-between gap-3"><DashboardProfileHeader name={profile?.public_name ?? "Tu cuenta"} avatarUrl={profile?.avatar_url ?? null} />{mercadoPagoConnected && <MercadoPagoConnectionBadge currency={currency} />}</div>{serverEnv.PAYMENT_PROVIDER === "whop" && <WhopActivationCard connected={whopConnected} />}<BalanceSummary currency={currency} availableMinor={availableMinor} pendingMinor={Number(balance?.pending_minor ?? 0)} todayMinor={todayNetMinor} monthMinor={monthNetMinor} grossConfirmedMinor={Number(totals?.gross_confirmed_minor ?? 0)} feesMinor={feesMinor} paymentProvider={paymentProvider} shareActions={publicUrl && profile?.username ? <CreatorShareCard publicUrl={publicUrl} username={profile.username} /> : undefined} refreshAction={<BalanceRefreshButton />} /><div className="mt-6"><RecentTips tips={(tips ?? []) as RecentTip[]} showAllLink twoColumns /></div></>;
+  return <><div className="mb-6 flex flex-wrap items-end justify-between gap-3"><DashboardProfileHeader name={profile?.public_name ?? "Tu cuenta"} avatarUrl={profile?.avatar_url ?? null} />{paypalConnected && <PayPalConnectionBadge verified={!platformPayouts || paypalVerified} />}{mercadoPagoConnected && <MercadoPagoConnectionBadge currency={currency} />}</div>{serverEnv.PAYMENT_PROVIDER === "whop" && <WhopActivationCard connected={whopConnected} />}<BalanceSummary currency={currency} availableMinor={availableMinor} pendingMinor={Number(balance?.pending_minor ?? 0)} todayMinor={paymentProvider === "paypal" || paymentProvider === "mercadopago" ? todayGrossMinor : todayNetMinor} monthMinor={paymentProvider === "paypal" || paymentProvider === "mercadopago" ? monthGrossMinor : monthNetMinor} grossConfirmedMinor={Number(totals?.gross_confirmed_minor ?? 0)} feesMinor={feesMinor} paymentProvider={paymentProvider} platformPayouts={platformPayouts} sandboxSingleMerchant={serverEnv.PAYPAL_SANDBOX_SINGLE_MERCHANT} shareActions={publicUrl && profile?.username ? <CreatorShareCard publicUrl={publicUrl} username={profile.username} /> : undefined} refreshAction={<BalanceRefreshButton />} /><div className="mt-6"><RecentTips tips={(tips ?? []) as RecentTip[]} showAllLink twoColumns /></div></>;
 }

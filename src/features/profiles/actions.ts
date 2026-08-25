@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { validateUsername } from "./username";
@@ -50,6 +51,35 @@ export async function saveOnboardingProfile(formData: FormData) {
     redirect(`/onboarding?step=1&error=${error.code === "23505" ? "username_taken" : "save_profile"}`);
   }
   redirect(env.PAYMENT_PROVIDER === "whop" ? "/dashboard" : "/onboarding?step=2");
+}
+
+export async function saveMockPayoutAccount(formData: FormData) {
+  const bankName = z.string().trim().min(2).max(80).safeParse(formData.get("bankName"));
+  const last4 = z.string().regex(/^\d{4}$/).safeParse(formData.get("last4"));
+  if (!bankName.success || !last4.success) redirect("/onboarding?step=2&error=invalid_payout");
+  const { user } = await authenticatedUser();
+  if (getServerEnv().PAYMENT_PROVIDER !== "mock") redirect("/onboarding?step=2&error=provider_unavailable");
+  const admin = createAdminSupabaseClient();
+  const { error } = await admin.from("payout_accounts").upsert({
+    creator_id: user.id, provider: "mock", provider_account_id: `mock_${user.id}`,
+    bank_name: bankName.data, last4: last4.data, country: "ZZ", status: "verified",
+  }, { onConflict: "creator_id,provider,provider_account_id" });
+  if (error) redirect("/onboarding?step=2&error=save_payout");
+  redirect("/onboarding?step=3");
+}
+
+export async function savePayPalPayoutEmail(formData: FormData) {
+  const email = z.string().trim().toLowerCase().email().max(254).safeParse(formData.get("paypalEmail"));
+  const returnTo = formData.get("returnTo") === "/dashboard/payouts" ? "/dashboard/payouts" : "/onboarding?step=3";
+  if (!email.success) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=invalid_paypal_email`);
+  const { supabase } = await authenticatedUser();
+  const env = getServerEnv();
+  if (env.PAYMENT_PROVIDER !== "paypal" || env.PAYPAL_FLOW !== "platform_payouts") {
+    redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=provider_unavailable`);
+  }
+  const { error } = await supabase.rpc("set_my_paypal_payout_email", { p_email: email.data });
+  if (error) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=save_paypal_email`);
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}success=paypal_saved`);
 }
 
 export async function connectWhopCompany(formData: FormData) {
@@ -117,6 +147,10 @@ export async function completeOnboarding() {
   if (env.PAYMENT_PROVIDER === "mercadopago") {
     const { data: account } = await supabase.from("payment_accounts").select("id").eq("creator_id", user.id).eq("provider", "mercadopago").eq("status", "connected").eq("onboarding_completed", true).limit(1).maybeSingle();
     if (!account) redirect("/onboarding?step=2&error=mercadopago_required");
+  }
+  if (env.PAYMENT_PROVIDER === "paypal" && env.PAYPAL_FLOW === "platform_payouts") {
+    const { data: destination } = await supabase.from("payout_accounts").select("id").eq("creator_id", user.id).eq("provider", "paypal").in("status", ["pending", "verified"]).limit(1).maybeSingle();
+    if (!destination) redirect("/onboarding?step=2&error=paypal_required");
   }
   if (env.PAYMENT_PROVIDER === "dlocalgo") {
     const { data: account } = await supabase.from("payment_accounts").select("id").eq("creator_id", user.id).eq("provider", "dlocalgo").eq("status", "connected").limit(1).maybeSingle();

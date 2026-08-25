@@ -26,3 +26,14 @@ export async function sendTipPush(client: SupabaseClient, creatorId: string, tip
   });
 }
 
+export async function sendPayoutPush(client: SupabaseClient, payload: { creatorId: string; payoutId: string; title: string; body: string; status: string; amountMinor?: number; currency?: string }) {
+  const { data, error } = await client.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("creator_id", payload.creatorId).is("revoked_at", null);
+  if (error) throw new Error("push_subscriptions_failed");
+  const subscriptions = (data ?? []) as PushSubscriptionRow[];
+  const safePayload = { title: payload.title, body: payload.body, url: "/dashboard/payouts", tag: `payout-${payload.payoutId}-${payload.status}` };
+  return sendCreatorPush(safePayload, subscriptions, sender(), {
+    revoke: async (id) => { await client.from("push_subscriptions").update({ revoked_at: new Date().toISOString() }).eq("id", id); },
+    markUsed: async (id) => { await client.from("push_subscriptions").update({ last_used_at: new Date().toISOString() }).eq("id", id); },
+  });
+}
+

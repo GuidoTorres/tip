@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PaymentAccountWriter, PayPalAccountWrite } from "./paypal-onboarding";
 
 import type { Currency } from "./types";
 import type { MercadoPagoCountry, MercadoPagoCurrency } from "./mercadopago-regions";
@@ -11,7 +12,7 @@ export type ConnectedPaymentAccount = {
   currency: Currency | null;
 };
 
-export class SupabasePaymentAccountRepository {
+export class SupabasePaymentAccountRepository implements PaymentAccountWriter {
   constructor(private readonly client: SupabaseClient) {}
 
   async findConnected(creatorId: string, provider: string): Promise<ConnectedPaymentAccount | null> {
@@ -27,6 +28,16 @@ export class SupabasePaymentAccountRepository {
       country: data.provider_country as MercadoPagoCountry | null,
       currency: data.provider_currency as Currency | null,
     };
+  }
+
+  async upsertPayPal(account: PayPalAccountWrite) {
+    const { error } = await this.client.from("payment_accounts").upsert({
+      creator_id: account.creatorId, provider: "paypal", provider_merchant_id: account.providerMerchantId,
+      status: account.status, onboarding_completed: account.onboardingCompleted, email_confirmed: account.emailConfirmed,
+      payments_receivable: account.paymentsReceivable, card_payments_enabled: account.cardPaymentsEnabled,
+      connected_at: account.onboardingCompleted ? new Date().toISOString() : null,
+    }, { onConflict: "creator_id,provider" });
+    if (error) throw new Error("payment_account_save_failed");
   }
 
   async upsertMercadoPago(account: { creatorId: string; providerMerchantId: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency }) {
