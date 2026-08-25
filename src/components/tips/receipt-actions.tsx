@@ -68,10 +68,10 @@ export function ReceiptActions({ tipId, token, operationCode, canShare }: {
       <button type="button" onClick={copyCode} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold">
         {copied ? <Check size={18} weight="bold" className="text-success" /> : <Copy size={18} />} {copied ? "Copiado" : "Copiar código"}
       </button>
-      {canShare && <button type="button" onClick={shareReceipt} disabled={!receiptFile || sharing} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-60">
+      {canShare && <button type="button" onClick={shareReceipt} disabled={!receiptFile || sharing} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-strong px-3 text-sm font-semibold text-on-accent disabled:opacity-60">
         {!receiptFile || sharing ? <SpinnerGap size={18} className="animate-spin" /> : <ShareNetwork size={18} />} Compartir recibo
       </button>}
     </div>
-    {error && <p role="alert" className="mt-2 text-xs font-semibold text-accent">{error}</p>}
+    {error && <p role="alert" className="mt-2 text-xs font-semibold text-accent-strong">{error}</p>}
   </div>;
 }

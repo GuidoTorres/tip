@@ -15,30 +15,52 @@ Fan envía tip
 
 Dominio previsto: `https://tipme.pro`
 
-## Estado actual del MVP (2026-08-22)
+## Estado actual del MVP (2026-08-25)
 
-El flujo activo para producción es Mercado Pago regional con cobro directo a la cuenta conectada de la creadora:
+El nuevo piloto usa una **Whop App instalada en la empresa normal de cada creador**, sin Whop for Platforms y sin custodia de fondos por TipMe:
 
 ```text
-Fan elige tip entero en USD
-  -> TipMe cotiza USD a la moneda de la cuenta Mercado Pago
-  -> Checkout API/Card Payment Brick
-  -> Mercado Pago cobra y liquida en la cuenta de la creadora
-  -> Webhook global de producción
-  -> TipMe valida firma, pago e importe
-  -> Tip confirmado, ledger, saldo, notificación y push
+Persona crea su página TipMe en un solo paso
+  -> entra al dashboard sin estar obligada a crear Whop
+  -> conecta posteriormente su empresa Whop e instala TipMe
+  -> fan paga un tip en USD mediante checkout Whop
+  -> el dinero queda en el saldo Whop del creador
+  -> webhook Whop firmado
+  -> TipMe confirma ledger, recibo, Realtime y Web Push
 ```
 
-- `PLATFORM_FEE_BPS=0` por defecto para el piloto. No se envía `application_fee` cuando es cero.
-- La moneda del dashboard es la moneda real de la cuenta conectada (`PEN`, `MXN`, `COP`, etc.).
-- El fan no crea una cuenta y selecciona importes enteros: `5`, `10`, `20`, `50` u otro monto entero.
-- Nombre y mensaje son opcionales y están agrupados para mantener corto el formulario.
-- La creadora retira directamente desde Mercado Pago; el menú principal de TipMe no muestra Retiros para este proveedor.
-- El webhook de producción de Perú es `https://tipme.pro/api/webhooks/mercadopago/PE` y acepta los formatos `data.id` y `resource`.
-- Durante el envío se muestra un estado de procesamiento para evitar reenvíos y parpadeos antes del recibo.
-- Apple Pay y Google Pay no están integrados actualmente en el checkout de Mercado Pago Perú.
+- `PLATFORM_FEE_BPS=0` es obligatorio durante este piloto.
+- Sin una empresa Whop instalada y comprobada, la página pública existe pero no permite iniciar pagos.
+- TipMe no retira ni reparte el dinero: el creador configura KYC y retiros dentro de Whop.
+- Mercado Pago y dLocal Go permanecen como adaptadores inactivos para conservar el trabajo.
+- Checkout invitado, webhook de app y saldo del creador deben comprobarse en Sandbox antes de Live.
 
-Estado actual: **MVP con Mock, PayPal y Mercado Pago regional**. El modo `mercadopago` implementa Split Payments 1:1 para Argentina, Brasil, Chile, Colombia, México, Perú y Uruguay, con checkout de tarjeta embebido, comisión TipMe configurable y confirmación exclusiva por webhook. Cada región requiere credenciales reales propias; el código no equivale a aprobación comercial de Mercado Pago.
+## Whop App: configuración del piloto
+
+```dotenv
+PAYMENT_PROVIDER=whop
+PLATFORM_FEE_BPS=0
+WHOP_ENVIRONMENT=sandbox
+WHOP_APP_ID=app_REEMPLAZAR
+WHOP_API_KEY=REEMPLAZAR
+WHOP_WEBHOOK_SECRET=ws_REEMPLAZAR
+```
+
+`WHOP_API_KEY` y `WHOP_WEBHOOK_SECRET` son secretos server-side. No deben usar el prefijo `NEXT_PUBLIC_`.
+
+La app necesita permisos para leer la empresa instalada, crear checkout configurations y planes, y recibir/leer pagos. La API exige actualmente `company:basic:read`, `checkout_configuration:create`, `checkout_configuration:basic:read`, `plan:create`, `access_pass:create`, `access_pass:update` y los permisos de lectura de pagos asociados. Refunds y disputas requieren además sus permisos de lectura y webhook.
+
+Webhook:
+
+```text
+https://tipme.pro/api/webhooks/whop
+```
+
+Eventos: `payment.succeeded`, `payment.pending`, `payment.failed`, `refund.created`, `refund.updated`, `dispute.created` y `dispute.updated`.
+
+El webhook debe usar API `v1`, pertenecer a la app TipMe y entregar eventos de empresas que instalaron la app. Guarda el signing secret mostrado una sola vez en `WHOP_WEBHOOK_SECRET`. Antes de Live, realiza un pago Sandbox desde una empresa instalada: un evento genérico del panel no demuestra por sí solo la propagación entre instalaciones.
+
+El onboarding solo crea el perfil y la URL. La conexión posterior está en `/dashboard/settings/payments`: abre la instalación de la app y valida server-side el `biz_...` antes de habilitar tips.
 
 ## Mercado Pago regional
 
@@ -112,6 +134,7 @@ Las public keys pueden llegar al navegador. Client secrets, secrets de webhook, 
 - Foto almacenada en Supabase Storage, con reemplazo y eliminación.
 - El fan elige el tip en USD; Mercado Pago lo convierte y cobra en la moneda local de la cuenta conectada (ARS, BRL, CLP, COP, MXN, PEN o UYU).
 - Onboarding adaptado al proveedor activo:
+  - con Whop, crea la página en un solo paso y deja la activación de cobros para el dashboard;
   - cuenta y payout simulados en modo mock;
   - un solo correo de destino PayPal personal en `platform_payouts`;
   - Partner Referrals únicamente en el modo Multiparty conservado.
@@ -164,6 +187,7 @@ El navegador nunca confirma un pago ni modifica un saldo. Incluso después de un
 - `MockPaymentProvider` para probar el recorrido sin dinero real.
 - `PayPalPaymentProvider` para Checkout centralizado, Payouts y el modo Multiparty conservado.
 - `MercadoPagoPaymentProvider` para cobro directo regional con Card Payment Brick; `application_fee` es opcional y está desactivado en el piloto.
+- `WhopPaymentProvider` para checkout alojado bajo la empresa Whop instalada por el creador, con firma Standard Webhooks.
 - Creación, consulta y captura separadas de la confirmación financiera.
 - Webhook único en `/api/webhooks/payments`.
 - Verificación de firma HMAC para mock y verificación oficial de webhook para PayPal.
@@ -251,7 +275,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 | --- | --- |
 | `/signup` | Crear una cuenta con email o Google |
 | `/login` | Iniciar sesión con email o Google |
-| `/onboarding` | Perfil, proveedor y link público |
+| `/onboarding` | Creación corta del perfil y link público |
 | `/[username]` | Página pública para enviar tips sin cuenta |
 | `/dashboard` | Resumen, link, QR y tips recientes |
 | `/dashboard/tips` | Historial completo |
@@ -259,6 +283,7 @@ docs/manual                     Checklists manuales de DB y dispositivos
 | `/dashboard/notifications` | Centro de avisos |
 | `/dashboard/payouts` | Retiros TipMe en mock/PayPal o estado directo administrado por Mercado Pago |
 | `/dashboard/settings` | Perfil, foto, idioma y push |
+| `/dashboard/settings/payments` | Instalar, comprobar y conectar Whop |
 | `/admin` | Estado general protegido |
 | `/terms`, `/refund-policy`, `/privacy` | Documentos legales |
 
@@ -292,9 +317,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_PUBLISHABLE_O_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=TU_SECRET_O_SERVICE_ROLE_KEY
 
 PLATFORM_FEE_BPS=0
-PAYMENT_PROVIDER=mercadopago
+PAYMENT_PROVIDER=whop
 MOCK_WEBHOOK_SECRET=GENERA_UN_SECRETO_LARGO
 RECEIPT_SIGNING_SECRET=GENERA_OTRO_SECRETO_LARGO
+
+WHOP_ENVIRONMENT=sandbox
+WHOP_APP_ID=app_REEMPLAZAR
+WHOP_API_KEY=REEMPLAZAR
+WHOP_WEBHOOK_SECRET=ws_REEMPLAZAR
 
 PAYPAL_ENVIRONMENT=sandbox
 PAYPAL_FLOW=platform_payouts
@@ -323,6 +353,7 @@ Reglas importantes:
 
 - Una variable `NEXT_PUBLIC_*` queda incluida en el bundle del navegador. Solo coloca allí datos públicos como URL, publishable key, client ID o clave VAPID pública.
 - Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, `PAYPAL_CLIENT_SECRET`, `VAPID_PRIVATE_KEY`, `MOCK_WEBHOOK_SECRET` ni `RECEIPT_SIGNING_SECRET`.
+- Nunca expongas `WHOP_API_KEY` ni `WHOP_WEBHOOK_SECRET`.
 - `PLATFORM_FEE_BPS=0` no aplica comisión TipMe durante el piloto. Puede cambiarse si Mercado Pago habilita Split Payments.
 - `PAYPAL_CHECKOUT_*` solo estima el aporte voluntario del fan; el ledger espera el fee real de PayPal.
 - `PAYPAL_PAYOUT_FEE_*` reserva conservadoramente la comisión de envío; el webhook concilia la cifra real.
@@ -349,6 +380,8 @@ Ejecuta las migraciones en este orden:
 11. `202608200005_mercadopago_regional_accounts.sql`: añade MXN, cuentas regionales y credenciales OAuth privadas.
 12. `202608210001_mercadopago_all_regions.sql`: habilita las siete regiones de Split Payments y añade UYU.
 13. `202608210002_usd_tip_quotes.sql`: conserva el importe elegido en USD y la cotización usada para el cobro local.
+14. `202608240001_dlocalgo_payment_accounts.sql`: conserva el adaptador opcional de dLocal Go.
+15. `202608250001_whop_payment_accounts.sql`: permite vincular una empresa Whop instalada.
 
 Con Supabase CLI:
 

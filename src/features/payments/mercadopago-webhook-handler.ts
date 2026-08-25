@@ -59,8 +59,6 @@ export async function handleMercadoPagoWebhook(input: { rawBody: string; headers
     capturePayment: async () => ({ status: "pending", providerCaptureId: null }),
     verifyWebhook: async () => true,
     parseWebhook: async () => event,
-    createPayout: async () => { throw new Error("payouts_managed_by_mercadopago"); },
-    getPayoutStatus: async () => "processing",
   };
   const repository = new SupabaseWebhookRepository(dependencies.admin, "mercadopago");
   return processPaymentWebhook(input.rawBody, input.headers, {

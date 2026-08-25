@@ -34,9 +34,9 @@ export default async function TipsHistoryPage({ searchParams }: { searchParams: 
         <MagnifyingGlass className="shrink-0 text-muted" size={20} />
         <input id="operation-code" name="q" defaultValue={rawQuery} maxLength={24} autoCapitalize="characters" autoComplete="off" spellCheck={false} placeholder="TM-7A4F-91C2-D8B0-1234" className="min-w-0 flex-1 bg-transparent font-mono text-sm outline-none" />
       </div>
-      <button type="submit" className="pressable min-h-12 rounded-xl bg-accent px-5 font-semibold text-on-accent">Buscar</button>
+      <button type="submit" className="pressable min-h-12 rounded-xl bg-accent-strong px-5 font-semibold text-on-accent">Buscar</button>
     </form>
-    {searched && <div className="mt-3 flex items-center justify-between gap-3 text-sm"><p className="text-muted">Verificación por código exacto</p><Link href="/dashboard/tips" className="inline-flex min-h-11 items-center gap-1 font-semibold text-accent"><X size={17} /> Limpiar</Link></div>}
+    {searched && <div className="mt-3 flex items-center justify-between gap-3 text-sm"><p className="text-muted">Verificación por código exacto</p><Link href="/dashboard/tips" className="inline-flex min-h-11 items-center gap-1 font-semibold text-accent-strong"><X size={17} /> Limpiar</Link></div>}
     <div className="mt-5">
       {searched && !operationCode ? <SearchMessage>El formato del código no es válido.</SearchMessage>
         : searched && tips.length === 0 ? <SearchMessage>No encontramos ese código entre tus operaciones.</SearchMessage>

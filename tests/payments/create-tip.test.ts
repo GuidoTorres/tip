@@ -2,10 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { createTip, type TipRepository } from "@/features/payments/create-tip";
 import type { PaymentProvider } from "@/features/payments/provider";
 import { createPaymentQuote } from "@/lib/security/payment-quote";
+import { CURRENT_LEGAL_TERMS_VERSION } from "@/features/legal/terms";
 
-const legalAcceptance = { legalAccepted: true, legalTermsVersion: "2026-08-20" } as const;
+const legalAcceptance = { legalAccepted: true, legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION } as const;
 
-function dependencies(providerName: "mock" | "paypal" | "mercadopago" = "mock", connectedMerchant: string | null = null) {
+function dependencies(providerName: "mock" | "mercadopago" | "dlocalgo" | "whop" = "mock", connectedMerchant: string | null = null) {
   const repository: TipRepository = {
     findCreatorByUsername: vi.fn().mockResolvedValue({ id: "creator-1", currency: "USD" }),
     insertTip: vi.fn().mockResolvedValue({ id: "tip-1" }),
@@ -15,8 +16,8 @@ function dependencies(providerName: "mock" | "paypal" | "mercadopago" = "mock", 
     name: providerName,
     createPayment: vi.fn().mockResolvedValue(providerName === "mock"
       ? { providerPaymentId: "mock_pay_1", status: "pending", checkout: { kind: "redirect", url: "/pay/mock/mock_pay_1" }, gatewayFeeMinor: null }
-      : { providerPaymentId: "ORDER-1", status: "pending", checkout: { kind: "embedded", clientId: "client", merchantId: "MERCHANT-1", clientToken: "token", partnerAttributionId: "BN" }, gatewayFeeMinor: null }),
-    getPaymentStatus: vi.fn(), capturePayment: vi.fn(), verifyWebhook: vi.fn(), parseWebhook: vi.fn(), createPayout: vi.fn(), getPayoutStatus: vi.fn(),
+      : { providerPaymentId: "MP-1", status: "pending", gatewayFeeMinor: null }),
+    getPaymentStatus: vi.fn(), capturePayment: vi.fn(), verifyWebhook: vi.fn(), parseWebhook: vi.fn(),
   };
   const paymentAccounts = { findConnected: vi.fn().mockResolvedValue(connectedMerchant ? {
     id: "account-1", providerMerchantId: connectedMerchant, cardPaymentsEnabled: true,
@@ -32,7 +33,7 @@ describe("createTip", () => {
 
     await expect(createTip({
       username: "camila", amountMinor: 2_000, payerName: null, message: null,
-      anonymous: true, legalAccepted: false, legalTermsVersion: "2026-08-20",
+      anonymous: true, legalAccepted: false, legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION,
     }, { repository, provider, platformFeeBps: 300 })).rejects.toThrow("legal_acceptance_required");
 
     expect(repository.insertTip).not.toHaveBeenCalled();
@@ -43,11 +44,11 @@ describe("createTip", () => {
 
     await createTip({
       username: "camila", amountMinor: 2_000, payerName: null, message: null,
-      anonymous: true, legalAccepted: true, legalTermsVersion: "2026-08-20",
+      anonymous: true, legalAccepted: true, legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION,
     }, { repository, provider, platformFeeBps: 300 });
 
     expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({
-      legalTermsVersion: "2026-08-20",
+      legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION,
       legalAcceptedAt: expect.any(String),
     }));
   });
@@ -60,37 +61,12 @@ describe("createTip", () => {
     expect(repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 2_000, platformFeeMinor: 60, netAmountMinor: 1_940, currency: "USD", payerName: "Mateo" }));
   });
 
-  it("requires a verified connected PayPal account", async () => {
-    const deps = dependencies("paypal", null);
-    await expect(createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance }, { ...deps, platformFeeBps: 300 })).rejects.toThrow("paypal_account_not_connected");
-    expect(deps.provider.createPayment).not.toHaveBeenCalled();
-  });
-
-  it("directs the PayPal order to the verified creator merchant", async () => {
-    const deps = dependencies("paypal", "MERCHANT-1");
-    await createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance }, { ...deps, platformFeeBps: 300 });
-    expect(deps.provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({ providerAccountId: "MERCHANT-1", platformFeeMinor: 60 }));
-  });
-
-  it("requires a configured PayPal payout destination in platform payouts mode", async () => {
-    const deps = dependencies("paypal", null);
-    const payoutDestinations = { findConfigured: vi.fn().mockResolvedValue(null) };
-
-    await expect(createTip(
-      { username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, coverProcessing: false, ...legalAcceptance },
-      { ...deps, payoutDestinations, paypalFlow: "platform_payouts", platformFeeBps: 0, checkoutFeeBps: 540, checkoutFixedFeeMinor: 30 },
-    )).rejects.toThrow("paypal_account_not_connected");
-
-    expect(deps.provider.createPayment).not.toHaveBeenCalled();
-  });
-
   it("calculates voluntary processing support on the server", async () => {
-    const deps = dependencies("paypal", null);
-    const payoutDestinations = { findConfigured: vi.fn().mockResolvedValue({ id: "destination-1", status: "pending" }) };
+    const deps = dependencies("mock", null);
 
     await createTip(
       { username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, coverProcessing: true, ...legalAcceptance },
-      { ...deps, payoutDestinations, paypalFlow: "platform_payouts", platformFeeBps: 0, checkoutFeeBps: 540, checkoutFixedFeeMinor: 30 },
+      { ...deps, platformFeeBps: 0, checkoutFeeBps: 540, checkoutFixedFeeMinor: 30 },
     );
 
     expect(deps.repository.insertTip).toHaveBeenCalledWith(expect.objectContaining({
@@ -105,16 +81,6 @@ describe("createTip", () => {
       providerAccountId: null,
     }));
     expect(deps.paymentAccounts.findConnected).not.toHaveBeenCalled();
-  });
-
-  it("uses the platform Sandbox merchant without a connected creator account", async () => {
-    const deps = dependencies("paypal", null);
-    await createTip(
-      { username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
-      { ...deps, platformFeeBps: 300, providerAccountOverride: "PARTNER-MERCHANT" },
-    );
-    expect(deps.paymentAccounts.findConnected).not.toHaveBeenCalled();
-    expect(deps.provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({ providerAccountId: "PARTNER-MERCHANT" }));
   });
 
   it("fuerza USD aunque el perfil conserve otra moneda", async () => {
@@ -190,6 +156,59 @@ describe("createTip", () => {
     const { repository, provider } = dependencies();
     await expect(createTip({ payerName: null, message: null, anonymous: false, ...legalAcceptance, ...input }, { repository, provider, platformFeeBps: 300 })).rejects.toThrow();
     expect(repository.insertTip).not.toHaveBeenCalled();
+  });
+
+  it("cobra en USD con el split code de la creadora en dLocal Go", async () => {
+    const deps = dependencies("dlocalgo", "SPLIT-CODE-1");
+    vi.mocked(deps.provider.createPayment).mockResolvedValue({
+      providerPaymentId: "DP-1", status: "pending",
+      checkout: { kind: "redirect", url: "https://checkout.dlocalgo.com/x" }, gatewayFeeMinor: null,
+    });
+
+    const result = await createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
+      { ...deps, platformFeeBps: 300 });
+
+    expect(deps.paymentAccounts.findConnected).toHaveBeenCalledWith("creator-1", "dlocalgo");
+    expect(deps.provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+      providerAccountId: "SPLIT-CODE-1", currency: "USD", amountMinor: 2_000,
+    }));
+    // El país lo resuelve el checkout según el fan, no la cuenta de la creadora.
+    expect(vi.mocked(deps.provider.createPayment).mock.calls[0][0]).not.toHaveProperty("providerCountry");
+    expect(result.checkout).toEqual({ kind: "redirect", url: "https://checkout.dlocalgo.com/x" });
+  });
+
+  it("no crea el tip si la creadora no tiene contrato de split en dLocal Go", async () => {
+    const deps = dependencies("dlocalgo", null);
+
+    await expect(createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
+      { ...deps, platformFeeBps: 300 })).rejects.toThrow("dlocalgo_account_not_connected");
+
+    expect(deps.repository.insertTip).not.toHaveBeenCalled();
+  });
+
+  it("charges under the connected Whop company", async () => {
+    const deps = dependencies("whop", "biz_creator");
+    vi.mocked(deps.provider.createPayment).mockResolvedValue({
+      providerPaymentId: "ch_1", status: "pending",
+      checkout: { kind: "redirect", url: "https://whop.com/checkout/ch_1" }, gatewayFeeMinor: null,
+    });
+
+    await createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
+      { ...deps, platformFeeBps: 0 });
+
+    expect(deps.paymentAccounts.findConnected).toHaveBeenCalledWith("creator-1", "whop");
+    expect(deps.provider.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+      providerAccountId: "biz_creator", amountMinor: 2_000, currency: "USD", platformFeeMinor: 0,
+    }));
+  });
+
+  it("does not create a tip before Whop is connected", async () => {
+    const deps = dependencies("whop", null);
+
+    await expect(createTip({ username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
+      { ...deps, platformFeeBps: 0 })).rejects.toThrow("whop_account_not_connected");
+
+    expect(deps.repository.insertTip).not.toHaveBeenCalled();
   });
 
   it("rechaza una creadora inexistente", async () => {

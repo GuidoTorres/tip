@@ -27,7 +27,7 @@ export default async function TipDetailPage({ params }: { params: Promise<{ tipI
   return <div className="mx-auto max-w-xl">
     <Link href="/dashboard/tips" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted hover:text-foreground"><ArrowLeft /> Volver al historial</Link>
     <section className="mt-4 rounded-2xl border border-border bg-surface p-6 sm:p-8">
-      <div className={`flex items-center gap-2 text-sm font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent" : "text-warning"}`}><StatusIcon weight="fill" />{status.label}</div>
+      <div className={`flex items-center gap-2 text-sm font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent-strong" : "text-warning"}`}><StatusIcon weight="fill" />{status.label}</div>
       <h1 className="mt-5 text-5xl font-semibold tracking-[-0.04em]">{formatMoney(baseAmountMinor, currency, "es")}</h1>
       {data.display_amount_usd_minor && <p className="mt-2 text-sm text-muted">Referencia elegida por el fan: {formatMoney(Number(data.display_amount_usd_minor), "USD", "es")}</p>}
       <p className="mt-3 text-lg font-semibold">{data.anonymous ? "Anónimo" : data.payer_name || "Alguien"}</p>

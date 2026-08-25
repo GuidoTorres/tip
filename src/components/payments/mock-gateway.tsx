@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CheckCircle, Clock, XCircle } from "@phosphor-icons/react";
 
 const actions = [
-  { status: "confirmed", label: "Simular pago aprobado", icon: CheckCircle, className: "bg-accent text-on-accent" },
+  { status: "confirmed", label: "Simular pago aprobado", icon: CheckCircle, className: "bg-accent-strong text-on-accent" },
   { status: "pending", label: "Simular pago pendiente", icon: Clock, className: "border border-border bg-surface" },
   { status: "rejected", label: "Simular pago rechazado", icon: XCircle, className: "border border-border bg-surface" },
 ] as const;

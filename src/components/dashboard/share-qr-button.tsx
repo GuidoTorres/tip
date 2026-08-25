@@ -48,7 +48,7 @@ export function ShareQrButton({ dataUrl, username }: ShareQrButtonProps) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={share} disabled={sharing} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-4 font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-60">
+        <button type="button" onClick={share} disabled={sharing} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-strong px-4 font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-60">
           <ShareNetwork size={20} weight="bold" /> {sharing ? "Compartiendo…" : "Compartir QR"}
         </button>
         <a href={dataUrl} download={fileName} className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-border px-4 font-semibold hover:bg-surface-soft">

@@ -14,17 +14,11 @@ describe("MockPaymentProvider", () => {
     expect(first.checkout).toEqual({ kind: "redirect", url: expect.stringContaining(first.providerPaymentId) });
   });
 
-  it("crea payouts mock sin tocar el ledger", async () => {
-    const provider = new MockPaymentProvider("secret-that-is-long-enough");
-    const result = await provider.createPayout({ payoutId: "po-1", amountMinor: 500, recipientAmountMinor: 500, estimatedFeeMinor: 0, currency: "USD", providerAccountId: "acct-1", recipientType: "EMAIL", idempotencyKey: "payout:po-1" });
-    expect(result.status).toBe("processing");
-    expect(result.providerBatchId).toMatch(/^mock_po_/);
-  });
 });
 
 describe("getPaymentProvider", () => {
   it("solo habilita mock hasta tener adaptadores documentados", () => {
     expect(getPaymentProvider({ provider: "mock", mockWebhookSecret: "secret-that-is-long-enough" }).name).toBe("mock");
-    expect(() => getPaymentProvider({ provider: "nuvei", mockWebhookSecret: "secret-that-is-long-enough" })).toThrow("not implemented");
+    expect(() => getPaymentProvider({ provider: "nuvei" as never, mockWebhookSecret: "secret-that-is-long-enough" })).toThrow("not implemented");
   });
 });

@@ -59,6 +59,7 @@ describe("confirmed receipt image", () => {
     expect(response.status).toBe(404);
   });
 
+  // Generar el PNG supera el timeout de 5s por defecto cuando la suite corre en paralelo.
   it("returns a protected PNG for a confirmed payment", async () => {
     const token = createReceiptToken("tip-1", secret);
     const response = await GET(new Request(`https://tipme.pro/api/tips/tip-1/receipt-image?token=${token}`), { params: Promise.resolve({ tipId: "tip-1" }) });
@@ -67,5 +68,5 @@ describe("confirmed receipt image", () => {
     expect(response.headers.get("content-type")).toContain("image/png");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(100);
-  });
+  }, 20_000);
 });

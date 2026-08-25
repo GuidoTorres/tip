@@ -5,7 +5,6 @@ import type { Currency } from "./types";
 import type { PaymentProvider } from "./provider";
 import type { ConnectedPaymentAccount } from "./payment-account-repository";
 import { CURRENT_LEGAL_TERMS_VERSION } from "@/features/legal/terms";
-import type { PayPalFlow } from "./paypal-client";
 import { verifyPaymentQuote } from "@/lib/security/payment-quote";
 
 const inputSchema = z.object({
@@ -64,10 +63,6 @@ export interface PaymentAccountLookup {
   findConnected(creatorId: string, provider: string): Promise<ConnectedPaymentAccount | null>;
 }
 
-export interface PayoutDestinationLookup {
-  findConfigured(creatorId: string): Promise<{ id: string; status: "pending" | "verified" } | null>;
-}
-
 export interface MercadoPagoCredentialLookup {
   findByAccountId(accountId: string, country?: string): Promise<{ accessToken: string } | null>;
 }
@@ -76,14 +71,12 @@ type Dependencies = {
   repository: TipRepository;
   provider: PaymentProvider;
   platformFeeBps: number;
-  paypalFlow?: PayPalFlow;
   checkoutFeeBps?: number;
   checkoutFixedFeeMinor?: number;
   paymentAccounts?: PaymentAccountLookup;
-  payoutDestinations?: PayoutDestinationLookup;
-  providerAccountOverride?: string;
   mercadoPagoCredentials?: MercadoPagoCredentialLookup;
   quoteSigningSecret?: string;
+  paymentReturnUrl?: (tipId: string) => string;
 };
 
 export async function createTip(input: CreateTipInput, dependencies: Dependencies) {
@@ -93,7 +86,6 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   }
   const creator = await dependencies.repository.findCreatorByUsername(value.username);
   if (!creator) throw new Error("creator_not_found");
-  const paypalFlow = dependencies.paypalFlow ?? "multiparty";
   let providerAccountId: string | null = null;
   let providerAccessToken: string | undefined;
   let providerCountry: string | undefined;
@@ -103,16 +95,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
   let exchangeRate: number | null = null;
   let exchangeRateQuotedAt: string | null = null;
   let exchangeRateSource: string | null = null;
-  if (dependencies.provider.name === "paypal" && paypalFlow === "platform_payouts") {
-    const destination = await dependencies.payoutDestinations?.findConfigured(creator.id) ?? null;
-    if (!destination) throw new Error("paypal_account_not_connected");
-  } else if (dependencies.provider.name === "paypal") {
-    const paymentAccount = dependencies.providerAccountOverride
-      ? null
-      : await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null;
-    providerAccountId = dependencies.providerAccountOverride ?? paymentAccount?.providerMerchantId ?? null;
-    if (!providerAccountId) throw new Error("paypal_account_not_connected");
-  } else if (dependencies.provider.name === "mercadopago") {
+  if (dependencies.provider.name === "mercadopago") {
     const paymentAccount = await dependencies.paymentAccounts?.findConnected(creator.id, "mercadopago") ?? null;
     if (!paymentAccount?.country || !paymentAccount.currency || !["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(paymentAccount.currency)) {
       throw new Error("mercadopago_account_not_connected");
@@ -135,6 +118,20 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     exchangeRate = quote.rate;
     exchangeRateQuotedAt = quote.quotedAt;
     exchangeRateSource = quote.source;
+  }
+  if (dependencies.provider.name === "dlocalgo") {
+    // dLocal Go cobra en USD y convierte a la moneda del fan en su checkout,
+    // así que aquí no hace falta cotización ni token de tarjeta propios.
+    const paymentAccount = await dependencies.paymentAccounts?.findConnected(creator.id, "dlocalgo") ?? null;
+    if (!paymentAccount) throw new Error("dlocalgo_account_not_connected");
+    providerAccountId = paymentAccount.providerMerchantId;
+    // `country` en dLocal Go es el país del pagador, no el de la creadora: se omite
+    // a propósito para que el checkout lo detecte y ofrezca los medios locales del fan.
+  }
+  if (dependencies.provider.name === "whop") {
+    const paymentAccount = await dependencies.paymentAccounts?.findConnected(creator.id, "whop") ?? null;
+    if (!paymentAccount) throw new Error("whop_account_not_connected");
+    providerAccountId = paymentAccount.providerMerchantId;
   }
   const maximumMinor = paymentCurrency === "COP" ? 100_000_000 : paymentCurrency === "MXN" ? 10_000_000 : 1_000_000;
   const minimumMinor = paymentCurrency === "COP" ? 100_000 : paymentCurrency === "MXN" ? 1_000 : 100;
@@ -182,6 +179,7 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     ...(providerAccessToken ? { providerAccessToken } : {}),
     ...(providerCountry ? { providerCountry } : {}),
     ...(value.paymentMethodData ? { paymentMethodData: value.paymentMethodData } : {}),
+    ...(dependencies.paymentReturnUrl ? { returnUrl: dependencies.paymentReturnUrl(tip.id) } : {}),
   });
   await dependencies.repository.attachPayment(tip.id, {
     providerPaymentId: payment.providerPaymentId,

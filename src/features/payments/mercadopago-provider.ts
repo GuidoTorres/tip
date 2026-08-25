@@ -1,6 +1,6 @@
 import type {
   CapturePaymentResult, CreatePaymentInput,
-  PaymentProvider, PaymentResult, PayoutResult, PayoutStatus, ProviderWebhookEvent,
+  PaymentProvider, PaymentResult, ProviderWebhookEvent,
 } from "./provider";
 import { currencyFractionDigits } from "./mercadopago-exchange-rate";
 
@@ -32,6 +32,11 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     if (!["ARS", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"].includes(input.currency)) throw new Error("unsupported_currency");
     const card = input.paymentMethodData;
     const unit = 10 ** currencyFractionDigits(input.currency);
+    // Mercado Pago rejects non-HTTPS callbacks, so local development falls back
+    // to the webhook configured in the regional application dashboard.
+    const webhookUrl = this.appUrl.startsWith("https://")
+      ? `${this.appUrl}/api/webhooks/mercadopago/${input.providerCountry}`
+      : null;
     const body = {
       transaction_amount: input.amountMinor / unit,
       ...(input.platformFeeMinor > 0 ? { application_fee: input.platformFeeMinor / unit } : {}),
@@ -45,6 +50,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       },
       description: "Tip mediante TipMe",
       external_reference: input.tipId,
+      ...(webhookUrl ? { notification_url: webhookUrl } : {}),
       metadata: { tip_id: input.tipId, tipme_creator_id: input.providerAccountId },
     };
     console.info(JSON.stringify({
@@ -52,7 +58,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
       appUrl: this.appUrl,
       providerCountry: input.providerCountry,
       platformFeeMinor: input.platformFeeMinor,
-      webhookMode: "dashboard_configured",
+      webhookMode: webhookUrl ? "notification_url" : "dashboard_configured",
     }));
     const response = await this.fetchImpl("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -74,7 +80,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         ...(safeProviderText(result?.message) ? { message: safeProviderText(result?.message) } : {}),
         ...(cause?.code !== undefined ? { causeCode: String(cause.code).slice(0, 80) } : {}),
         ...(safeProviderText(cause?.description) ? { causeDescription: safeProviderText(cause?.description) } : {}),
-        webhookMode: "dashboard_configured",
       }));
       throw new Error("mercadopago_payment_create_failed");
     }
@@ -85,6 +90,4 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
   async capturePayment(): Promise<CapturePaymentResult> { return { status: "pending", providerCaptureId: null }; }
   async verifyWebhook(): Promise<boolean> { throw new Error("mercadopago_webhook_uses_regional_handler"); }
   async parseWebhook(): Promise<ProviderWebhookEvent> { throw new Error("mercadopago_webhook_uses_regional_handler"); }
-  async createPayout(): Promise<PayoutResult> { throw new Error("payouts_managed_by_mercadopago"); }
-  async getPayoutStatus(): Promise<PayoutStatus> { throw new Error("payouts_managed_by_mercadopago"); }
 }

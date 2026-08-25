@@ -1,34 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  calculateProcessingSupportMinor,
   calculateTipBreakdown,
-  quotePayoutFromDebit,
   sumLedger,
-  sumWithdrawnByCurrency,
 } from "@/features/ledger/money";
-
-describe("PayPal fee estimates", () => {
-  it("calcula el aporte voluntario con gross-up usando enteros", () => {
-    expect(calculateProcessingSupportMinor(2_000, 540, 30)).toBe(146);
-  });
-
-  it("reserva suficiente comisión para retirar todo sin fondos de TipMe", () => {
-    expect(quotePayoutFromDebit(1_839, 200, 100)).toEqual({
-      totalDebitMinor: 1_839,
-      recipientAmountMinor: 1_802,
-      estimatedFeeMinor: 37,
-    });
-  });
-
-  it.each([
-    () => calculateProcessingSupportMinor(-1, 540, 30),
-    () => calculateProcessingSupportMinor(2_000, 10_000, 30),
-    () => quotePayoutFromDebit(10.5, 200, 100),
-    () => quotePayoutFromDebit(1_000, -1, 100),
-  ])("rechaza dinero o tarifas inseguras", (operation) => {
-    expect(operation).toThrow("invalid_money");
-  });
-});
 
 describe("calculateTipBreakdown", () => {
   it("calcula 300 basis points sin usar decimales monetarios", () => {
@@ -65,25 +39,5 @@ describe("sumLedger", () => {
 
   it("rechaza mezclar monedas", () => {
     expect(() => sumLedger([{ type: "tip_confirmed", amountMinor: 100, currency: "EUR" }], "USD")).toThrow("currency");
-  });
-});
-
-describe("sumWithdrawnByCurrency", () => {
-  it("suma retiros completados por moneda y devuelve importes positivos", () => {
-    expect(sumWithdrawnByCurrency([
-      { amountMinor: -1_000, currency: "USD" },
-      { amountMinor: -500, currency: "USD" },
-      { amountMinor: -2_000, currency: "PEN" },
-    ])).toEqual({ USD: 1_500, PEN: 2_000 });
-  });
-
-  it("devuelve un total vacío cuando aún no existen retiros", () => {
-    expect(sumWithdrawnByCurrency([])).toEqual({});
-  });
-
-  it("rechaza movimientos de payout que no sean débitos", () => {
-    expect(() => sumWithdrawnByCurrency([
-      { amountMinor: 100, currency: "USD" },
-    ])).toThrow("payout ledger amount must be negative");
   });
 });

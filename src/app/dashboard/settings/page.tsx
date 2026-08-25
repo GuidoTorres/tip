@@ -20,7 +20,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <section className="mt-7 rounded-2xl border border-border bg-surface p-6">
       <div aria-label="Perfil" className="flex items-center gap-5">
         <div className="relative size-18">
-          {profile?.avatar_url ? <Image src={profile.avatar_url} alt="Tu foto de perfil" width={72} height={72} className="size-18 rounded-2xl object-cover" /> : <div aria-label={`Inicial de ${profile?.public_name ?? "tu cuenta"}`} className="grid size-18 place-items-center rounded-2xl bg-accent text-2xl font-bold text-on-accent">{(profile?.public_name ?? "T").charAt(0)}</div>}
+          {profile?.avatar_url ? <Image src={profile.avatar_url} alt="Tu foto de perfil" width={72} height={72} className="size-18 rounded-2xl object-cover" /> : <div aria-label={`Inicial de ${profile?.public_name ?? "tu cuenta"}`} className="grid size-18 place-items-center rounded-2xl bg-accent-strong text-2xl font-bold text-on-accent">{(profile?.public_name ?? "T").charAt(0)}</div>}
           {profile?.avatar_url && <form action={deleteAvatar} className="absolute -bottom-2 -right-2"><button aria-label="Borrar foto" title="Borrar foto" className="pressable grid size-11 place-items-center rounded-full border border-border bg-surface text-muted hover:text-foreground"><Trash size={18} /></button></form>}
         </div>
       </div>
@@ -31,7 +31,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <label className="block text-sm font-semibold">Descripción<textarea className={`${inputClass} min-h-24 py-3`} name="bio" maxLength={180} defaultValue={profile?.bio ?? ""} /></label>
         <ApplicationCurrencyField />
         <label className="block text-sm font-semibold">Idioma<select className={inputClass} name="locale" defaultValue={profile?.locale ?? "es"}><option value="es">Español</option><option value="en">English</option></select></label>
-        <button className="pressable min-h-14 w-full rounded-full bg-accent px-6 font-bold text-on-accent">Guardar cambios</button>
+        <button className="pressable min-h-14 w-full rounded-full bg-accent-strong px-6 font-bold text-on-accent">Guardar cambios</button>
       </form>
     </section>
   </div>;

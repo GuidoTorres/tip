@@ -8,7 +8,8 @@ describe("fan single-screen checkout", () => {
 
     expect(html).toContain('name="payerName"');
     expect(html).not.toContain("Enviar anónimamente");
-    expect(html.match(/type="checkbox"/g)).toHaveLength(2);
+    // Solo queda la casilla opcional de cubrir comisión: la legal pasó a aviso al pagar.
+    expect(html.match(/type="checkbox"/g)).toHaveLength(1);
   });
 
   it("uses a compact message field and no preliminary send action", () => {
@@ -16,7 +17,7 @@ describe("fan single-screen checkout", () => {
 
     expect(html).toContain('name="message"');
     expect(html).toContain('rows="2"');
-    expect(html).toContain("min-h-16");
+    expect(html).toContain("min-h-14");
     expect(html).not.toContain("Preparando pago</button>");
   });
 

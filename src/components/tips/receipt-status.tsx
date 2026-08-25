@@ -52,7 +52,7 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
   const description = confirmed ? `Le enviaste a ${creator}` : rejected ? "El pago no fue aprobado." : reversed ? "Este pago ya no está confirmado." : "Estamos esperando la confirmación del gateway.";
 
   return <div className="text-center">
-    {confirmed ? <CheckCircle size={52} weight="fill" className="mx-auto text-success" /> : rejected || reversed ? <XCircle size={52} weight="fill" className="mx-auto text-accent" /> : <Clock size={52} weight="fill" className="mx-auto text-warning" />}
+    {confirmed ? <CheckCircle size={52} weight="fill" className="mx-auto text-success" /> : rejected || reversed ? <XCircle size={52} weight="fill" className="mx-auto text-accent-strong" /> : <Clock size={52} weight="fill" className="mx-auto text-warning" />}
     <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em]">{heading}</h1>
     <p className="mt-2 text-muted">{description}</p>
     <p className="mt-7 text-5xl font-semibold tracking-[-0.04em]">{displayAmount}</p>
@@ -68,8 +68,8 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
     </div>
     <ReceiptActions tipId={tip.id} token={token} operationCode={tip.operation_code} canShare={confirmed} />
     {tip.message && <blockquote className="mt-6 rounded-2xl bg-surface-soft p-4 text-muted">“{tip.message}”</blockquote>}
-    <p className={`mt-6 font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent" : "text-warning"}`}>{status.label}</p>
-    {repeatHref && repeatLabel && <div className="mt-7"><a href={repeatHref} className="pressable inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-7 font-semibold text-on-accent">{repeatLabel}</a></div>}
+    <p className={`mt-6 font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent-strong" : "text-warning"}`}>{status.label}</p>
+    {repeatHref && repeatLabel && <div className="mt-7"><a href={repeatHref} className="pressable inline-flex min-h-12 items-center justify-center rounded-full bg-accent-strong px-7 font-semibold text-on-accent">{repeatLabel}</a></div>}
     {confirmed && tip.provider === "paypal" && <p className="mt-6 rounded-xl bg-surface-soft p-3 text-xs leading-relaxed text-muted">Procesado por PayPal. Las disputas y operaciones no autorizadas se gestionan según PayPal y el emisor del medio de pago.</p>}
     <p className="mt-4 text-xs leading-relaxed text-muted">El dashboard de TipMe es la fuente de verdad.</p>
   </div>;

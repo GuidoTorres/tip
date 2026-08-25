@@ -1,38 +1,20 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/navigation", () => ({
-  redirect: vi.fn(),
-  useRouter: () => ({ replace: vi.fn() }),
-}));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("@/lib/env/public", () => ({
-  getPublicEnv: () => ({
-    NEXT_PUBLIC_APP_URL: "https://tipme.pro",
-    NEXT_PUBLIC_VAPID_PUBLIC_KEY: "public-vapid-key",
-  }),
+  getPublicEnv: () => ({ NEXT_PUBLIC_APP_URL: "https://tipme.pro", NEXT_PUBLIC_VAPID_PUBLIC_KEY: "public-vapid-key" }),
 }));
-vi.mock("@/lib/env/server", () => ({
-  getServerEnv: () => ({
-    PAYMENT_PROVIDER: "paypal",
-    PAYPAL_FLOW: "platform_payouts",
-    PAYPAL_SANDBOX_SINGLE_MERCHANT: false,
-  }),
-}));
+vi.mock("@/lib/env/server", () => ({ getServerEnv: () => ({ PAYMENT_PROVIDER: "whop", WHOP_APP_ID: "app_test" }) }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: "creator-1", email: "creator@example.com" } } }) },
-    from: (table: string) => {
+    from: () => {
       const query = {
         select: () => query,
         eq: () => query,
-        order: () => query,
-        limit: () => query,
         single: async () => ({ data: { public_name: "Camila", username: "camila", bio: null, locale: "es" } }),
-        maybeSingle: async () => ({
-          data: table === "payout_accounts"
-            ? { provider_account_id: "creator@example.com", status: "pending" }
-            : null,
-        }),
+        maybeSingle: async () => ({ data: null }),
       };
       return query;
     },
@@ -42,14 +24,12 @@ vi.mock("@/lib/supabase/server", () => ({
 import OnboardingPage from "@/app/onboarding/page";
 
 describe("creator onboarding", () => {
-  it("finishes in step three without requesting push permissions", async () => {
-    const page = await OnboardingPage({ searchParams: Promise.resolve({ step: "3" }) });
+  it("creates the TipMe page in one step without requiring Whop", async () => {
+    const page = await OnboardingPage({ searchParams: Promise.resolve({ step: "1" }) });
     const html = renderToStaticMarkup(page);
 
-    expect(html).toContain("3 de 3");
-    expect(html).toContain("Tu link está listo");
-    expect(html).toContain("Ir a mi dashboard");
-    expect(html).not.toContain("Activar notificaciones");
-    expect(html).not.toContain("No te pierdas ningún tip");
+    expect(html).toContain("1 de 1");
+    expect(html).toContain("Crear mi página");
+    expect(html).not.toContain("Conecta Whop");
   });
 });

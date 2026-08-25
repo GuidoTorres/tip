@@ -24,9 +24,10 @@ describe("isDashboardItemActive", () => {
   });
 });
 
-describe("dashboard navigation by payment provider", () => {
-  it("removes withdrawals for PayPal and keeps them for mock", () => {
-    expect(getDashboardNavigationItems(false).map((item) => item.label)).not.toContain("Retiros");
-    expect(getDashboardNavigationItems(true).map((item) => item.label)).toContain("Retiros");
+describe("dashboard navigation", () => {
+  it("no ofrece retiros: el dinero llega directo a la cuenta del proveedor", () => {
+    const labels = getDashboardNavigationItems().map((item) => item.label);
+    expect(labels).not.toContain("Retiros");
+    expect(labels).toEqual(["Inicio", "Tips", "Ajustes"]);
   });
 });

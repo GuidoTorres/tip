@@ -38,34 +38,6 @@ export function calculateProcessingSupportMinor(baseAmountMinor: number, feeBps:
   return grossAmountMinor - baseAmountMinor;
 }
 
-function estimatedPayoutFeeMinor(recipientAmountMinor: number, feeBps: number, feeCapMinor: number): number {
-  const numerator = recipientAmountMinor * feeBps;
-  if (!Number.isSafeInteger(numerator)) throw new Error("invalid_money");
-  return Math.min(Math.ceil(numerator / 10_000), feeCapMinor);
-}
-
-export function quotePayoutFromDebit(totalDebitMinor: number, feeBps: number, feeCapMinor: number) {
-  if (!Number.isSafeInteger(totalDebitMinor) || totalDebitMinor <= 0 || !Number.isSafeInteger(feeCapMinor) || feeCapMinor < 0) {
-    throw new Error("invalid_money");
-  }
-  assertFeeBps(feeBps);
-
-  let low = 0;
-  let high = totalDebitMinor;
-  while (low < high) {
-    const candidate = Math.ceil((low + high) / 2);
-    const fee = estimatedPayoutFeeMinor(candidate, feeBps, feeCapMinor);
-    if (candidate + fee <= totalDebitMinor) low = candidate;
-    else high = candidate - 1;
-  }
-  if (low <= 0) throw new Error("invalid_money");
-  return {
-    totalDebitMinor,
-    recipientAmountMinor: low,
-    estimatedFeeMinor: totalDebitMinor - low,
-  };
-}
-
 export function calculateTipBreakdown(input: BreakdownInput): TipBreakdown {
   assertSafeInteger(input.amountMinor, "amountMinor", false);
   assertSafeInteger(input.platformFeeBps, "platformFeeBps");
@@ -94,11 +66,6 @@ export type LedgerProjection = {
 
 export type BalanceSummary = { availableMinor: number; pendingMinor: number };
 
-export type PayoutLedgerMovement = {
-  amountMinor: number;
-  currency: Currency;
-};
-
 export function sumLedger(entries: LedgerProjection[], currency: Currency): BalanceSummary {
   let availableMinor = 0;
   let pendingMinor = 0;
@@ -114,22 +81,3 @@ export function sumLedger(entries: LedgerProjection[], currency: Currency): Bala
   return { availableMinor, pendingMinor: Math.max(0, pendingMinor) };
 }
 
-export function sumWithdrawnByCurrency(
-  entries: PayoutLedgerMovement[],
-): Partial<Record<Currency, number>> {
-  const totals: Partial<Record<Currency, number>> = {};
-
-  for (const entry of entries) {
-    if (!Number.isSafeInteger(entry.amountMinor) || entry.amountMinor >= 0) {
-      throw new Error("payout ledger amount must be negative");
-    }
-
-    const total = (totals[entry.currency] ?? 0) + Math.abs(entry.amountMinor);
-    if (!Number.isSafeInteger(total)) {
-      throw new Error("withdrawn total must be a safe integer");
-    }
-    totals[entry.currency] = total;
-  }
-
-  return totals;
-}

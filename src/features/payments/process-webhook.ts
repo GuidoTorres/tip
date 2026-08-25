@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { PaymentProvider, PaymentWebhookEvent, PayoutWebhookEvent } from "./provider";
+import type { PaymentProvider, PaymentWebhookEvent } from "./provider";
 import type { TipPushData } from "@/features/notifications/push";
 
 type ConfirmResult = {
@@ -21,19 +21,12 @@ type Dependencies = {
   provider: PaymentProvider;
   repository: WebhookRepository;
   push(tip: TipPushData): Promise<unknown>;
-  processPayout?(event: PayoutWebhookEvent, payloadDigest: string): Promise<{ newlyProcessed: boolean }>;
 };
 
 export async function processPaymentWebhook(rawBody: string, headers: Headers, dependencies: Dependencies) {
   if (!await dependencies.provider.verifyWebhook({ rawBody, headers })) throw new Error("invalid_webhook");
   const event = await dependencies.provider.parseWebhook(rawBody);
   const digest = createHash("sha256").update(rawBody).digest("hex");
-
-  if (event.kind === "payout") {
-    if (!dependencies.processPayout) throw new Error("payout_webhook_handler_missing");
-    const result = await dependencies.processPayout(event, digest);
-    return { ok: true, duplicate: !result.newlyProcessed, status: event.status } as const;
-  }
 
   if (event.status === "ignored") {
     const processed = await dependencies.repository.recordIgnored?.(event, digest);

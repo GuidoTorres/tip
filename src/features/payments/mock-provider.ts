@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { verifyMockWebhook } from "@/lib/security/hmac";
 import type {
-  CreatePaymentInput, CreatePayoutInput, PaymentProvider, PaymentResult,
-  PaymentWebhookEvent, PayoutResult, PayoutStatus,
+  CreatePaymentInput, PaymentProvider, PaymentResult,
+  PaymentWebhookEvent,
 } from "./provider";
 
 const eventSchema = z.object({
@@ -49,11 +49,4 @@ export class MockPaymentProvider implements PaymentProvider {
     return { kind: "payment", ...eventSchema.parse(JSON.parse(rawBody)), providerCaptureId: null };
   }
 
-  async createPayout(input: CreatePayoutInput): Promise<PayoutResult> {
-    return { providerBatchId: stableId("mock_po_", input.idempotencyKey), status: "processing" };
-  }
-
-  async getPayoutStatus(): Promise<PayoutStatus> {
-    return "requested";
-  }
 }

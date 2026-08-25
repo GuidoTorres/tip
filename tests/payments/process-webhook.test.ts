@@ -7,7 +7,7 @@ const event: PaymentWebhookEvent = { kind: "payment", eventId: "evt-1", provider
 function setup(overrides?: { verified?: boolean; newlyProcessed?: boolean; event?: PaymentWebhookEvent }) {
   const parsed = overrides?.event ?? event;
   const provider: PaymentProvider = {
-    name: "mock", createPayment: vi.fn(), getPaymentStatus: vi.fn(), capturePayment: vi.fn(), createPayout: vi.fn(), getPayoutStatus: vi.fn(),
+    name: "mock", createPayment: vi.fn(), getPaymentStatus: vi.fn(), capturePayment: vi.fn(),
     verifyWebhook: vi.fn().mockResolvedValue(overrides?.verified ?? true), parseWebhook: vi.fn().mockResolvedValue(parsed),
   };
   const repository: WebhookRepository = {
@@ -52,31 +52,6 @@ describe("processPaymentWebhook", () => {
     const deps = setup({ event: { ...event, status } });
     const result = await processPaymentWebhook("raw", new Headers({ "x-tipme-signature": "signature" }), deps);
     expect(result.status).toBe(status);
-    expect(deps.push).not.toHaveBeenCalled();
-  });
-
-  it("routes payout item events without touching the tip ledger", async () => {
-    const deps = setup();
-    const payoutEvent = {
-      kind: "payout" as const,
-      eventId: "WH-PAYOUT-1",
-      payoutId: "00000000-0000-4000-8000-000000000001",
-      providerPayoutItemId: "ITEM-1",
-      status: "completed" as const,
-      actualFeeMinor: 37,
-      providerStatus: "SUCCESS",
-      failureCode: null,
-      occurredAt: "2026-08-20T12:00:00.000Z",
-    };
-    vi.mocked(deps.provider.parseWebhook).mockResolvedValue(payoutEvent);
-    const processPayout = vi.fn().mockResolvedValue({ newlyProcessed: true });
-
-    await expect(processPaymentWebhook("raw", new Headers(), { ...deps, processPayout })).resolves.toEqual({
-      ok: true, duplicate: false, status: "completed",
-    });
-
-    expect(processPayout).toHaveBeenCalledWith(payoutEvent, expect.any(String));
-    expect(deps.repository.confirm).not.toHaveBeenCalled();
     expect(deps.push).not.toHaveBeenCalled();
   });
 });

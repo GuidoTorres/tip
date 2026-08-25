@@ -22,7 +22,7 @@ export function MercadoPagoConnect({ connected, country }: { connected: boolean;
     return <div className="rounded-2xl bg-surface-soft p-5">
       <strong className="flex items-center gap-2 text-success"><CheckCircle size={21} weight="fill" /> Mercado Pago conectado</strong>
       <p className="mt-1 text-sm text-muted">Los tips llegarán directamente a tu cuenta{option ? ` en ${option.currency}` : ""}.</p>
-      <Link href="/onboarding?step=3" className="pressable mt-5 flex min-h-12 items-center justify-center rounded-full bg-accent px-5 font-bold text-on-accent">Continuar</Link>
+      <Link href="/onboarding?step=3" className="pressable mt-5 flex min-h-12 items-center justify-center rounded-full bg-accent-strong px-5 font-bold text-on-accent">Continuar</Link>
     </div>;
   }
 
@@ -51,7 +51,7 @@ export function MercadoPagoConnect({ connected, country }: { connected: boolean;
       </select>
     </label>
     <p className="mt-3 text-sm text-muted">Debes conectar una cuenta del mismo país. Mercado Pago verificará tu identidad y administrará tus retiros.</p>
-    <button type="button" disabled={loading} onClick={connect} className="pressable mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#009ee3] px-6 font-bold text-white disabled:opacity-60">{loading && <SpinnerGap className="animate-spin" />} Conectar cuenta existente</button>
+    <button type="button" disabled={loading} onClick={connect} className="pressable mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#007eb5] px-6 font-bold text-white disabled:opacity-60">{loading && <SpinnerGap className="animate-spin" />} Conectar cuenta existente</button>
     <a href={getMercadoPagoSignupUrl(selectedCountry)} target="_blank" rel="noopener noreferrer" className="pressable mt-3 flex min-h-12 items-center justify-center text-sm font-semibold text-[#007eb5] underline-offset-4 hover:underline">¿No tienes cuenta? Créala gratis</a>
     <p className="text-center text-xs text-muted">Después vuelve a TipMe para conectarla.</p>
     {error && <p role="alert" className="mt-3 text-sm font-semibold text-accent-strong">No pudimos iniciar la conexión. Inténtalo nuevamente.</p>}

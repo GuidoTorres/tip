@@ -1,7 +1,6 @@
 import { z } from "zod";
-import type { PaymentAccountLookup, PayoutDestinationLookup, TipRepository } from "./create-tip";
-import type { PayPalFlow } from "./paypal-client";
-import type { EmbeddedCheckout, PaymentProvider } from "./provider";
+import type { PaymentAccountLookup, TipRepository } from "./create-tip";
+import type { PaymentProvider } from "./provider";
 import type { MercadoPagoCountry, MercadoPagoCurrency, MercadoPagoRegionEnv } from "./mercadopago-regions";
 import { getMercadoPagoRegion } from "./mercadopago-regions";
 
@@ -11,16 +10,12 @@ const inputSchema = z.object({
 
 export type CheckoutBootstrap =
   | { kind: "redirect" }
-  | { kind: "embedded"; checkout: EmbeddedCheckout }
   | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
 
 type Dependencies = {
   provider: PaymentProvider;
   creators: Pick<TipRepository, "findCreatorByUsername">;
   paymentAccounts?: PaymentAccountLookup;
-  payoutDestinations?: PayoutDestinationLookup;
-  providerAccountOverride?: string;
-  paypalFlow?: PayPalFlow;
   mercadoPagoEnv?: MercadoPagoRegionEnv;
 };
 
@@ -35,21 +30,14 @@ export async function prepareCheckout(input: { username: string }, dependencies:
     if (region.currency !== account.currency) throw new Error("mercadopago_region_mismatch");
     return { kind: "mercadopago", publicKey: region.publicKey, country: region.country, currency: region.currency };
   }
-  if (!dependencies.provider.prepareCheckout) return { kind: "redirect" };
-
-  const paypalFlow = dependencies.paypalFlow ?? "multiparty";
-  let providerAccountId: string | null = null;
-  if (dependencies.provider.name === "paypal" && paypalFlow === "platform_payouts") {
-    const destination = await dependencies.payoutDestinations?.findConfigured(creator.id) ?? null;
-    if (!destination) throw new Error("paypal_account_not_connected");
-  } else if (dependencies.provider.name === "paypal") {
-    const account = dependencies.providerAccountOverride
-      ? null
-      : await dependencies.paymentAccounts?.findConnected(creator.id, "paypal") ?? null;
-    providerAccountId = dependencies.providerAccountOverride ?? account?.providerMerchantId ?? null;
-    if (!providerAccountId) throw new Error("paypal_account_not_connected");
+  if (dependencies.provider.name === "dlocalgo") {
+    // Sin split_code el cobro fallaría recién al enviar: se avisa antes de mostrar el formulario.
+    const account = await dependencies.paymentAccounts?.findConnected(creator.id, "dlocalgo") ?? null;
+    if (!account) throw new Error("dlocalgo_account_not_connected");
   }
-
-  const checkout = await dependencies.provider.prepareCheckout({ providerAccountId });
-  return checkout ? { kind: "embedded", checkout } : { kind: "redirect" };
+  if (dependencies.provider.name === "whop") {
+    const account = await dependencies.paymentAccounts?.findConnected(creator.id, "whop") ?? null;
+    if (!account) throw new Error("whop_account_not_connected");
+  }
+  return { kind: "redirect" };
 }

@@ -21,7 +21,6 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabaseClient: () => ({}) }
 vi.mock("@/features/payments/provider-factory", () => ({ getPaymentProviderFromEnv: () => ({ name: "paypal" }) }));
 vi.mock("@/features/payments/supabase-tip-repository", () => ({ SupabaseTipRepository: class {} }));
 vi.mock("@/features/payments/payment-account-repository", () => ({ SupabasePaymentAccountRepository: class {} }));
-vi.mock("@/features/payouts/destination-repository", () => ({ SupabasePayoutDestinationRepository: class {} }));
 
 import { GET } from "@/app/api/payments/checkout-config/route";
 
@@ -29,8 +28,8 @@ describe("checkout configuration route", () => {
   beforeEach(() => {
     mocks.allowed = true;
     mocks.prepareCheckout.mockReset().mockResolvedValue({
-      kind: "embedded",
-      checkout: { kind: "embedded", clientId: "public-client", clientToken: "temporary-token" },
+      kind: "mercadopago",
+      publicKey: "public-key", country: "PE", currency: "PEN",
     });
   });
 
@@ -40,8 +39,8 @@ describe("checkout configuration route", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      kind: "embedded",
-      checkout: { kind: "embedded", clientId: "public-client", clientToken: "temporary-token" },
+      kind: "mercadopago",
+      publicKey: "public-key", country: "PE", currency: "PEN",
     });
     expect(JSON.stringify(body)).not.toContain("must-never-leak");
   });
