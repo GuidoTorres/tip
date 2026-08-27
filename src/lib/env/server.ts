@@ -5,6 +5,8 @@ const schema = z.object({
   PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
   PAYMENT_PROVIDER: z.enum(["mock", "paypal", "mercadopago", "dlocalgo", "whop"]).default("mock"),
   PAYPAL_ENVIRONMENT: z.enum(["sandbox", "live"]).default("sandbox"),
+  PAYPAL_JS_SDK_VERSION: z.enum(["v5", "v6"]).default("v6"),
+  PAYPAL_MERCHANT_COUNTRY: z.string().regex(/^[A-Z]{2}$/).default("PE"),
   PAYPAL_FLOW: z.enum(["platform_payouts", "multiparty"]).default("platform_payouts"),
   PAYPAL_SANDBOX_SINGLE_MERCHANT: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
   PAYPAL_PAYOUT_FEE_BPS: z.coerce.number().int().min(0).max(10_000).default(200),

@@ -2,6 +2,8 @@ export type PayPalFlow = "platform_payouts" | "multiparty";
 
 export type PayPalConfig = {
   environment: "sandbox" | "live";
+  sdkVersion: "v5" | "v6";
+  merchantCountry: string;
   clientId: string;
   clientSecret: string;
   webhookId: string;
@@ -13,6 +15,8 @@ export type PayPalConfig = {
 
 export function payPalConfigFromEnv(env: {
   PAYPAL_ENVIRONMENT: "sandbox" | "live";
+  PAYPAL_JS_SDK_VERSION: "v5" | "v6";
+  PAYPAL_MERCHANT_COUNTRY: string;
   NEXT_PUBLIC_PAYPAL_CLIENT_ID: string;
   PAYPAL_CLIENT_SECRET: string;
   PAYPAL_WEBHOOK_ID: string;
@@ -23,6 +27,8 @@ export function payPalConfigFromEnv(env: {
 }): PayPalConfig {
   return {
     environment: env.PAYPAL_ENVIRONMENT,
+    sdkVersion: env.PAYPAL_JS_SDK_VERSION,
+    merchantCountry: env.PAYPAL_MERCHANT_COUNTRY,
     clientId: env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
     clientSecret: env.PAYPAL_CLIENT_SECRET,
     webhookId: env.PAYPAL_WEBHOOK_ID,
@@ -112,6 +118,19 @@ export class PayPalClient {
     const result = await this.request<{ client_token?: string }>("/v1/identity/generate-token", { method: "POST", body: {} });
     if (!result.client_token) throw new PayPalApiError(502);
     return result.client_token;
+  }
+
+  async generateBrowserSafeClientToken() {
+    const basic = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
+    const response = await this.fetchImpl(`${this.baseUrl}/v1/oauth2/token`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${basic}`, "content-type": "application/x-www-form-urlencoded" },
+      body: "grant_type=client_credentials&response_type=client_token&intent=sdk_init",
+    });
+    if (!response.ok) throw new PayPalApiError(response.status);
+    const data = await response.json() as { access_token?: string };
+    if (!data.access_token) throw new PayPalApiError(502);
+    return data.access_token;
   }
 
   async createOrder(input: CreateOrderInput) {

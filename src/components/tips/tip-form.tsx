@@ -248,7 +248,7 @@ export function TipForm({ username, currency, locale, checkoutFeeBps = 0, checko
 
     {bootstrap?.kind === "redirect" && <button disabled={submitting} className="pressable mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-accent-strong px-6 py-4 font-bold text-on-accent hover:bg-accent-pressed disabled:opacity-60">{submitting ? <><SpinnerGap size={22} className="animate-spin" /> {locale === "es" ? "Preparando pago" : "Preparing payment"}</> : <><Heart size={21} weight="fill" /> {t.tip.send}</>}</button>}
     </form>
-    {bootstrap?.kind === "embedded" && <PayPalCheckout checkout={bootstrap.checkout} locale={locale} createOrder={createEmbeddedOrder} />}
+    {bootstrap?.kind === "embedded" && <PayPalCheckout checkout={bootstrap.checkout} locale={locale} amountMinor={estimatedTotalMinor} createOrder={createEmbeddedOrder} />}
     {bootstrap?.kind === "mercadopago" && quote && <><MercadoPagoCardCheckout publicKey={bootstrap.publicKey} country={bootstrap.country} amount={quote.localAmountMinor / 10 ** currencyDigits(quote.currency)} locale={locale} onPay={submitMercadoPago}>{legalNotice}</MercadoPagoCardCheckout></>}
     {!(bootstrap?.kind === "mercadopago" && quote) && legalNotice}
     {bootstrap?.kind === "mercadopago" && !quote && !quoteError && <p className="mt-6 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-surface-soft text-sm font-semibold text-muted"><SpinnerGap size={20} className="animate-spin" /> {locale === "es" ? "Calculando pago seguro" : "Calculating secure payment"}</p>}

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getDictionary } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { LegalFooter } from "@/components/shared/legal-footer";
 import { getMisroutedOAuthCallback } from "@/features/auth/oauth";
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
@@ -46,6 +47,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </div>
           </div>
         </section>
+        <LegalFooter locale={locale} year={new Date().getFullYear()} />
       </div>
     </main>
   );

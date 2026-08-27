@@ -8,6 +8,13 @@ export const en = {
     copyLink: "Copy my link",
     copied: "Link copied",
   },
+  legalFooter: {
+    rights: "All rights reserved.",
+    navigation: "Legal documents",
+    terms: "Terms",
+    privacy: "Privacy",
+    refunds: "Refunds",
+  },
   landing: {
     headline: "Get direct support from the people who value your work.",
     body: "Share your link, receive tips, and know right away.",

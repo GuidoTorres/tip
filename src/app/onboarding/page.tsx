@@ -139,7 +139,7 @@ export default async function OnboardingPage({
                 bio={profile?.bio ?? ""}
                 locale={profile?.locale === "en" ? "en" : "es"}
                 showCurrency={provider !== "mercadopago"}
-                submitLabel={whopOnboarding ? "Crear mi pagina" : "Continuar"}
+                submitLabel={whopOnboarding ? "Crear mi página" : "Continuar"}
               />
             </>
           )}

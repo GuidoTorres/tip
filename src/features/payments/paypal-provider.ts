@@ -61,9 +61,26 @@ export class PayPalPaymentProvider implements PaymentProvider {
       ? this.config.partnerMerchantId
       : input.providerAccountId;
     if (!merchantId) throw new Error("paypal_account_not_connected");
+    if (this.config.sdkVersion === "v6") {
+      const clientToken = await this.client.generateBrowserSafeClientToken();
+      return {
+        kind: "embedded",
+        sdkVersion: "v6",
+        environment: this.config.environment,
+        clientId: this.config.clientId,
+        clientToken,
+        ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox ? { merchantId } : {}),
+        merchantCountry: this.config.merchantCountry,
+        ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox && this.config.partnerAttributionId
+          ? { partnerAttributionId: this.config.partnerAttributionId }
+          : {}),
+      };
+    }
     const clientToken = await this.client.generateClientToken();
     return {
       kind: "embedded",
+      sdkVersion: "v5",
+      environment: this.config.environment,
       clientId: this.config.clientId,
       ...(this.config.flow === "multiparty" && !this.config.singleMerchantSandbox ? { merchantId } : {}),
       clientToken,

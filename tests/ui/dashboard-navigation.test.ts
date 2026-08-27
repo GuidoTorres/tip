@@ -25,9 +25,8 @@ describe("isDashboardItemActive", () => {
 });
 
 describe("dashboard navigation", () => {
-  it("no ofrece retiros: el dinero llega directo a la cuenta del proveedor", () => {
+  it("ofrece retiros para el flujo PayPal con saldo administrado por TipMe", () => {
     const labels = getDashboardNavigationItems().map((item) => item.label);
-    expect(labels).not.toContain("Retiros");
-    expect(labels).toEqual(["Inicio", "Tips", "Ajustes"]);
+    expect(labels).toEqual(["Inicio", "Tips", "Retiros", "Ajustes"]);
   });
 });

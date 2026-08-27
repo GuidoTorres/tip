@@ -24,7 +24,16 @@ export type MercadoPagoCardPaymentData = {
 
 export type CheckoutPresentation =
   | { kind: "redirect"; url: string }
-  | { kind: "embedded"; clientId: string; merchantId?: string; clientToken: string; partnerAttributionId?: string }
+  | {
+      kind: "embedded";
+      clientId: string;
+      sdkVersion?: "v5" | "v6";
+      environment?: "sandbox" | "live";
+      merchantId?: string;
+      merchantCountry?: string;
+      clientToken?: string;
+      partnerAttributionId?: string;
+    }
   | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
 
 export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;

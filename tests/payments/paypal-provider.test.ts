@@ -4,6 +4,8 @@ import { PayPalPaymentProvider } from "@/features/payments/paypal-provider";
 
 const config = {
   environment: "sandbox" as const,
+  sdkVersion: "v5" as const,
+  merchantCountry: "PE",
   clientId: "platform-client-id",
   clientSecret: "platform-client-secret",
   webhookId: "WH-CONFIGURED",
@@ -18,6 +20,29 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("PayPal partner primitives", () => {
+  it("prepares SDK v6 with a short-lived browser-safe token", async () => {
+    const v6Config = { ...config, sdkVersion: "v6" as const, merchantCountry: "PE" };
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      expect(String(input)).toBe("https://api-m.sandbox.paypal.com/v1/oauth2/token");
+      expect(new Headers(init?.headers).get("authorization")).toBe(`Basic ${Buffer.from("platform-client-id:platform-client-secret").toString("base64")}`);
+      expect(init?.body).toBe("grant_type=client_credentials&response_type=client_token&intent=sdk_init");
+      return jsonResponse({ access_token: "browser-safe-token", expires_in: 900 });
+    });
+    const provider = new PayPalPaymentProvider(new PayPalClient(v6Config, fetchImpl as typeof fetch), v6Config);
+
+    await expect(provider.prepareCheckout({ providerAccountId: "CREATOR-MERCHANT" })).resolves.toEqual({
+      kind: "embedded",
+      sdkVersion: "v6",
+      environment: "sandbox",
+      clientId: "platform-client-id",
+      clientToken: "browser-safe-token",
+      merchantId: "CREATOR-MERCHANT",
+      merchantCountry: "PE",
+      partnerAttributionId: "TIPME_SP_PPCP",
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it("looks up the seller created for TipMe's tracking ID", async () => {
     const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       void init;
@@ -66,7 +91,7 @@ describe("PayPal partner primitives", () => {
 
     expect(result.providerPaymentId).toBe("ORDER-1");
     expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-1" });
-    expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", merchantId: "CREATOR-MERCHANT", clientToken: "client-token", partnerAttributionId: "TIPME_SP_PPCP" });
+    expect(checkout).toEqual({ kind: "embedded", sdkVersion: "v5", environment: "sandbox", clientId: "platform-client-id", merchantId: "CREATOR-MERCHANT", clientToken: "client-token", partnerAttributionId: "TIPME_SP_PPCP" });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
     const headers = new Headers(orderCall?.[1]?.headers);
     const payload = JSON.parse(String(orderCall?.[1]?.body));
@@ -105,7 +130,7 @@ describe("PayPal partner primitives", () => {
     await provider.capturePayment({ providerPaymentId: "ORDER-STANDARD", providerAccountId: "PARTNER-MERCHANT", idempotencyKey: "capture:tip-1" });
 
     expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-STANDARD" });
-    expect(checkout).toEqual({ kind: "embedded", clientId: "platform-client-id", clientToken: "client-token" });
+    expect(checkout).toEqual({ kind: "embedded", sdkVersion: "v5", environment: "sandbox", clientId: "platform-client-id", clientToken: "client-token" });
     const paypalCalls = fetchImpl.mock.calls.filter(([url]) => !String(url).endsWith("/v1/oauth2/token") && !String(url).endsWith("/v1/identity/generate-token"));
     for (const [, init] of paypalCalls) {
       const headers = new Headers(init?.headers);
@@ -145,7 +170,7 @@ describe("PayPal partner primitives", () => {
 
     expect(result.checkout).toEqual({ kind: "redirect", url: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-PLATFORM" });
     expect(checkout).toEqual({
-      kind: "embedded", clientId: "platform-client-id", clientToken: "client-token",
+      kind: "embedded", sdkVersion: "v5", environment: "sandbox", clientId: "platform-client-id", clientToken: "client-token",
     });
     const orderCall = fetchImpl.mock.calls.find(([url]) => String(url).endsWith("/v2/checkout/orders"));
     const headers = new Headers(orderCall?.[1]?.headers);

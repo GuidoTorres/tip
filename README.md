@@ -38,7 +38,7 @@ Persona crea su página TipMe en un solo paso
 ## Whop App: configuración del piloto
 
 ```dotenv
-PAYMENT_PROVIDER=whop
+PAYMENT_PROVIDER=paypal
 PLATFORM_FEE_BPS=0
 WHOP_ENVIRONMENT=sandbox
 WHOP_APP_ID=app_REEMPLAZAR
@@ -327,6 +327,8 @@ WHOP_API_KEY=REEMPLAZAR
 WHOP_WEBHOOK_SECRET=ws_REEMPLAZAR
 
 PAYPAL_ENVIRONMENT=sandbox
+PAYPAL_JS_SDK_VERSION=v6
+PAYPAL_MERCHANT_COUNTRY=PE
 PAYPAL_FLOW=platform_payouts
 PAYPAL_SANDBOX_SINGLE_MERCHANT=false
 PAYPAL_PAYOUT_FEE_BPS=200
@@ -493,7 +495,7 @@ Los simuladores responden 404 en Vercel Production. Para una demo desplegada con
 La implementación utiliza:
 
 - REST Orders API con `CAPTURE`.
-- JavaScript SDK con `buttons,card-fields`.
+- Web SDK v6 con sesiones para PayPal, Card Fields y Apple Pay; v5 queda disponible como rollback.
 - Payouts API para enviar retiros a una cuenta PayPal personal.
 - Un `sender_batch_id` y `sender_item_id` derivados del UUID interno para evitar envíos duplicados.
 - Partner Referrals, `payee` y `payment_instruction.platform_fees` solo cuando `PAYPAL_FLOW=multiparty`.
@@ -502,11 +504,15 @@ La implementación utiliza:
 
 Card Fields muestra número, vencimiento y CVV dentro de TipMe cuando PayPal declara elegible la transacción. PayPal puede solicitar datos adicionales, login o verificación según país, riesgo y cuenta; TipMe no puede eliminar esos requisitos.
 
+Apple Pay solo aparece cuando PayPal, Safari y el dispositivo lo declaran elegible. Para activarlo en producción: habilita Apple Pay en la app REST, descarga el archivo de asociación desde PayPal, publícalo sin extensión en `public/.well-known/apple-developer-merchantid-domain-association` y registra `tipme.pro` en PayPal. El archivo debe responder `200`, sin redirección. No se incluye un archivo falso.
+
 ### Variables PayPal
 
 ```dotenv
 PAYMENT_PROVIDER=paypal
 PAYPAL_ENVIRONMENT=sandbox
+PAYPAL_JS_SDK_VERSION=v6
+PAYPAL_MERCHANT_COUNTRY=PE
 PAYPAL_FLOW=platform_payouts
 PAYPAL_SANDBOX_SINGLE_MERCHANT=false
 PLATFORM_FEE_BPS=0
@@ -521,6 +527,8 @@ PAYPAL_WEBHOOK_ID=WEBHOOK_ID_SANDBOX
 PAYPAL_PARTNER_MERCHANT_ID=PARTNER_MERCHANT_ID
 PAYPAL_PARTNER_ATTRIBUTION_ID=BN_CODE
 ```
+
+Rollback inmediato: cambia `PAYPAL_JS_SDK_VERSION=v5` y vuelve a desplegar. v6 usa un token browser-safe de corta duración generado server-side; `PAYPAL_CLIENT_SECRET` nunca llega al navegador.
 
 El webhook debe apuntar a:
 
@@ -573,6 +581,7 @@ Si todavía no tienes Multiparty habilitado, puedes probar Checkout, captura, we
 ```dotenv
 PAYMENT_PROVIDER=paypal
 PAYPAL_ENVIRONMENT=sandbox
+PAYPAL_JS_SDK_VERSION=v5
 PAYPAL_SANDBOX_SINGLE_MERCHANT=true
 PAYPAL_PARTNER_ATTRIBUTION_ID=
 ```
