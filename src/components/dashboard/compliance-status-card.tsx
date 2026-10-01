@@ -1,13 +1,11 @@
 import Link from "next/link";
 
 export function ComplianceStatusCard({ status, reason }: { status: string | null; reason: string | null }) {
-  if (status === "approved") return null;
+  if (status !== "rejected" && status !== "suspended") return null;
 
   const content = status === "rejected"
     ? { title: "Tu página necesita cambios", body: reason ?? "Revisa tus datos y las reglas de uso antes de volver a enviar el perfil." }
-    : status === "suspended"
-      ? { title: "Recepción de tips suspendida", body: reason ?? "Contacta a soporte para revisar tu cuenta." }
-      : { title: "Revisión de uso pendiente", body: "Tu página ya existe, pero no podrá recibir tips hasta que revisemos su uso." };
+    : { title: "Recepción de tips suspendida", body: reason ?? "Contacta a soporte para revisar tu cuenta." };
 
   return <section className="mb-6 rounded-2xl border border-border bg-surface-soft p-5">
     <h2 className="font-semibold">{content.title}</h2>

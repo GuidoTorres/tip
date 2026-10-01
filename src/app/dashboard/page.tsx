@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     : supabase.from("payment_accounts").select("status,payments_receivable,email_confirmed,onboarding_completed").eq("creator_id", user.id).eq("provider", "paypal").maybeSingle();
 
   const [{ data: profile }, { data: balances }, { data: tips }, { data: recentConfirmedTips }, { data: paymentAccount }, { data: tipTotals }] = await Promise.all([
-    supabase.from("profiles").select("public_name,username,avatar_url,payment_review_status,payment_review_reason").eq("id", user.id).single(),
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.rpc("creator_balances", { requested_creator: user.id }),
     supabase.from("tips").select("id,payer_name,message,anonymous,base_amount_minor,amount_minor,net_amount_minor,currency,status,created_at").eq("creator_id", user.id).eq("status", "confirmed").order("created_at", { ascending: false }).limit(6),
     supabase.from("tips").select("base_amount_minor,amount_minor,net_amount_minor,currency,status,created_at,confirmed_at").eq("creator_id", user.id).eq("status", "confirmed").gte("confirmed_at", monthStart.toISOString()),
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   return <>
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <DashboardProfileHeader name={profile?.public_name ?? "Tu cuenta"} avatarUrl={profile?.avatar_url ?? null} />
-      {paypalConnected && <PayPalConnectionBadge verified />}
+      {paypalConnected && <PayPalConnectionBadge verified={!platformPayouts || paypalAccountState?.status === "verified"} />}
     </div>
     <ComplianceStatusCard status={profile?.payment_review_status ?? "pending"} reason={profile?.payment_review_reason ?? null} />
     {!paypalConnected && <PayPalActivationCard connected={false} verified={false} payoutEmail={platformPayouts} />}

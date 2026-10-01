@@ -59,6 +59,10 @@ export async function savePayPalPayoutEmail(formData: FormData) {
   const email = z.string().trim().toLowerCase().email().max(254).safeParse(formData.get("paypalEmail"));
   const returnTo = formData.get("returnTo") === "/dashboard/payouts" ? "/dashboard/payouts" : "/onboarding?step=3";
   if (!email.success) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=invalid_paypal_email`);
+  const confirmation = String(formData.get("paypalEmailConfirmation") ?? "").trim().toLowerCase();
+  if (confirmation !== email.data || formData.get("paypalEmailConfirmed") !== "on") {
+    redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=confirm_paypal_email`);
+  }
   const { supabase } = await authenticatedUser();
   const env = getServerEnv();
   if (env.PAYMENT_PROVIDER !== "paypal" || env.PAYPAL_FLOW !== "platform_payouts") {
@@ -66,6 +70,8 @@ export async function savePayPalPayoutEmail(formData: FormData) {
   }
   const { error } = await supabase.rpc("set_my_paypal_payout_email", { p_email: email.data });
   if (error) redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}error=save_paypal_email`);
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/[username]", "page");
   redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}success=paypal_saved`);
 }
 

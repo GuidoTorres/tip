@@ -13,13 +13,20 @@ export function PayPalPayoutEmailForm({ email = "", status, returnTo }: {
     <label className="block text-sm font-semibold">Correo de tu cuenta PayPal
       <input className={inputClass} type="email" name="paypalEmail" required maxLength={254} autoComplete="email" defaultValue={email} placeholder="tu-correo@ejemplo.com" />
     </label>
+    <label className="block text-sm font-semibold">Repite tu correo PayPal
+      <input className={inputClass} type="email" name="paypalEmailConfirmation" required maxLength={254} autoComplete="off" placeholder="Escribe de nuevo tu correo PayPal" />
+    </label>
     <div className="flex items-start gap-3 rounded-xl bg-surface-soft p-4">
       <PaypalLogo size={24} weight="fill" className="shrink-0 text-[#0070e0]" />
       <div>
-        <p className="flex items-center gap-2 font-semibold">{status === "verified" ? <><CheckCircle className="text-success" weight="fill" /> PayPal verificado</> : <><Clock className="text-warning" weight="fill" /> {status === "pending" ? "PayPal configurado" : "Validación automática"}</>}</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted">{status === "verified" ? "Ya completamos un retiro a esta cuenta." : "Confirmaremos que la cuenta puede recibir dinero con el primer retiro exitoso."}</p>
+        <p className="flex items-center gap-2 font-semibold">{status === "verified" ? <><CheckCircle className="text-success" weight="fill" /> Retiro realizado</> : <><Clock className="text-warning" weight="fill" /> {status === "pending" ? "Correo guardado" : "Confirma tu correo de retiro"}</>}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{status === "verified" ? "Ya completamos un retiro al correo guardado." : "No necesitas un primer retiro ni aprobación manual para recibir tips. Guardar el correo no verifica tu cuenta en PayPal."}</p>
       </div>
     </div>
+    <label className="flex items-start gap-3 rounded-xl border border-border p-4 text-sm">
+      <input type="checkbox" name="paypalEmailConfirmed" required className="mt-0.5 size-5 shrink-0 accent-accent" />
+      <span>Confirmo que este correo pertenece a mi cuenta PayPal y está escrito correctamente. Los retiros se enviarán a ese correo; un error podría enviar el dinero a otra persona o impedir que lo reciba.</span>
+    </label>
     <button className="pressable min-h-14 w-full rounded-full bg-accent px-6 font-bold text-on-accent">{returnTo.startsWith("/onboarding") ? "Guardar y continuar" : "Guardar correo PayPal"}</button>
   </form>;
 }

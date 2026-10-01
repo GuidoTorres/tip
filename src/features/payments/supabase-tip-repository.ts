@@ -1,16 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TipRepository } from "./create-tip";
-import type { Currency } from "./types";
+import { findPublicCreator } from "@/features/profiles/public-creator";
 
 export class SupabaseTipRepository implements TipRepository {
   constructor(private readonly client: SupabaseClient) {}
 
   async findCreatorByUsername(username: string) {
-    const { data, error } = await this.client.rpc("get_public_creator", { requested_username: username }).maybeSingle();
-    if (error) throw new Error("creator_lookup_failed");
-    if (!data) return null;
-    const row = data as { id: string; preferred_currency: Currency; can_accept_tips: boolean };
-    if (row.can_accept_tips !== true) return null;
+    const row = await findPublicCreator(this.client, username);
+    if (!row?.can_accept_tips) return null;
     return { id: row.id, currency: row.preferred_currency };
   }
 
@@ -21,8 +18,6 @@ export class SupabaseTipRepository implements TipRepository {
       amount_minor: tip.amountMinor, currency: tip.currency, platform_fee_minor: tip.platformFeeMinor,
       gateway_fee_minor: tip.gatewayFeeMinor, net_amount_minor: tip.netAmountMinor, provider: tip.provider, status: "created",
       legal_terms_version: tip.legalTermsVersion, legal_accepted_at: tip.legalAcceptedAt,
-      display_amount_usd_minor: tip.displayAmountUsdMinor, exchange_rate: tip.exchangeRate,
-      exchange_rate_quoted_at: tip.exchangeRateQuotedAt, exchange_rate_source: tip.exchangeRateSource,
     }).select("id").single();
     if (error) throw new Error("tip_create_failed");
     return data as { id: string };

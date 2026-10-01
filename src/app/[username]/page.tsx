@@ -8,6 +8,9 @@ import { DEFAULT_SUPPORT_EMAIL } from "@/features/legal/contact";
 import { APPLICATION_CURRENCY } from "@/features/payments/application-currency";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { findPublicCreator } from "@/features/profiles/public-creator";
+import { SupabasePayoutDestinationRepository } from "@/features/payouts/destination-repository";
+import { getServerEnv } from "@/lib/env/server";
 
 type PublicCreator = {
   id: string;
@@ -16,7 +19,6 @@ type PublicCreator = {
   avatar_url: string | null;
   bio: string | null;
   social_url: string | null;
-  content_category: string | null;
   can_accept_tips: boolean;
 };
 
@@ -32,9 +34,7 @@ function publicSocialLink(value: string | null) {
 }
 
 async function getCreator(username: string): Promise<PublicCreator | null> {
-  const { data, error } = await createAdminSupabaseClient().rpc("get_public_creator", { requested_username: username }).maybeSingle();
-  if (error || !data) return null;
-  return data as PublicCreator;
+  return findPublicCreator(createAdminSupabaseClient(), username);
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
@@ -51,11 +51,13 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const creator = await getCreator(username);
   if (!creator) notFound();
 
-  const acceptsTips = creator.can_accept_tips === true;
+  const env = getServerEnv();
+  const destinationReady = env.PAYPAL_FLOW !== "platform_payouts"
+    || Boolean(await new SupabasePayoutDestinationRepository(createAdminSupabaseClient()).findConfigured(creator.id));
+  const acceptsTips = creator.can_accept_tips && destinationReady;
   const initial = (creator.public_name ?? creator.username).charAt(0).toUpperCase();
   const social = publicSocialLink(creator.social_url);
   const reportHref = `mailto:${DEFAULT_SUPPORT_EMAIL}?subject=${encodeURIComponent(`Reporte de perfil @${creator.username}`)}`;
-  const pendingReview = creator.can_accept_tips !== true;
 
   return <main className="min-h-[100dvh] px-4 py-5 sm:py-10">
     <div className="mx-auto max-w-md">
@@ -74,7 +76,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
         {social && <a href={social.href} target="_blank" rel="noreferrer" className="pressable mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-accent"><ArrowSquareOut size={18} aria-hidden="true" />{locale === "es" ? `Ver perfil público en ${social.hostname}` : `View public profile on ${social.hostname}`}</a>}
         {acceptsTips
           ? <TipForm username={creator.username} currency={APPLICATION_CURRENCY} locale={locale} checkoutFeeBps={0} checkoutFixedFeeMinor={0} />
-          : <div className="mt-8 rounded-2xl bg-surface-soft p-5 text-center"><p className="font-semibold">{pendingReview ? (locale === "es" ? "Esta página está pendiente de revisión" : "This page is pending review") : (locale === "es" ? "Esta página todavía no acepta tips" : "This page is not accepting tips yet")}</p><p className="mt-1 text-sm text-muted">{locale === "es" ? "Vuelve a intentarlo más adelante." : "Please try again later."}</p></div>}
+          : <div className="mt-8 rounded-2xl bg-surface-soft p-5 text-center"><p className="font-semibold">{locale === "es" ? "Esta página todavía no acepta tips" : "This page is not accepting tips yet"}</p><p className="mt-1 text-sm text-muted">{locale === "es" ? "Vuelve a intentarlo más adelante." : "Please try again later."}</p></div>}
       </section>
       <div className="mt-5 flex flex-col items-center gap-2 text-xs text-muted"><p>{locale === "es" ? "Pagos verificables mediante TipMe" : "Verifiable payments through TipMe"}</p><a href={reportHref} className="min-h-10 py-3 underline">{locale === "es" ? "Reportar esta página" : "Report this page"}</a></div>
     </div>

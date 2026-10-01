@@ -36,10 +36,6 @@ type NewTip = {
   provider: string;
   legalTermsVersion: string;
   legalAcceptedAt: string;
-  displayAmountUsdMinor: number | null;
-  exchangeRate: number | null;
-  exchangeRateQuotedAt: string | null;
-  exchangeRateSource: string | null;
 };
 
 export interface TipRepository {
@@ -117,10 +113,6 @@ export async function createTip(input: CreateTipInput, dependencies: Dependencie
     provider: dependencies.provider.name,
     legalTermsVersion: CURRENT_LEGAL_TERMS_VERSION,
     legalAcceptedAt: new Date().toISOString(),
-    displayAmountUsdMinor: null,
-    exchangeRate: null,
-    exchangeRateQuotedAt: null,
-    exchangeRateSource: null,
   });
   const payment = await dependencies.provider.createPayment({
     tipId: tip.id,

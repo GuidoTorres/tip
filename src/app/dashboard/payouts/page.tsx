@@ -76,7 +76,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
           </span>
         ))}</div>
       </div>
-      {query.error && <p role="alert" className="mt-5 rounded-xl bg-surface-soft p-3 text-sm font-semibold text-accent-strong">{query.error === "insufficient_balance" ? "No tienes saldo suficiente." : "No pudimos solicitar el retiro."}</p>}
+      {query.error && <p role="alert" className="mt-5 rounded-xl bg-surface-soft p-3 text-sm font-semibold text-accent-strong">{query.error === "insufficient_balance" ? "No tienes saldo suficiente." : query.error === "confirm_paypal_email" ? "Los correos deben coincidir y debes confirmar que la cuenta PayPal es tuya." : query.error === "invalid_paypal_email" ? "Escribe un correo PayPal válido." : query.error === "save_paypal_email" ? "No pudimos guardar el correo PayPal. Inténtalo nuevamente." : "No pudimos solicitar el retiro."}</p>}
       {query.success && <p className="mt-5 rounded-xl bg-surface-soft p-3 text-sm font-semibold text-success">{query.success === "paypal_saved" ? "Correo PayPal guardado." : "Retiro solicitado."}</p>}
       {accountReady
         ? <PayoutForm accountId={account.id} currency={currency} availableMinor={available} fractionDigits={digits} payoutFeeBps={serverEnv.PAYPAL_PAYOUT_FEE_BPS} payoutFeeCapMinor={serverEnv.PAYPAL_PAYOUT_FEE_CAP_MINOR} />
@@ -86,7 +86,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       <div className="flex items-center gap-4">
         <PaypalLogo size={28} className="text-[#0070e0]" weight="fill" />
         <div className="min-w-0"><p className="font-semibold">PayPal</p><p className="truncate text-sm text-muted">{account.provider_account_id}</p></div>
-        <span className={`ml-auto text-sm font-semibold ${account.status === "verified" ? "text-success" : "text-warning"}`}>{account.status === "verified" ? "Verificado" : "Pendiente"}</span>
+        <span className="ml-auto text-sm font-semibold text-success">{account.status === "verified" ? "Retiro realizado" : "Correo guardado"}</span>
       </div>
       <details className="mt-4 border-t border-border pt-4">
         <summary className="pressable cursor-pointer text-sm font-semibold text-muted">Cambiar correo PayPal</summary>

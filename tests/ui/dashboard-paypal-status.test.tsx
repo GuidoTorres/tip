@@ -102,11 +102,18 @@ describe("Dashboard PayPal connection status", () => {
     expect(html).not.toContain('href="/onboarding?step=2"');
   });
 
-  it("shows that a new creator is pending policy review", async () => {
+  it("does not require manual review for a new creator", async () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).toContain("Revisión de uso pendiente");
-    expect(html).toContain("Tu página ya existe");
+    expect(html).not.toContain("Revisión de uso pendiente");
+    expect(html).not.toContain("no podrá recibir tips hasta");
+  });
+  it("labels a saved payout email as configured rather than verified", async () => {
+    state.paypalFlow = "platform_payouts";
+    state.paymentAccount!.status = "pending";
+    const html = renderToStaticMarkup(await DashboardPage());
+    expect(html).toContain("PayPal configurado");
+    expect(html).not.toContain("PayPal verificado");
   });
 
   it("preserves the account connection route for direct PayPal", async () => {

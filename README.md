@@ -56,6 +56,8 @@ Consulta [.env.example](.env.example) para la lista completa y los valores de de
 
 Usa `PAYPAL_FLOW=platform_payouts`. La creadora registra su correo PayPal y TipMe gestiona el retiro desde el saldo confirmado. Configura las comisiones estimadas con `PAYPAL_PAYOUT_FEE_BPS` y `PAYPAL_PAYOUT_FEE_CAP_MINOR`.
 
+Al guardar o cambiar el correo, la creadora debe repetirlo y confirmar que le pertenece. Un perfil completo con un destino PayPal guardado puede recibir tips sin aprobación manual ni un primer retiro. Los perfiles rechazados o suspendidos siguen bloqueados. El estado interno `pending` del destino significa correo guardado, no una verificación en curso; `verified` indica que ya se completó un retiro. La confirmación del formulario no comprueba la existencia ni la titularidad de la cuenta en PayPal.
+
 ### Multiparty
 
 Usa `PAYPAL_FLOW=multiparty`. Cada creadora completa el onboarding de PayPal y el checkout se crea para su merchant conectado. Este modo requiere configuración Partner válida.
@@ -76,7 +78,11 @@ Stripe no está implementado ni habilitado. Su incorporación requiere revisar l
 
 Aplica las migraciones de `supabase/migrations` en orden. Algunos archivos históricos contienen esquemas de integraciones retiradas; se conservan deliberadamente porque el historial de migraciones es append-only y no debe reescribirse en instalaciones existentes.
 
+La migración `202610010001_creator_self_service_activation.sql` elimina la aprobación manual como requisito de activación y conserva rechazos o suspensiones cuando se edita un perfil. Aplícala después de `202609070001_creator_policy_readiness.sql`. La lectura pública de la aplicación es compatible con perfiles anteriores sin columnas de revisión; las migraciones pendientes siguen siendo necesarias para guardar los campos nuevos de configuración y usar la moderación administrativa.
+
 El seed local usa identificadores deterministas y pagos PayPal de demostración. No lo ejecutes sobre producción.
+
+La [auditoría y limpieza del esquema de pagos](docs/database-cleanup.md) documenta los objetos retirados, las comprobaciones de datos y la reversión. Para `202610010002_retired_payment_schema_cleanup.sql`, despliega primero el código actualizado y después aplica el SQL: versiones anteriores todavía consultan las columnas eliminadas.
 
 ## Verificación
 

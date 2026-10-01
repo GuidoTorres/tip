@@ -134,8 +134,9 @@ describe("createTip", () => {
     expect(repository.insertTip).not.toHaveBeenCalled();
   });
 
-  it("uses the saved PayPal payout destination in platform payout mode", async () => {
+  it("accepts a saved pending PayPal destination without a first withdrawal", async () => {
     const deps = dependencies("paypal", "creator-paypal@example.com");
+    deps.payoutDestinations.findConfigured.mockResolvedValue({ id: "payout-1", status: "pending" });
 
     await createTip(
       { username: "camila", amountMinor: 2_000, payerName: null, message: null, anonymous: true, ...legalAcceptance },
