@@ -21,6 +21,7 @@ vi.mock("@/lib/supabase/server", () => ({
             username: "camila",
             avatar_url: "https://example.com/avatar.jpg",
             bio: "Gracias por apoyar mi contenido",
+            social_url: "https://www.tiktok.com/@camila",
             locale: "es",
           },
         }),
@@ -41,6 +42,8 @@ describe("settings layout", () => {
     const html = renderToStaticMarkup(await SettingsPage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('aria-label="Perfil"');
     expect(html).toContain('aria-label="Datos del perfil"');
+    expect(html).toContain('name="socialUrl"');
+    expect(html).toContain('value="https://www.tiktok.com/@camila"');
     expect(html).not.toContain('aria-label="Control de notificaciones"');
     expect(html).not.toContain("Comprobando notificaciones");
     expect(html).not.toContain("Tu link");

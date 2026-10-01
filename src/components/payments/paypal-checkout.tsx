@@ -4,8 +4,17 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { CreditCard, Heart, PaypalLogo, SpinnerGap } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { createCheckoutAttempt, type CreatedCheckoutAttempt } from "@/features/payments/checkout-attempt";
+import {
+  PAYMENT_TIMING_STORAGE_KEY,
+  createPaymentTimingRecorder,
+  parseStoredPaymentTimings,
+  paymentTimingDebugEnabled,
+  paymentTimingReceiptHref,
+  type PaymentTimingEntry,
+} from "@/features/payments/payment-timing";
 import type { EmbeddedCheckout } from "@/features/payments/provider";
 import type { Locale } from "@/lib/i18n/config";
+import { PaymentTimingPanel } from "./payment-timing-panel";
 import { loadPayPalSdk, type PayPalCardFields } from "./paypal-sdk";
 import {
   buildApplePayPaymentRequest,
@@ -21,6 +30,7 @@ type PayPalCheckoutProps = {
   locale: Locale;
   amountMinor: number;
   createOrder: () => Promise<CreatedCheckoutAttempt>;
+  bootstrapDurationMs?: number | null;
 };
 
 export function PayPalCheckout(props: PayPalCheckoutProps) {
@@ -145,35 +155,67 @@ function PayPalV5Checkout({ checkout, locale, createOrder }: PayPalCheckoutProps
   </section>;
 }
 
-function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder }: PayPalCheckoutProps) {
+function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder, bootstrapDurationMs }: PayPalCheckoutProps) {
   const es = locale === "es";
   const router = useRouter();
   const [state, setState] = useState<"loading" | "ready" | "confirming" | "rejected" | "error">("loading");
   const [cardEligible, setCardEligible] = useState(true);
   const [paypalEligible, setPaypalEligible] = useState(true);
   const [appleEligible, setAppleEligible] = useState(false);
+  const [timingEntries, setTimingEntries] = useState<PaymentTimingEntry[]>([]);
   const cardSession = useRef<PayPalV6CardSession | null>(null);
   const startPayPalRef = useRef<(() => Promise<void>) | null>(null);
   const attemptRef = useRef<ReturnType<typeof createCheckoutAttempt> | null>(null);
+  const timingRef = useRef<ReturnType<typeof createPaymentTimingRecorder> | null>(null);
+  const diagnosticsEnabledRef = useRef(false);
   const createLatestOrder = useEffectEvent(createOrder);
 
   useEffect(() => {
     let active = true;
     const listeners = new AbortController();
-    const attempt = createCheckoutAttempt(() => createLatestOrder());
+    const diagnosticsEnabled = paymentTimingDebugEnabled(window.location.search);
+    diagnosticsEnabledRef.current = diagnosticsEnabled;
+    let storedEntries: PaymentTimingEntry[] = [];
+    if (diagnosticsEnabled) {
+      try { storedEntries = parseStoredPaymentTimings(sessionStorage.getItem(PAYMENT_TIMING_STORAGE_KEY)); } catch { /* Storage is optional diagnostics infrastructure. */ }
+    }
+    const recorder = createPaymentTimingRecorder({
+      enabled: diagnosticsEnabled,
+      initialEntries: storedEntries,
+      onChange: (entries) => {
+        if (!active) return;
+        setTimingEntries(entries);
+        try { sessionStorage.setItem(PAYMENT_TIMING_STORAGE_KEY, JSON.stringify(entries)); } catch { /* Keep checkout working when storage is unavailable. */ }
+        console.info("[TipMe payment diagnostics]", entries.at(-1));
+      },
+    });
+    timingRef.current = recorder;
+    if (bootstrapDurationMs !== null && bootstrapDurationMs !== undefined) {
+      recorder.record("checkout_bootstrap", bootstrapDurationMs);
+    }
+    const attempt = createCheckoutAttempt(() => recorder.measure("order_create", () => createLatestOrder()));
     attemptRef.current = attempt;
 
     async function captureAndWait(onCaptured?: (succeeded: boolean) => void) {
       if (!active) return;
       setState("confirming");
       const current = await attempt.getOrCreate();
-      const capture = await fetch(`/api/paypal/tips/${current.tipId}/capture`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ receiptToken: current.receiptToken }),
-      });
-      const captureResult = await capture.json().catch(() => ({})) as { status?: string };
-      if (!capture.ok) throw new Error("capture_failed");
+      const finishCapture = recorder.start("capture");
+      let capture: Response;
+      let captureResult: { status?: string };
+      try {
+        capture = await fetch(`/api/paypal/tips/${current.tipId}/capture`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ receiptToken: current.receiptToken }),
+        });
+        captureResult = await capture.json().catch(() => ({})) as { status?: string };
+        if (!capture.ok) throw new Error("capture_failed");
+        finishCapture(captureResult.status === "rejected" ? "failed" : "completed");
+      } catch (error) {
+        finishCapture("failed");
+        throw error;
+      }
       if (captureResult.status === "rejected") {
         onCaptured?.(false);
         attempt.clear();
@@ -181,41 +223,50 @@ function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder }: PayPal
         return;
       }
       onCaptured?.(true);
+      const finishWebhook = recorder.start("webhook_confirmation");
       for (let poll = 0; poll < 20 && active; poll += 1) {
         const response = await fetch(`/api/tips/${current.tipId}/status?token=${encodeURIComponent(current.receiptToken)}`, { cache: "no-store" });
         const tip = await response.json().catch(() => ({})) as { status?: string };
         if (tip.status === "confirmed") {
-          router.push(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`);
+          finishWebhook("completed");
+          router.push(paymentTimingReceiptHref(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`, diagnosticsEnabled));
           return;
         }
         if (tip.status === "rejected") {
+          finishWebhook("failed");
           attempt.clear();
           setState("rejected");
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 1_000));
       }
-      if (active) router.push(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`);
+      if (active) {
+        finishWebhook("timeout");
+        router.push(paymentTimingReceiptHref(`/tips/${current.tipId}/receipt?token=${encodeURIComponent(current.receiptToken)}`, diagnosticsEnabled));
+      }
     }
 
     async function initialize() {
       const appleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (appleDevice) await loadApplePaySdk().catch(() => undefined);
-      const paypal = await loadPayPalV6Sdk(checkout.environment ?? "live");
+      const paypal = await recorder.measure("paypal_sdk_load", async () => {
+        if (appleDevice) await loadApplePaySdk().catch(() => undefined);
+        return loadPayPalV6Sdk(checkout.environment ?? "live");
+      });
       if (!active) return;
-      if (!checkout.clientToken) throw new Error("paypal_v6_client_token_missing");
-      const sdk = await paypal.createInstance({
-        clientToken: checkout.clientToken,
+      const clientToken = checkout.clientToken;
+      if (!clientToken) throw new Error("paypal_v6_client_token_missing");
+      const sdk = await recorder.measure("paypal_sdk_initialize", () => paypal.createInstance({
+        clientToken,
         components: ["paypal-payments", "card-fields", "applepay-payments"],
         pageType: "checkout",
         locale: es ? "es-ES" : "en-US",
         ...(checkout.merchantId ? { merchantId: checkout.merchantId } : {}),
         ...(checkout.partnerAttributionId ? { partnerAttributionId: checkout.partnerAttributionId } : {}),
-      });
-      const methods = await sdk.findEligibleMethods({
+      }));
+      const methods = await recorder.measure("payment_method_eligibility", () => sdk.findEligibleMethods({
         currencyCode: "USD",
         amount: `${Math.floor(amountMinor / 100)}.${String(amountMinor % 100).padStart(2, "0")}`,
-      });
+      }));
       if (!active) return;
 
       if (methods.isEligible("advanced_cards")) {
@@ -230,22 +281,36 @@ function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder }: PayPal
       }
 
       if (methods.isEligible("paypal")) {
+        let finishPayPalInteraction: ((status?: "completed" | "failed" | "canceled") => void) | null = null;
         const session = sdk.createPayPalOneTimePaymentSession({
-          onApprove: () => captureAndWait(),
-          onCancel: () => active && setState("ready"),
-          onError: () => active && setState("error"),
+          onApprove: () => {
+            finishPayPalInteraction?.("completed");
+            return captureAndWait();
+          },
+          onCancel: () => {
+            finishPayPalInteraction?.("canceled");
+            if (active) setState("ready");
+          },
+          onError: () => {
+            finishPayPalInteraction?.("failed");
+            if (active) setState("error");
+          },
         });
         const container = document.querySelector("#paypal-button-container");
         const button = document.createElement("paypal-button");
         button.setAttribute("type", "pay");
         button.style.display = "block";
         button.style.width = "100%";
-        const startPayPal = () => session.start(
-            { presentationMode: "auto" },
-            attempt.getOrCreate().then((current) => ({ orderId: current.orderId })),
-          ).catch(() => {
+        const startPayPal = () => {
+          finishPayPalInteraction = recorder.start("paypal_interaction");
+          return session.start(
+              { presentationMode: "auto" },
+              attempt.getOrCreate().then((current) => ({ orderId: current.orderId })),
+            ).catch(() => {
+            finishPayPalInteraction?.("failed");
             if (active) setState("error");
           });
+        };
         startPayPalRef.current = startPayPal;
         button.addEventListener("click", () => void startPayPal(), { signal: listeners.signal });
         container?.replaceChildren(button);
@@ -306,32 +371,38 @@ function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder }: PayPal
       cardSession.current = null;
       startPayPalRef.current = null;
       if (attemptRef.current === attempt) attemptRef.current = null;
+      if (timingRef.current === recorder) timingRef.current = null;
     };
-  }, [amountMinor, checkout, es, locale, router]);
+  }, [amountMinor, bootstrapDurationMs, checkout, es, locale, router]);
 
   async function submitCard() {
     if (!cardSession.current || !attemptRef.current) return;
     setState("confirming");
+    const finishAuthorization = timingRef.current?.start("card_authorization");
     try {
       const attempt = await attemptRef.current.getOrCreate();
       const result = await cardSession.current.submit(attempt.orderId, {});
       if (result.state === "succeeded") {
-        const capture = await fetch(`/api/paypal/tips/${attempt.tipId}/capture`, {
+        finishAuthorization?.("completed");
+        const capture = await timingRef.current?.measure("capture", () => fetch(`/api/paypal/tips/${attempt.tipId}/capture`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ receiptToken: attempt.receiptToken }),
-        });
+        }));
+        if (!capture) throw new Error("capture_failed");
         const captureResult = await capture.json().catch(() => ({})) as { status?: string };
         if (!capture.ok) throw new Error("capture_failed");
         if (captureResult.status === "rejected") {
           setState("rejected");
           return;
         }
-        router.push(`/tips/${attempt.tipId}/receipt?token=${encodeURIComponent(attempt.receiptToken)}`);
+        router.push(paymentTimingReceiptHref(`/tips/${attempt.tipId}/receipt?token=${encodeURIComponent(attempt.receiptToken)}`, diagnosticsEnabledRef.current));
         return;
       }
+      finishAuthorization?.(result.state === "canceled" ? "canceled" : "failed");
       setState(result.state === "canceled" ? "ready" : "error");
     } catch {
+      finishAuthorization?.("failed");
       setState("error");
     }
   }
@@ -368,6 +439,7 @@ function PayPalV6Checkout({ checkout, locale, amountMinor, createOrder }: PayPal
     {state === "rejected" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "El pago fue rechazado. Prueba otra tarjeta o PayPal." : "The payment was declined. Try another card or PayPal."}</p>}
     {state === "error" && <p className="mt-3 text-sm font-semibold text-accent-strong">{es ? "No pudimos completar este intento. Revisa los datos o inténtalo nuevamente." : "We could not complete this attempt. Check the details or try again."}</p>}
     <p className="mt-3 text-center text-[11px] leading-relaxed text-muted">{es ? "PayPal protege y procesa tus datos de pago." : "PayPal protects and processes your payment details."}</p>
+    <PaymentTimingPanel entries={timingEntries} locale={locale} />
   </section>;
 }
 

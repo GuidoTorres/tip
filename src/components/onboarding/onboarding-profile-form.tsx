@@ -4,15 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle, SpinnerGap } from "@phosphor-icons/react";
 import { validateUsername } from "@/features/profiles/username";
 import { ApplicationCurrencyField } from "@/components/shared/application-currency-field";
+import { CONTENT_CATEGORIES, CONTENT_CATEGORY_LABELS, type ContentCategory } from "@/features/compliance/creator-policy";
 
 const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent";
 type Availability = "idle" | "invalid" | "reserved" | "checking" | "available" | "taken" | "error";
 
-export function OnboardingProfileForm({ action, publicName, username: savedUsername, bio, locale, showCurrency, submitLabel }: {
+export function OnboardingProfileForm({ action, publicName, username: savedUsername, bio, socialUrl, contentCategory, locale, showCurrency, submitLabel }: {
   action: (formData: FormData) => void | Promise<void>;
   publicName: string;
   username: string;
   bio: string;
+  socialUrl: string;
+  contentCategory?: ContentCategory | null;
   locale: "es" | "en";
   showCurrency: boolean;
   submitLabel: string;
@@ -100,6 +103,25 @@ export function OnboardingProfileForm({ action, publicName, username: savedUsern
       <label className="block text-sm font-semibold">
         Descripcion
         <textarea className={`${inputClass} min-h-24 py-3`} name="bio" maxLength={180} defaultValue={bio} />
+      </label>
+      <label className="block text-sm font-semibold">
+        Red social pública
+        <input className={inputClass} type="url" name="socialUrl" required maxLength={2048} placeholder="https://tiktok.com/@tuusuario" defaultValue={socialUrl} />
+        <span className="mt-2 block font-normal text-muted">Ayuda a tus fans a comprobar que esta página es tuya.</span>
+      </label>
+      <label className="block text-sm font-semibold">
+        Categoría de contenido
+        <select className={inputClass} name="contentCategory" required defaultValue={contentCategory ?? ""}>
+          <option value="" disabled>Selecciona una categoría</option>
+          {CONTENT_CATEGORIES.map((category) => <option key={category} value={category}>{CONTENT_CATEGORY_LABELS[category][locale]}</option>)}
+        </select>
+      </label>
+      <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">
+        Los tips sirven para agradecer contenido permitido que ya compartiste en tus redes.
+      </p>
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm">
+        <input type="checkbox" name="creatorPolicyAccepted" required className="mt-0.5 size-5 shrink-0 accent-accent" />
+        <span>Confirmo que no usaré TipMe para vender contenido adicional, acceso ni interacciones privadas pagadas.</span>
       </label>
       {showCurrency && <ApplicationCurrencyField />}
       <input type="hidden" name="locale" value={locale} />

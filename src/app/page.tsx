@@ -24,6 +24,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <section className="grid flex-1 items-center gap-8 py-6 md:grid-cols-[1.15fr_0.85fr] md:gap-10 md:py-16">
           <div className="max-w-2xl">
             <Heart size={38} weight="fill" className="mb-4 text-accent-strong" aria-hidden="true" />
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-accent-strong">{t.landing.positioning}</p>
             <h1 className="text-5xl font-semibold leading-[0.98] tracking-[-0.06em] sm:text-6xl md:max-w-[12ch] md:text-7xl">
               {t.landing.headline}
             </h1>
@@ -31,11 +32,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <Link href="/signup" className="pressable mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-accent-strong px-7 py-4 font-bold text-on-accent hover:bg-accent-pressed sm:inline-flex sm:w-auto">
               {t.landing.signup}<ArrowRight size={20} weight="bold" aria-hidden="true" />
             </Link>
-            <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
-              <span>{t.landing.coverage}</span>
-              <span aria-hidden="true" className="tracking-wide">🇲🇽 🇨🇴 🇵🇪 🇨🇱 🇦🇷 🇧🇷 🇺🇾</span>
-              <span>{t.landing.coverageMore}</span>
-            </p>
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow)] sm:p-8">

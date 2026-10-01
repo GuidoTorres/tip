@@ -9,7 +9,8 @@ export class SupabaseTipRepository implements TipRepository {
     const { data, error } = await this.client.rpc("get_public_creator", { requested_username: username }).maybeSingle();
     if (error) throw new Error("creator_lookup_failed");
     if (!data) return null;
-    const row = data as { id: string; preferred_currency: Currency };
+    const row = data as { id: string; preferred_currency: Currency; can_accept_tips: boolean };
+    if (row.can_accept_tips !== true) return null;
     return { id: row.id, currency: row.preferred_currency };
   }
 

@@ -1,13 +1,21 @@
-import { describe, expect, it } from "vitest";
-import { mockSimulatorAllowed } from "@/lib/env/runtime";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { getServerEnv } from "@/lib/env/server";
+import { getPaymentProviderFromEnv } from "@/features/payments/provider-factory";
 
-describe("mockSimulatorAllowed", () => {
-  it("bloquea siempre el entorno Production de Vercel", () => {
-    expect(mockSimulatorAllowed({ NODE_ENV: "production", VERCEL_ENV: "production" })).toBe(false);
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("payment runtime", () => {
+  it("rejects retired payment providers", () => {
+    vi.stubEnv("PAYMENT_PROVIDER", "dlocalgo");
+
+    expect(() => getServerEnv()).toThrow();
   });
 
-  it("habilita desarrollo local y Vercel Preview", () => {
-    expect(mockSimulatorAllowed({ NODE_ENV: "development" })).toBe(true);
-    expect(mockSimulatorAllowed({ NODE_ENV: "production", VERCEL_ENV: "preview" })).toBe(true);
+  it("builds the PayPal provider from server configuration", () => {
+    vi.stubEnv("PAYMENT_PROVIDER", "paypal");
+
+    expect(getPaymentProviderFromEnv(getServerEnv()).name).toBe("paypal");
   });
 });

@@ -28,8 +28,8 @@ describe("checkout configuration route", () => {
   beforeEach(() => {
     mocks.allowed = true;
     mocks.prepareCheckout.mockReset().mockResolvedValue({
-      kind: "mercadopago",
-      publicKey: "public-key", country: "PE", currency: "PEN",
+      kind: "embedded",
+      checkout: { kind: "embedded", clientId: "paypal-client-id", clientToken: "browser-token" },
     });
   });
 
@@ -39,13 +39,13 @@ describe("checkout configuration route", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({
-      kind: "mercadopago",
-      publicKey: "public-key", country: "PE", currency: "PEN",
+      kind: "embedded",
+      checkout: { kind: "embedded", clientId: "paypal-client-id", clientToken: "browser-token" },
     });
     expect(JSON.stringify(body)).not.toContain("must-never-leak");
   });
 
-  it("preserves redirect mode for the mock provider", async () => {
+  it("preserves the provider-neutral redirect mode for Stripe", async () => {
     mocks.prepareCheckout.mockResolvedValue({ kind: "redirect" });
 
     const response = await GET(new Request("https://tipme.pro/api/payments/checkout-config?username=camila"));

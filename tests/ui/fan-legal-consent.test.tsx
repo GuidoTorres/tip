@@ -5,12 +5,13 @@ import { TipForm } from "@/components/tips/tip-form";
 describe("fan legal consent", () => {
   // La aceptación pasó de casilla explícita a consentimiento por el acto de pagar.
   // El aviso debe seguir siendo visible, contundente y pegado al formulario de pago.
-  it("leads with the non-refundable consequence next to payment", () => {
+  it("explains the voluntary nature and refund limits next to payment", () => {
     const html = renderToStaticMarkup(<TipForm username="camila" currency="USD" locale="es" />);
 
-    // Los enlaces van embebidos en la frase, así que el texto no es contiguo.
-    expect(html).toContain("Los tips ");
-    expect(html).toContain(">no son reembolsables</a>");
+    expect(html).toContain("Este tip es un apoyo voluntario");
+    expect(html).toContain("agradece contenido que esta creadora ya compartió");
+    expect(html).toContain("No compra contenido adicional, acceso ni garantiza una respuesta");
+    expect(html).toContain(">generalmente no son reembolsables</a>");
     expect(html).toContain("antes de pagar");
   });
 

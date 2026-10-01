@@ -37,6 +37,9 @@ const mercadoPagoMigrationPath = fileURLToPath(
 const mercadoPagoAllRegionsMigrationPath = fileURLToPath(
   new URL("../../supabase/migrations/202608210001_mercadopago_all_regions.sql", import.meta.url),
 );
+const creatorSocialMigrationPath = fileURLToPath(
+  new URL("../../supabase/migrations/202609020001_creator_social_url.sql", import.meta.url),
+);
 
 describe("database migration safety", () => {
   it("does not resolve citext through an empty function search path", () => {
@@ -161,5 +164,15 @@ describe("database migration safety", () => {
     for (const country of ["AR", "BR", "CL", "CO", "MX", "PE", "UY"]) {
       expect(regionalMigration).toContain(`provider_country = '${country}'`);
     }
+  });
+
+  it("adds a public social URL without invalidating existing creator profiles", () => {
+    expect(existsSync(creatorSocialMigrationPath)).toBe(true);
+    if (!existsSync(creatorSocialMigrationPath)) return;
+
+    const socialMigration = readFileSync(creatorSocialMigrationPath, "utf8");
+    expect(socialMigration).toMatch(/add column social_url text/i);
+    expect(socialMigration).toMatch(/returns table \([^)]*social_url text/is);
+    expect(socialMigration).not.toMatch(/alter column social_url set not null/i);
   });
 });

@@ -35,9 +35,9 @@ insert into public.tips (
   id, creator_id, payer_name, message, anonymous, base_amount_minor, processing_support_minor, amount_minor, currency,
   platform_fee_minor, gateway_fee_minor, net_amount_minor, provider, provider_payment_id, status, confirmed_at
 ) values
-  ('30000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'Mateo', 'Para ti ❤️', false, 5000, 0, 5000, 'USD', 150, 200, 4650, 'mock', 'mock_demo_confirmed_1', 'confirmed', now() - interval '2 minutes'),
-  ('30000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', null, null, true, 2000, 0, 2000, 'USD', 60, null, 1940, 'mock', 'mock_demo_confirmed_2', 'confirmed', now() - interval '10 minutes'),
-  ('30000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', 'Lucía', 'Sigue creando', false, 3500, 0, 3500, 'USD', 105, null, 3395, 'mock', 'mock_demo_pending_1', 'pending', null)
+  ('30000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'Mateo', 'Para ti ❤️', false, 5000, 0, 5000, 'USD', 150, 200, 4650, 'paypal', 'PAYPAL-DEMO-CONFIRMED-1', 'confirmed', now() - interval '2 minutes'),
+  ('30000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', null, null, true, 2000, 0, 2000, 'USD', 60, null, 1940, 'paypal', 'PAYPAL-DEMO-CONFIRMED-2', 'confirmed', now() - interval '10 minutes'),
+  ('30000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', 'Lucía', 'Sigue creando', false, 3500, 0, 3500, 'USD', 105, null, 3395, 'paypal', 'PAYPAL-DEMO-PENDING-1', 'pending', null)
 on conflict (id) do nothing;
 
 insert into public.ledger_entries (creator_id, tip_id, type, amount_minor, currency) values

@@ -21,8 +21,8 @@ export async function requestPayoutAction(formData: FormData) {
   if (!user) redirect("/login");
   const admin = createAdminSupabaseClient();
   const env = getServerEnv();
-  const platformPayouts = env.PAYMENT_PROVIDER === "paypal" && env.PAYPAL_FLOW === "platform_payouts";
-  if (env.PAYMENT_PROVIDER !== "mock" && !platformPayouts) redirect("/dashboard/payouts?error=managed_by_provider");
+  const platformPayouts = env.PAYPAL_FLOW === "platform_payouts";
+  if (!platformPayouts) redirect("/dashboard/payouts?error=managed_by_provider");
   const idempotencyKey = createHash("sha256").update(`${user.id}:${parsed.data.accountId}:${parsed.data.amountMinor}:${randomUUID()}`).digest("hex");
   try {
     await requestPayout({ creatorId: user.id, ...parsed.data, idempotencyKey }, {

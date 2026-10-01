@@ -12,7 +12,7 @@ type BalanceSummaryProps = {
   monthMinor?: number;
   grossConfirmedMinor?: number;
   feesMinor?: number;
-  paymentProvider?: "mock" | "paypal" | "mercadopago";
+  paymentProvider?: "paypal";
   sandboxSingleMerchant?: boolean;
   platformPayouts?: boolean;
   shareActions?: ReactNode;
@@ -26,62 +26,15 @@ export function BalanceSummary({
   monthMinor = 0,
   grossConfirmedMinor = 0,
   feesMinor = 0,
-  paymentProvider = "mock",
+  paymentProvider = "paypal",
   sandboxSingleMerchant = false,
   platformPayouts = false,
   shareActions,
   refreshAction,
 }: BalanceSummaryProps) {
-  const paypal = paymentProvider === "paypal";
-  const mercadoPago = paymentProvider === "mercadopago";
-
-  if (mercadoPago) {
-    return (
-      <section className="rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
-        {/* Una columna en móvil; en escritorio el dinero queda a la izquierda y
-            compartir a la derecha, para no dejar un vacío en el centro. */}
-        <div className="sm:flex sm:items-start sm:justify-between sm:gap-10">
-          <div className="min-w-0 sm:flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm opacity-70">Recibido en Mercado Pago</p>
-              <span className="rounded-full border border-background/20 px-2.5 py-1 text-[0.7rem] font-semibold">
-                {currency}
-              </span>
-              {refreshAction && <div className="ml-auto sm:hidden">{refreshAction}</div>}
-            </div>
-            <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl">
-              {formatMoney(availableMinor, currency, "es")}
-            </p>
-            {grossConfirmedMinor > 0 && (
-              <p className="mt-1.5 text-sm opacity-65">
-                De {formatMoney(grossConfirmedMinor, currency, "es")}
-                {feesMinor > 0 && <> · {formatMoney(feesMinor, currency, "es")} en comisiones</>}
-              </p>
-            )}
-            <dl aria-label="Tips confirmados por periodo" className="mt-5 grid max-w-sm grid-cols-2 divide-x divide-background/15 border-t border-background/15 pt-4">
-              <div className="pr-4 sm:pr-6">
-                <dt className="text-xs opacity-65">Hoy</dt>
-                <dd className="mt-0.5 text-sm font-semibold tabular-nums sm:text-lg">{formatMoney(todayMinor, currency, "es")}</dd>
-              </div>
-              <div className="pl-4 sm:pl-6">
-                <dt className="text-xs opacity-65">Este mes</dt>
-                <dd className="mt-0.5 text-sm font-semibold tabular-nums sm:text-lg">{formatMoney(monthMinor, currency, "es")}</dd>
-              </div>
-            </dl>
-          </div>
-          <div className="hidden shrink-0 sm:flex sm:items-center sm:gap-3">
-            {shareActions}
-            {refreshAction}
-          </div>
-        </div>
-        {shareActions && <div className="mt-4 border-t border-background/15 pt-4 sm:hidden">{shareActions}</div>}
-      </section>
-    );
-  }
-
   // PayPal sin custodia: el dinero ya está en la cuenta de la creadora, así que se
   // muestra lo confirmado y lo neto, sin ofrecer un retiro que TipMe no puede hacer.
-  if (paypal && !platformPayouts) {
+  if (paymentProvider === "paypal" && !platformPayouts) {
     return (
       <section className="relative rounded-2xl bg-foreground p-6 text-background shadow-[var(--shadow)] sm:p-8">
         {refreshAction && <div className="absolute right-5 top-5 sm:right-7 sm:top-7">{refreshAction}</div>}

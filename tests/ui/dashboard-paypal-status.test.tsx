@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
+  paypalFlow: "multiparty",
+  reviewStatus: "pending",
   tips: [] as Array<{
     id: string;
     payer_name: string;
@@ -34,7 +36,7 @@ vi.mock("@/lib/env/public", () => ({
   getPublicEnv: () => ({ NEXT_PUBLIC_APP_URL: "https://tipme.pro" }),
 }));
 vi.mock("@/lib/env/server", () => ({
-  getServerEnv: () => ({ PAYMENT_PROVIDER: "paypal", PAYPAL_SANDBOX_SINGLE_MERCHANT: false }),
+  getServerEnv: () => ({ PAYMENT_PROVIDER: "paypal", PAYPAL_FLOW: state.paypalFlow, PAYPAL_SANDBOX_SINGLE_MERCHANT: false }),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({
@@ -46,7 +48,7 @@ vi.mock("@/lib/supabase/server", () => ({
         eq: () => query,
         order: () => query,
         gte: async () => ({ data: state.tips }),
-        single: async () => ({ data: { public_name: "Camila", username: "camila" } }),
+        single: async () => ({ data: { public_name: "Camila", username: "camila", payment_review_status: state.reviewStatus, payment_review_reason: null } }),
         maybeSingle: async () => ({ data: state.paymentAccount }),
         limit: async (count: number) => ({ data: table === "tips" ? state.tips.slice(0, count) : null }),
       };
@@ -59,6 +61,8 @@ import DashboardPage from "@/app/dashboard/page";
 
 describe("Dashboard PayPal connection status", () => {
   beforeEach(() => {
+    state.paypalFlow = "multiparty";
+    state.reviewStatus = "pending";
     state.tips = Array.from({ length: 7 }, (_, index) => ({
       id: `tip-${index + 1}`,
       payer_name: `Fan ${index + 1}`,
@@ -87,11 +91,32 @@ describe("Dashboard PayPal connection status", () => {
   });
 
   it("does not claim PayPal is linked when there is no verified account", async () => {
+    state.paypalFlow = "platform_payouts";
     state.paymentAccount = null;
 
     const html = renderToStaticMarkup(await DashboardPage());
 
     expect(html).not.toContain("PayPal verificado");
+    expect(html).toContain("Conecta tu correo PayPal para recibir tips");
+    expect(html).toContain('href="/dashboard/payouts"');
+    expect(html).not.toContain('href="/onboarding?step=2"');
+  });
+
+  it("shows that a new creator is pending policy review", async () => {
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain("Revisión de uso pendiente");
+    expect(html).toContain("Tu página ya existe");
+  });
+
+  it("preserves the account connection route for direct PayPal", async () => {
+    state.paymentAccount = null;
+
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain("Conecta PayPal para recibir tips");
+    expect(html).toContain('href="/onboarding?step=2"');
+    expect(html).not.toContain("Conecta tu correo PayPal");
   });
 
   it("places recent tips after the compact balance", async () => {

@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, Clock, XCircle } from "@phosphor-icons/react";
 import { ReceiptActions } from "@/components/tips/receipt-actions";
+import { PaymentTimingPanel } from "@/components/payments/payment-timing-panel";
 import { creatorVisibleTipAmount } from "@/features/payments/creator-visible-amount";
+import {
+  PAYMENT_TIMING_STORAGE_KEY,
+  parseStoredPaymentTimings,
+  paymentTimingDebugEnabled,
+  type PaymentTimingEntry,
+} from "@/features/payments/payment-timing";
 import { getTipStatusPresentation } from "@/features/payments/tip-status-presentation";
 import { formatMoney } from "@/lib/i18n";
 import type { Currency, TipStatus } from "@/features/payments/types";
@@ -26,6 +33,15 @@ type Receipt = {
 
 export function ReceiptStatus({ initial, token }: { initial: Receipt; token: string }) {
   const [tip, setTip] = useState(initial);
+  const [timingEntries, setTimingEntries] = useState<PaymentTimingEntry[]>([]);
+
+  useEffect(() => {
+    if (!paymentTimingDebugEnabled(window.location.search)) return;
+    const timer = window.setTimeout(() => {
+      try { setTimingEntries(parseStoredPaymentTimings(sessionStorage.getItem(PAYMENT_TIMING_STORAGE_KEY))); } catch { /* Diagnostics must never block a receipt. */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!(["created", "pending"] as TipStatus[]).includes(tip.status)) return;
@@ -71,6 +87,7 @@ export function ReceiptStatus({ initial, token }: { initial: Receipt; token: str
     <p className={`mt-6 font-semibold ${status.tone === "success" ? "text-success" : status.tone === "danger" ? "text-accent-strong" : "text-warning"}`}>{status.label}</p>
     {repeatHref && repeatLabel && <div className="mt-7"><a href={repeatHref} className="pressable inline-flex min-h-12 items-center justify-center rounded-full bg-accent-strong px-7 font-semibold text-on-accent">{repeatLabel}</a></div>}
     {confirmed && tip.provider === "paypal" && <p className="mt-6 rounded-xl bg-surface-soft p-3 text-xs leading-relaxed text-muted">Procesado por PayPal. Las disputas y operaciones no autorizadas se gestionan según PayPal y el emisor del medio de pago.</p>}
+    <PaymentTimingPanel entries={timingEntries} locale="es" />
     <p className="mt-4 text-xs leading-relaxed text-muted">El dashboard de TipMe es la fuente de verdad.</p>
   </div>;
 }

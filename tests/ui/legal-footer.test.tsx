@@ -10,6 +10,8 @@ describe("legal footer", () => {
     expect(html).toContain('href="/terms"');
     expect(html).toContain('href="/privacy"');
     expect(html).toContain('href="/refund-policy"');
+    expect(html).toContain('href="mailto:soporte@tipme.pro"');
+    expect(html).toContain(">Soporte</a>");
   });
 
   it("uses the English labels when the site is in English", () => {
@@ -19,5 +21,6 @@ describe("legal footer", () => {
     expect(html).toContain(">Terms</a>");
     expect(html).toContain(">Privacy</a>");
     expect(html).toContain(">Refunds</a>");
+    expect(html).toContain(">Support</a>");
   });
 });

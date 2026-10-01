@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DEFAULT_SUPPORT_EMAIL } from "@/features/legal/contact";
 import { getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -12,6 +13,7 @@ export function LegalFooter({ locale, year }: { locale: Locale; year: number }) 
         <Link href="/terms" className="hover:text-foreground">{t.terms}</Link>
         <Link href="/privacy" className="hover:text-foreground">{t.privacy}</Link>
         <Link href="/refund-policy" className="hover:text-foreground">{t.refunds}</Link>
+        <a href={`mailto:${DEFAULT_SUPPORT_EMAIL}`} className="hover:text-foreground">{t.support}</a>
       </nav>
     </footer>
   );

@@ -3,20 +3,17 @@ import { ArrowRight, Bank, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getPublicEnv } from "@/lib/env/public";
 import { getServerEnv } from "@/lib/env/server";
-import { completeOnboarding, saveDLocalGoSplitCode, saveOnboardingProfile } from "@/features/profiles/actions";
+import { completeOnboarding, saveOnboardingProfile } from "@/features/profiles/actions";
 import { CopyLink } from "@/components/shared/copy-link";
-import { MercadoPagoConnect } from "@/components/payments/mercadopago-connect";
 import { PayPalPayoutEmailForm } from "@/components/payouts/paypal-payout-email-form";
 import { OnboardingProfileForm } from "@/components/onboarding/onboarding-profile-form";
-
-const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent";
 
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string; error?: string; mercadopago?: string; paypal?: string }>;
+  searchParams: Promise<{ step?: string; error?: string; paypal?: string }>;
 }) {
-  const { step: requestedStep = "1", error, mercadopago, paypal } = await searchParams;
+  const { step: requestedStep = "1", error, paypal } = await searchParams;
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -25,81 +22,48 @@ export default async function OnboardingPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("public_name,username,bio,locale")
+    .select("public_name,username,bio,social_url,content_category,locale")
     .eq("id", user.id)
     .single();
 
   const publicEnv = getPublicEnv();
   const serverEnv = getServerEnv();
-  const provider = serverEnv.PAYMENT_PROVIDER;
-  const platformPayouts = provider === "paypal" && serverEnv.PAYPAL_FLOW === "platform_payouts";
-  const whopOnboarding = provider === "whop";
-  const step = whopOnboarding ? "1" : requestedStep === "4" ? "3" : requestedStep;
-  const totalSteps = whopOnboarding ? 1 : 3;
+  const platformPayouts = serverEnv.PAYPAL_FLOW === "platform_payouts";
+  const profileOnlyOnboarding = platformPayouts;
+  const step = profileOnlyOnboarding ? "1" : requestedStep === "4" ? "3" : requestedStep;
+  const totalSteps = profileOnlyOnboarding ? 1 : 3;
 
-  const { data: mercadoPagoAccount } =
-    provider === "mercadopago"
-      ? await supabase
-        .from("payment_accounts")
-        .select("status,provider_country")
-        .eq("creator_id", user.id)
-        .eq("provider", "mercadopago")
-        .maybeSingle()
-      : { data: null };
-
-  const { data: dLocalGoAccount } =
-    provider === "dlocalgo"
-      ? await supabase
-        .from("payment_accounts")
-        .select("status,provider_merchant_id")
-        .eq("creator_id", user.id)
-        .eq("provider", "dlocalgo")
-        .maybeSingle()
-      : { data: null };
-
-  const { data: paypalAccount } =
-    provider === "paypal"
-      ? platformPayouts
-        ? await supabase
-          .from("payout_accounts")
-          .select("status,provider_account_id,bank_name")
-          .eq("creator_id", user.id)
-          .eq("provider", "paypal")
-          .maybeSingle()
-        : await supabase
-          .from("payment_accounts")
-          .select("status,onboarding_completed,payments_receivable,card_payments_enabled")
-          .eq("creator_id", user.id)
-          .eq("provider", "paypal")
-          .maybeSingle()
-      : { data: null };
+  const { data: paypalAccount } = platformPayouts
+    ? await supabase
+      .from("payout_accounts")
+      .select("status,provider_account_id,bank_name")
+      .eq("creator_id", user.id)
+      .eq("provider", "paypal")
+      .maybeSingle()
+    : await supabase
+      .from("payment_accounts")
+      .select("status,onboarding_completed,payments_receivable,card_payments_enabled")
+      .eq("creator_id", user.id)
+      .eq("provider", "paypal")
+      .maybeSingle();
 
   const username = profile?.username ?? "username";
   const publicUrl = `${publicEnv.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/${username}`;
   const paypalPayoutEmail = platformPayouts ? ((paypalAccount as { provider_account_id?: string } | null)?.provider_account_id ?? "") : "";
 
-  const errorMessage =
-    error === "mercadopago_seller_required"
-      ? "Necesitas una cuenta de Mercado Pago verificada y habilitada para recibir pagos."
-      : error === "dlocalgo_required"
-        ? "Primero conecta tu cuenta de dLocal Go para poder recibir tips."
-        : error === "paypal_required"
-          ? platformPayouts
-            ? "Guarda tu correo de PayPal para poder recibir tips."
-            : "Conecta tu cuenta PayPal para poder recibir tips."
-          : error === "paypal_restricted"
-            ? "PayPal vinculó la cuenta, pero todavía está completando su activación."
-            : error === "paypal_invalid"
-              ? "No pudimos validar la conexión con PayPal. Inténtalo nuevamente."
-              : error === "paypal_unavailable"
-                ? "No pudimos comprobar PayPal en este momento. Inténtalo nuevamente."
-                : error === "invalid_split_code"
-                  ? "Ese split code no tiene un formato válido."
-                  : error === "split_code_taken"
-                    ? "Ese split code ya está vinculado a otra cuenta de TipMe."
-                    : error
-                      ? "No pudimos guardar este paso. Revisa los datos."
-                      : null;
+  const errorMessage = error === "paypal_required"
+    ? platformPayouts
+      ? "Guarda tu correo de PayPal para poder recibir tips."
+      : "Conecta tu cuenta PayPal para poder recibir tips."
+    : error === "paypal_restricted"
+      ? "PayPal vinculó la cuenta, pero todavía está completando su activación."
+      : error === "paypal_invalid"
+        ? "No pudimos validar la conexión con PayPal. Inténtalo nuevamente."
+        : error === "paypal_unavailable"
+          ? "No pudimos comprobar PayPal en este momento. Inténtalo nuevamente."
+          : error
+            ? "No pudimos guardar este paso. Revisa los datos."
+            : null;
 
   const paypalPayoutStatus = paypalAccount?.status === "verified" ? "verified" : "pending";
 
@@ -137,14 +101,16 @@ export default async function OnboardingPage({
                 publicName={profile?.public_name ?? ""}
                 username={profile?.username ?? ""}
                 bio={profile?.bio ?? ""}
+                socialUrl={profile?.social_url ?? ""}
+                contentCategory={profile?.content_category ?? null}
                 locale={profile?.locale === "en" ? "en" : "es"}
-                showCurrency={provider !== "mercadopago"}
-                submitLabel={whopOnboarding ? "Crear mi página" : "Continuar"}
+                showCurrency
+                submitLabel={profileOnlyOnboarding ? "Crear mi página" : "Continuar"}
               />
             </>
           )}
 
-          {step === "2" && provider === "paypal" && (
+          {step === "2" && (
             <>
               <Bank size={32} className="text-accent-strong" weight="fill" />
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">
@@ -167,46 +133,6 @@ export default async function OnboardingPage({
                   returnTo="/onboarding?step=3"
                 />
               </div>
-            </>
-          )}
-
-          {step === "2" && provider === "mercadopago" && (
-            <>
-              <Bank size={32} className="text-accent-strong" weight="fill" />
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">Conecta Mercado Pago</h1>
-              <p className="mt-2 text-muted">El fan paga directamente a tu cuenta.</p>
-              {mercadopago === "connected" && (
-                <p className="mt-4 rounded-xl bg-surface-soft p-3 text-sm font-semibold text-success">Cuenta vinculada correctamente.</p>
-              )}
-              <div className="mt-7">
-                <MercadoPagoConnect connected={mercadoPagoAccount?.status === "connected"} country={mercadoPagoAccount?.provider_country} />
-              </div>
-            </>
-          )}
-
-          {step === "2" && provider === "dlocalgo" && (
-            <>
-              <Bank size={32} className="text-accent-strong" weight="fill" />
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">Conecta dLocal Go</h1>
-              <p className="mt-2 text-muted">Pega el split code de tu colaboracion.</p>
-              <form action={saveDLocalGoSplitCode} className="mt-7 space-y-5">
-                <label className="block text-sm font-semibold">
-                  Split code
-                  <input className={inputClass} name="splitCode" required minLength={6} maxLength={64} defaultValue={dLocalGoAccount?.provider_merchant_id ?? ""} />
-                </label>
-                <SubmitButton label="Continuar" />
-              </form>
-            </>
-          )}
-
-          {step === "2" && provider !== "paypal" && provider !== "mercadopago" && provider !== "dlocalgo" && (
-            <>
-              <Bank size={32} className="text-accent-strong" weight="fill" />
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">Modo desarrollo</h1>
-              <p className="mt-2 text-muted">No hay una cuenta que conectar y ningun cobro es real.</p>
-              <form action={completeOnboarding} className="mt-7">
-                <SubmitButton label="Continuar" />
-              </form>
             </>
           )}
 

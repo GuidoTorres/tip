@@ -17,6 +17,9 @@ describe("USD como moneda operativa", () => {
     formData.set("publicName", "Alex");
     formData.set("username", "alex_live");
     formData.set("bio", "Contenido en vivo");
+    formData.set("socialUrl", "https://www.youtube.com/@alex_live");
+    formData.set("contentCategory", "livestreaming");
+    formData.set("creatorPolicyAccepted", "on");
     formData.set("locale", "es");
 
     const result = parseProfileFormData(formData);

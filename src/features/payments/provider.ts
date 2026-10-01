@@ -1,4 +1,3 @@
-import type { MercadoPagoCountry, MercadoPagoCurrency } from "./mercadopago-regions";
 import type { Currency, TipStatus } from "./types";
 
 export type CreatePaymentInput = {
@@ -8,18 +7,7 @@ export type CreatePaymentInput = {
   currency: Currency;
   providerAccountId: string | null;
   idempotencyKey: string;
-  providerAccessToken?: string;
-  providerCountry?: string;
-  paymentMethodData?: MercadoPagoCardPaymentData;
   returnUrl?: string;
-};
-
-export type MercadoPagoCardPaymentData = {
-  token: string;
-  paymentMethodId: string;
-  issuerId?: string | null;
-  installments: number;
-  payer: { email: string; identification?: { type: string; number: string } };
 };
 
 export type CheckoutPresentation =
@@ -33,8 +21,7 @@ export type CheckoutPresentation =
       merchantCountry?: string;
       clientToken?: string;
       partnerAttributionId?: string;
-    }
-  | { kind: "mercadopago"; publicKey: string; country: MercadoPagoCountry; currency: MercadoPagoCurrency };
+    };
 
 export type EmbeddedCheckout = Extract<CheckoutPresentation, { kind: "embedded" }>;
 export type PrepareCheckoutInput = { providerAccountId: string | null };
@@ -106,8 +93,7 @@ export interface PaymentProvider {
   capturePayment(input: CapturePaymentInput): Promise<CapturePaymentResult>;
   verifyWebhook(input: WebhookVerificationInput): Promise<boolean>;
   parseWebhook(rawBody: string): Promise<ProviderWebhookEvent>;
-  // Solo los proveedores con custodia pagan al creador desde un saldo de TipMe.
-  // Con split (Mercado Pago, dLocal Go, Whop) el dinero ya llegó a su destino.
+  // Los flujos con custodia pagan al creador desde un saldo de TipMe.
   createPayout?(input: CreatePayoutInput): Promise<PayoutResult>;
   getPayoutStatus?(providerPayoutId: string): Promise<PayoutStatus>;
 }

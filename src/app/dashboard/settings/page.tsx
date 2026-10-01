@@ -4,6 +4,7 @@ import { Trash } from "@phosphor-icons/react/dist/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ApplicationCurrencyField } from "@/components/shared/application-currency-field";
 import { deleteAvatar, updateSettings } from "@/features/profiles/actions";
+import { CONTENT_CATEGORIES, CONTENT_CATEGORY_LABELS } from "@/features/compliance/creator-policy";
 
 const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-border bg-background px-4 outline-none focus:border-accent";
 
@@ -12,7 +13,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("public_name,username,avatar_url,bio,locale").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("public_name,username,avatar_url,bio,social_url,content_category,locale").eq("id", user.id).single();
   return <div className="mx-auto max-w-2xl">
     <h1 className="text-3xl font-semibold tracking-[-0.04em]">Configuración</h1>
     {query.success && <p className="mt-5 rounded-xl bg-surface-soft p-3 text-sm font-semibold text-success">Cambios guardados.</p>}
@@ -29,6 +30,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <label className="block text-sm font-semibold">Nombre visible<input className={inputClass} name="publicName" required maxLength={80} defaultValue={profile?.public_name ?? ""} /></label>
         <label className="block text-sm font-semibold">Username<input className={inputClass} name="username" required minLength={3} maxLength={30} defaultValue={profile?.username ?? ""} /><span className="mt-2 block font-normal text-muted">Define tu enlace público: tipme.pro/username</span></label>
         <label className="block text-sm font-semibold">Descripción<textarea className={`${inputClass} min-h-24 py-3`} name="bio" maxLength={180} defaultValue={profile?.bio ?? ""} /></label>
+        <label className="block text-sm font-semibold">Red social pública<input className={inputClass} type="url" name="socialUrl" required maxLength={2048} placeholder="https://tiktok.com/@tuusuario" defaultValue={profile?.social_url ?? ""} /><span className="mt-2 block font-normal text-muted">Se mostrará en tu página para que tus fans puedan verificarte.</span></label>
+        <label className="block text-sm font-semibold">Categoría de contenido<select className={inputClass} name="contentCategory" required defaultValue={profile?.content_category ?? ""}><option value="" disabled>Selecciona una categoría</option>{CONTENT_CATEGORIES.map((category) => <option key={category} value={category}>{CONTENT_CATEGORY_LABELS[category].es}</option>)}</select></label>
+        <p className="rounded-xl bg-surface-soft p-4 text-sm text-muted">Los tips sirven para agradecer contenido permitido que ya compartiste en tus redes.</p>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm"><input type="checkbox" name="creatorPolicyAccepted" required className="mt-0.5 size-5 shrink-0 accent-accent" /><span>Confirmo que no usaré TipMe para vender contenido adicional, acceso ni interacciones privadas pagadas.</span></label>
         <ApplicationCurrencyField />
         <label className="block text-sm font-semibold">Idioma<select className={inputClass} name="locale" defaultValue={profile?.locale ?? "es"}><option value="es">Español</option><option value="en">English</option></select></label>
         <button className="pressable min-h-14 w-full rounded-full bg-accent-strong px-6 font-bold text-on-accent">Guardar cambios</button>
